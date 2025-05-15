@@ -1,6 +1,6 @@
 """
-파일명: iflist02.py
-버전: v3.0
+파일명: iflist03.py
+버전: v4.0
 작성일: 2023년 (실제 날짜 확인 필요)
 
 설명:
@@ -10,8 +10,8 @@
 사용법:
 1. 'iflist.sqlite' 데이터베이스 파일이 현재 디렉토리에 있어야 합니다.
 2. 'iflist' 테이블에 '송신시스템', '수신시스템', 'I/F명' 컬럼이 있어야 합니다.
-3. 명령행에서 다음과 같이 실행: 'python iflist02.py'
-4. 결과는 '{스크립트명}_reordered_v3.xlsx' 파일로 저장됩니다.
+3. 명령행에서 다음과 같이 실행: 'python iflist03.py'
+4. 결과는 '{스크립트명}_reordered_v4.xlsx' 파일로 저장됩니다.
 
 필요 라이브러리:
 - sqlite3: SQLite 데이터베이스 액세스
@@ -34,6 +34,7 @@
 - v1.0: 초기 버전
 - v2.0: 전체 데이터 활용 및 매칭 로직 개선
 - v3.0: 다중 매칭 시 우선순위 적용 및 디버깅용 색상 구분 추가
+- v4.0: 추가 개선 작업 시작
 """
 
 import sqlite3
@@ -59,9 +60,9 @@ replace_lz_with = 'VO'
 try:
     script_basename = os.path.basename(sys.argv[0])
     script_name_without_ext = os.path.splitext(script_basename)[0]
-    excel_filename = f"{script_name_without_ext}_reordered_v3.xlsx" # 버전 변경
+    excel_filename = f"{script_name_without_ext}_reordered_v4.xlsx" # 버전 변경
 except Exception:
-    excel_filename = "output_reordered_v3.xlsx"
+    excel_filename = "output_reordered_v4.xlsx"
     print(f"스크립트 이름을 감지할 수 없어 기본 파일명 '{excel_filename}'을 사용합니다.")
 
 df_complete_table = pd.DataFrame() # 원본 전체 테이블
@@ -291,4 +292,4 @@ elif not df_complete_table.empty and df_filtered.empty : # 초기 필터링 결�
 elif df_complete_table.empty : # 원본 데이터 자체가 없었던 경우
      print("원본 데이터(df_complete_table)가 없어 Excel 파일을 생성하지 않았습니다.")
 else: # 그 외 output_rows_info가 비어있는 경우
-    print("조건에 맞는 데이터가 없어 최종적으로 Excel 파일에 저장할 내용이 없습니다.")
+    print("조건에 맞는 데이터가 없어 최종적으로 Excel 파일에 저장할 내용이 없습니다.") 
