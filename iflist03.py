@@ -1,6 +1,6 @@
 """
 파일명: iflist03.py
-버전: v4.0
+버전: v5.0
 작성일: 2023년 (실제 날짜 확인 필요)
 
 설명:
@@ -11,7 +11,7 @@
 1. 'iflist.sqlite' 데이터베이스 파일이 현재 디렉토리에 있어야 합니다.
 2. 'iflist' 테이블에 '송신시스템', '수신시스템', 'I/F명' 컬럼이 있어야 합니다.
 3. 명령행에서 다음과 같이 실행: 'python iflist03.py'
-4. 결과는 '{스크립트명}_reordered_v4.xlsx' 파일로 저장됩니다.
+4. 결과는 '{스크립트명}_reordered_v5.xlsx' 파일로 저장됩니다.
 
 필요 라이브러리:
 - sqlite3: SQLite 데이터베이스 액세스
@@ -29,12 +29,14 @@
    - 케이스 2: 송신시스템 값이 같은 행
    - 케이스 2-1: 수신시스템 값이 같은 행
 5. 출력 Excel에서 매칭된 행은 노란색으로, 우선순위로 필터링된 행은 연두색으로 표시
+6. 각 행에 송신 파일 및 수신 파일 경로 정보를 포함한 컬럼 추가
 
 수정 이력:
 - v1.0: 초기 버전
 - v2.0: 전체 데이터 활용 및 매칭 로직 개선
 - v3.0: 다중 매칭 시 우선순위 적용 및 디버깅용 색상 구분 추가
 - v4.0: 디버깅 모드 토글 기능 추가
+- v5.0: 송신/수신 파일 경로 정보 컬럼 추가
 """
 
 import sqlite3
@@ -49,6 +51,17 @@ table_name = 'iflist'
 column_b_name = '송신시스템'
 column_c_name = '수신시스템'
 column_d_name = 'I/F명'
+
+# 추가 컬럼 이름 지정
+column_send_corp_name = '송신\n법인'
+column_recv_corp_name = '수신\n법인'
+column_send_pkg_name = '송신패키지'
+column_recv_pkg_name = '수신패키지'
+column_send_task_name = '송신\n업무명'
+column_recv_task_name = '수신\n업무명'
+column_ems_name = 'EMS명'
+column_group_id = 'Group ID'
+column_event_id = 'Event_ID'
 
 val_ly = 'LY'
 val_lz = 'LZ'
@@ -65,9 +78,9 @@ debug_mode = 1  # 기본값: 디버깅 모드 활성화 (모든 매칭 행 표�
 try:
     script_basename = os.path.basename(sys.argv[0])
     script_name_without_ext = os.path.splitext(script_basename)[0]
-    excel_filename = f"{script_name_without_ext}_reordered_v4.xlsx" # 버전 변경
+    excel_filename = f"{script_name_without_ext}_reordered_v5.xlsx" # 버전 변경
 except Exception:
-    excel_filename = "output_reordered_v4.xlsx"
+    excel_filename = "output_reordered_v5.xlsx"
     print(f"스크립트 이름을 감지할 수 없어 기본 파일명 '{excel_filename}'을 사용합니다.")
 
 df_complete_table = pd.DataFrame() # 원본 전체 테이블
@@ -237,6 +250,96 @@ if not df_filtered.empty and not df_complete_table.empty:
     
     print("행 재정렬 및 삽입 작업 완료.")
 
+# --- 파일 경로 생성 함수 ---
+def create_file_path(row, is_send=True):
+    """
+    주어진 행 데이터로부터 파일 경로를 생성합니다.
+    
+    Args:
+        row: 데이터프레임의 행
+        is_send: 송신 파일 경로인지 여부 (False면 수신 파일 경로)
+        
+    Returns:
+        생성된 파일 경로 문자열
+    """
+    try:
+        # 기본 경로 시작
+        base_path = "C:\\BwProject\\"
+        
+        # 사용할 컬럼 선택 (송신/수신에 따라)
+        corp_col = column_send_corp_name if is_send else column_recv_corp_name
+        pkg_col = column_send_pkg_name if is_send else column_recv_pkg_name
+        task_col = column_send_task_name if is_send else column_recv_task_name
+        
+        # 안전하게 컬럼값 가져오기 (컬럼이 없는 경우 빈 문자열 반환)
+        def safe_get_value(df_row, column_name):
+            try:
+                val = df_row[column_name] if column_name in df_row.index else ""
+                return str(val) if pd.notna(val) else ""
+            except:
+                return ""
+        
+        # 필요한 값들 가져오기
+        corp_val = safe_get_value(row, corp_col)
+        pkg_val = safe_get_value(row, pkg_col)
+        task_val = safe_get_value(row, task_col)
+        ems_val = safe_get_value(row, column_ems_name)
+        group_id = safe_get_value(row, column_group_id)
+        event_id = safe_get_value(row, column_event_id)
+        recv_task = "" if is_send else safe_get_value(row, column_recv_task_name)
+        
+        # 1번 디렉토리 (법인 정보에 따라)
+        dir1 = ""
+        if corp_val == "KR":
+            dir1 = "KR"
+        elif corp_val == "NJ":
+            dir1 = "CN"
+        elif corp_val == "VH":
+            dir1 = "VN"
+        else:
+            dir1 = "UNK"  # 알 수 없는 경우
+        
+        # 법인 정보에 따라 접미사 추가
+        if corp_val == "VH":
+            dir1 += "_TEST_SOURCE"
+        else:
+            dir1 += "_PROD_SOURCE"
+        
+        # 2번 디렉토리 (패키지의 첫 '_' 이전 부분)
+        dir2 = pkg_val.split('_')[0] if '_' in pkg_val and pkg_val else pkg_val
+        
+        # 3번 디렉토리 (조건부)
+        dir3 = ""
+        if task_val and any(keyword in task_val for keyword in ["PNL", "EAS", "MOD", "MES"]):
+            parts = task_val.split('_')
+            if len(parts) > 1:
+                dir3 = parts[-1]
+        
+        # 4번 디렉토리 (EMS명에 따라)
+        dir4 = "EMS_64000" if ems_val == "MES01" else "EMS_63000"
+        
+        # 5번 디렉토리 (패키지 전체 이름)
+        dir5 = pkg_val
+        
+        # 파일명
+        if is_send:
+            filename = f"{group_id}.{event_id}.process" if group_id and event_id else "unknown.process"
+        else:
+            filename = f"{group_id}.{event_id}.{recv_task}.process" if group_id and event_id else "unknown.process"
+        
+        # 경로 구성 (dir3가 없을 수 있음)
+        path_parts = [base_path, dir1, dir2, "Processes"]
+        if dir3:
+            path_parts.append(dir3)
+        path_parts.extend([dir4, dir5, filename])
+        
+        # 경로 조합
+        return "\\".join(path_parts)
+    
+    except Exception as e:
+        print(f"파일 경로 생성 오류 ({('송신' if is_send else '수신')}): {e}")
+        return "경로 생성 오류"
+
 # 최종 DataFrame 생성 (이전 코드와 동일)
 if output_rows_info:
     final_df_data = [item['data_row'] for item in output_rows_info]
@@ -247,6 +350,10 @@ if output_rows_info:
          df_excel_output = pd.DataFrame(final_df_data, columns=cols_for_final_df).reset_index(drop=True)
     else: # 비상시
          df_excel_output = pd.DataFrame(final_df_data).reset_index(drop=True)
+
+    # 송신/수신 파일 경로 컬럼 추가
+    df_excel_output['송신파일경로'] = df_excel_output.apply(lambda row: create_file_path(row, is_send=True), axis=1)
+    df_excel_output['수신파일경로'] = df_excel_output.apply(lambda row: create_file_path(row, is_send=False), axis=1)
 
     # 색상 플래그에 따라 행 인덱스 분리
     yellow_row_indices = [idx for idx, item in enumerate(output_rows_info) if item['color_flag'] == 'yellow']
@@ -259,6 +366,15 @@ else:
 # --- DataFrame을 Excel 파일로 저장하고 스타일 적용 ---
 if not df_excel_output.empty:
     try:
+        # 송신/수신 파일 경로 생성 여부 확인 메시지
+        print("\n송신 및 수신 파일 경로를 계산했습니다.")
+        if debug_mode == 1:
+            # 디버그 모드일 때만 첫 5개 행의 결과 출력
+            print("샘플 파일 경로 (처음 5개 행):")
+            for idx in range(min(5, len(df_excel_output))):
+                print(f"행 {idx+1} - 송신: {df_excel_output.iloc[idx]['송신파일경로']}")
+                print(f"행 {idx+1} - 수신: {df_excel_output.iloc[idx]['수신파일경로']}")
+        
         with pd.ExcelWriter(excel_filename, engine='xlsxwriter') as writer:
             df_excel_output.to_excel(writer, sheet_name='ProcessedData', index=False)
 
