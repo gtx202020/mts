@@ -1,6 +1,6 @@
 """
 파일명: iflist03.py
-버전: v6.0
+버전: v7.0
 작성일: 2023년 (실제 날짜 확인 필요)
 
 설명:
@@ -11,7 +11,7 @@
 1. 'iflist.sqlite' 데이터베이스 파일이 현재 디렉토리에 있어야 합니다.
 2. 'iflist' 테이블에 '송신시스템', '수신시스템', 'I/F명' 컬럼이 있어야 합니다.
 3. 명령행에서 다음과 같이 실행: 'python iflist03.py'
-4. 결과는 '{스크립트명}_reordered_v6.xlsx' 파일로 저장됩니다.
+4. 결과는 '{스크립트명}_reordered_v7.xlsx' 파일로 저장됩니다.
 
 필요 라이브러리:
 - sqlite3: SQLite 데이터베이스 액세스
@@ -32,6 +32,7 @@
 5. 출력 Excel에서 매칭된 행은 노란색으로, 우선순위로 필터링된 행은 연두색으로 표시
 6. 각 행에 송신 파일 및 수신 파일 경로 정보를 포함한 컬럼 추가
 7. 생성된 파일 경로가 실제로 존재하는지 확인하고, 존재 여부를 추가 컬럼에 표시
+8. 파일이 존재하는 경우 해당 디렉토리의 파일 개수를 세어 추가 컬럼에 표시
 
 수정 이력:
 - v1.0: 초기 버전
@@ -40,6 +41,7 @@
 - v4.0: 디버깅 모드 토글 기능 추가
 - v5.0: 송신/수신 파일 경로 정보 컬럼 추가
 - v6.0: 파일 존재 여부 확인 기능 추가
+- v7.0: 디렉토리 파일 개수 확인 기능 추가
 """
 
 import sqlite3
@@ -82,9 +84,9 @@ debug_mode = 1  # 기본값: 디버깅 모드 활성화 (모든 매칭 행 표�
 try:
     script_basename = os.path.basename(sys.argv[0])
     script_name_without_ext = os.path.splitext(script_basename)[0]
-    excel_filename = f"{script_name_without_ext}_reordered_v6.xlsx" # 버전 변경
+    excel_filename = f"{script_name_without_ext}_reordered_v7.xlsx" # 버전 변경
 except Exception:
-    excel_filename = "output_reordered_v6.xlsx"
+    excel_filename = "output_reordered_v7.xlsx"
     print(f"스크립트 이름을 감지할 수 없어 기본 파일명 '{excel_filename}'을 사용합니다.")
 
 df_complete_table = pd.DataFrame() # 원본 전체 테이블
@@ -364,6 +366,31 @@ def check_file_exists(file_path):
         print(f"파일 존재 여부 확인 중 오류: {e}")
         return 0
 
+# --- 디렉토리 내 파일 개수 확인 함수 ---
+def count_files_in_directory(file_path):
+    """
+    주어진 파일 경로의 디렉토리 내 파일 개수를 반환
+    
+    Args:
+        file_path: 파일 경로 (디렉토리 추출용)
+        
+    Returns:
+        디렉토리 내 파일 개수, 경로가 잘못되었거나 오류 시 0 반환
+    """
+    try:
+        # 파일 경로에서 디렉토리 추출
+        directory = os.path.dirname(file_path)
+        if not directory or not os.path.isdir(directory):
+            return 0
+        
+        # 디렉토리 내 파일만 카운트 (하위 디렉토리 제외)
+        file_count = len([f for f in os.listdir(directory) if os.path.isfile(os.path.join(directory, f))])
+        return file_count
+    
+    except Exception as e:
+        print(f"디렉토리 파일 개수 확인 중 오류: {e}")
+        return 0
+
 # 최종 DataFrame 생성 (이전 코드와 동일)
 if output_rows_info:
     final_df_data = [item['data_row'] for item in output_rows_info]
@@ -382,6 +409,21 @@ if output_rows_info:
     # 파일 존재 여부 확인 및 컬럼 추가
     df_excel_output['송신파일존재'] = df_excel_output['송신파일경로'].apply(check_file_exists)
     df_excel_output['수신파일존재'] = df_excel_output['수신파일경로'].apply(check_file_exists)
+    
+    # 송신/수신 디렉토리 파일 개수 계산 함수
+    def calc_dir_file_count(row, is_send=True):
+        column_name = '송신파일존재' if is_send else '수신파일존재'
+        file_path_column = '송신파일경로' if is_send else '수신파일경로'
+        
+        # 파일이 존재하는 경우에만 디렉토리 파일 개수 계산
+        if row[column_name] == 1:
+            return count_files_in_directory(row[file_path_column])
+        else:
+            return 0
+    
+    # 송신/수신 디렉토리 파일 개수 컬럼 추가
+    df_excel_output['송신DF'] = df_excel_output.apply(lambda row: calc_dir_file_count(row, is_send=True), axis=1)
+    df_excel_output['수신DF'] = df_excel_output.apply(lambda row: calc_dir_file_count(row, is_send=False), axis=1)
 
     # 색상 플래그에 따라 행 인덱스 분리
     yellow_row_indices = [idx for idx, item in enumerate(output_rows_info) if item['color_flag'] == 'yellow']
@@ -409,6 +451,17 @@ if not df_excel_output.empty:
         print(f"송신 파일 존재: {send_exists_count}/{len(df_excel_output)}개")
         print(f"수신 파일 존재: {recv_exists_count}/{len(df_excel_output)}개")
         
+        print("\n디렉토리 파일 개수를 계산합니다...")
+        send_df_total = df_excel_output['송신DF'].sum()
+        recv_df_total = df_excel_output['수신DF'].sum()
+        send_df_avg = df_excel_output.loc[df_excel_output['송신파일존재'] == 1, '송신DF'].mean() if send_exists_count > 0 else 0
+        recv_df_avg = df_excel_output.loc[df_excel_output['수신파일존재'] == 1, '수신DF'].mean() if recv_exists_count > 0 else 0
+        
+        print(f"송신 디렉토리 총 파일 수: {send_df_total}개")
+        print(f"수신 디렉토리 총 파일 수: {recv_df_total}개")
+        print(f"송신 디렉토리당 평균 파일 수: {send_df_avg:.1f}개")
+        print(f"수신 디렉토리당 평균 파일 수: {recv_df_avg:.1f}개")
+        
         with pd.ExcelWriter(excel_filename, engine='xlsxwriter') as writer:
             df_excel_output.to_excel(writer, sheet_name='ProcessedData', index=False)
 
@@ -420,6 +473,13 @@ if not df_excel_output.empty:
             # 파일 존재 여부에 따른 색상 형식 정의
             exist_format = workbook.add_format({'bg_color': '#90EE90'})  # 연두색(Light Green)
             not_exist_format = workbook.add_format({'bg_color': '#FFA500'})  # 주황색(Orange)
+            
+            # 디렉토리 파일 개수에 따른 색상 형식 정의 (파일 수에 따라 색상 진하기 다르게)
+            df_color_very_low = workbook.add_format({'bg_color': '#E6F2FF'})  # 매우 밝은 파란색 (1-3개)
+            df_color_low = workbook.add_format({'bg_color': '#99CCFF'})       # 밝은 파란색 (4-10개)
+            df_color_medium = workbook.add_format({'bg_color': '#3399FF'})    # 중간 파란색 (11-20개)
+            df_color_high = workbook.add_format({'bg_color': '#0066CC'})      # 진한 파란색 (21개 이상)
+            df_color_none = workbook.add_format({'bg_color': '#F2F2F2'})      # 회색 (0개)
 
             # 노란색 행 적용
             if yellow_row_indices:
@@ -434,10 +494,14 @@ if not df_excel_output.empty:
             # 송신/수신 파일 존재 여부에 따른 색상 적용
             send_file_exist_col = df_excel_output.columns.get_loc('송신파일존재')
             recv_file_exist_col = df_excel_output.columns.get_loc('수신파일존재')
+            send_df_col = df_excel_output.columns.get_loc('송신DF')
+            recv_df_col = df_excel_output.columns.get_loc('수신DF')
             
             for row_idx in range(len(df_excel_output)):
                 send_exists = df_excel_output.iloc[row_idx]['송신파일존재']
                 recv_exists = df_excel_output.iloc[row_idx]['수신파일존재']
+                send_df_count = df_excel_output.iloc[row_idx]['송신DF']
+                recv_df_count = df_excel_output.iloc[row_idx]['수신DF']
                 
                 # 송신 파일 존재 여부에 따른 색상 적용
                 if send_exists == 1:
@@ -450,7 +514,31 @@ if not df_excel_output.empty:
                     worksheet.write(row_idx + 1, recv_file_exist_col, 1, exist_format)
                 else:
                     worksheet.write(row_idx + 1, recv_file_exist_col, 0, not_exist_format)
-            
+                
+                # 송신 디렉토리 파일 개수에 따른 색상 적용
+                if send_df_count == 0:
+                    worksheet.write(row_idx + 1, send_df_col, send_df_count, df_color_none)
+                elif send_df_count <= 3:
+                    worksheet.write(row_idx + 1, send_df_col, send_df_count, df_color_very_low)
+                elif send_df_count <= 10:
+                    worksheet.write(row_idx + 1, send_df_col, send_df_count, df_color_low)
+                elif send_df_count <= 20:
+                    worksheet.write(row_idx + 1, send_df_col, send_df_count, df_color_medium)
+                else:
+                    worksheet.write(row_idx + 1, send_df_col, send_df_count, df_color_high)
+                
+                # 수신 디렉토리 파일 개수에 따른 색상 적용
+                if recv_df_count == 0:
+                    worksheet.write(row_idx + 1, recv_df_col, recv_df_count, df_color_none)
+                elif recv_df_count <= 3:
+                    worksheet.write(row_idx + 1, recv_df_col, recv_df_count, df_color_very_low)
+                elif recv_df_count <= 10:
+                    worksheet.write(row_idx + 1, recv_df_col, recv_df_count, df_color_low)
+                elif recv_df_count <= 20:
+                    worksheet.write(row_idx + 1, recv_df_col, recv_df_count, df_color_medium)
+                else:
+                    worksheet.write(row_idx + 1, recv_df_col, recv_df_count, df_color_high)
+
             for i, col_name_str in enumerate(df_excel_output.columns.astype(str)):
                 data_max_len_series = df_excel_output[col_name_str].astype(str).map(len)
                 data_max_len = data_max_len_series.max() if not data_max_len_series.empty else 0
@@ -465,6 +553,12 @@ if not df_excel_output.empty:
         else:
             print("우선순위로 필터링된 행은 연두색으로 표시됩니다.")
         print("파일 존재 여부 컬럼: 존재하면 1(연두색), 존재하지 않으면 0(주황색)으로 표시됩니다.")
+        print("'송신DF'와 '수신DF' 컬럼은 각 파일이 위치한 디렉토리의 파일 개수를 나타냅니다.")
+        print("  - 파일 개수가 0개: 회색")
+        print("  - 파일 개수가 1-3개: 매우 밝은 파란색")
+        print("  - 파일 개수가 4-10개: 밝은 파란색")
+        print("  - 파일 개수가 11-20개: 중간 파란색")
+        print("  - 파일 개수가 21개 이상: 진한 파란색")
 
     except ImportError:
         print("Excel 파일 저장을 위해 'xlsxwriter' 라이브러리가 필요합니다. 'pip install xlsxwriter' 명령어로 설치해주세요.")
