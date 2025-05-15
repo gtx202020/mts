@@ -204,8 +204,9 @@ if not df_filtered.empty and not df_complete_table.empty:
             else:
                 # 매칭된 행이 2개 이상인 경우
                 # 디버깅을 위해 모든 매칭 행을 노란색으로 먼저 추가
-                for row in matching_rows:
-                    output_rows_info.append({'data_row': row['row'], 'color_flag': 'yellow'})
+                if debug_mode == 1:  # 디버그 모드가 1일 때만 모든 매칭 행을 노란색으로 추가
+                    for row in matching_rows:
+                        output_rows_info.append({'data_row': row['row'], 'color_flag': 'yellow'})
                 
                 # 그 다음 우선순위별 필터링된 행을 연두색으로 추가
                 filtered_row = None
@@ -285,7 +286,10 @@ if not df_excel_output.empty:
                 worksheet.set_column(i, i, column_width)
 
         print(f"\n결과가 '{excel_filename}' 파일로 저장되었습니다.")
-        print("매칭된 모든 행은 노란색으로, 우선순위로 필터링된 행은 연두색으로 표시됩니다.")
+        if debug_mode == 1:
+            print("매칭된 모든 행은 노란색으로, 우선순위로 필터링된 행은 연두색으로 표시됩니다.")
+        else:
+            print("우선순위로 필터링된 행은 연두색으로 표시됩니다.")
 
     except ImportError:
         print("Excel 파일 저장을 위해 'xlsxwriter' 라이브러리가 필요합니다. 'pip install xlsxwriter' 명령어로 설치해주세요.")
