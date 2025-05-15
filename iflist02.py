@@ -4,13 +4,12 @@ import sys
 import os
 
 # --- 설정 변수 ---
-db_filename = 'info.sqlite'
-table_name = 'list'
+db_filename = 'iflist.sqlite'
+table_name = 'iflist'
 
-column_b_name = '컬럼B'
-column_c_name = '컬럼C'
-# !!! 중요: '컬럼D'의 실제 이름을 아래 변수에 지정해주세요. !!!
-column_d_name = '컬럼D'  # 예: 'D_Data_Column' 등 실제 엑셀/DB의 컬럼명
+column_b_name = '송신시스템'
+column_c_name = '수신시스템'
+column_d_name = 'I/F명'
 
 val_ly = 'LY'
 val_lz = 'LZ'
