@@ -98,6 +98,9 @@ if not df_filtered.empty and not df_complete_table.empty:
         current_b_val = str(current_row[column_b_name]) if pd.notna(current_row[column_b_name]) else ""
         current_c_val = str(current_row[column_c_name]) if pd.notna(current_row[column_c_name]) else ""
 
+        # 매칭되는 행들을 저장할 리스트
+        matching_rows = []
+
         # 비교 대상은 원본 전체 테이블 (df_complete_table)
         for idx_complete, target_row in df_complete_table.iterrows():
             # current_row와 target_row가 원본 테이블에서 같은 행인지 확인 후 건너뛰기
@@ -140,7 +143,39 @@ if not df_filtered.empty and not df_complete_table.empty:
                     cond3_c_match_for_target = True
             
             if cond2_b_match_for_target or cond3_c_match_for_target:
-                output_rows_info.append({'data_row': target_row.copy(), 'make_yellow': True})
+                # 매칭 정보와 함께 행 저장
+                matching_rows.append({
+                    'row': target_row.copy(), 
+                    'b_match': cond2_b_match_for_target,
+                    'c_match': cond3_c_match_for_target,
+                    'same_b_val': target_b_val == current_b_val
+                })
+        
+        # 매칭된 행이 있을 경우 우선순위에 따라 필터링
+        if matching_rows:
+            # 매칭된 행이 1개이면 그대로 추가
+            if len(matching_rows) == 1:
+                output_rows_info.append({'data_row': matching_rows[0]['row'], 'make_yellow': True})
+            else:
+                # 매칭된 행이 2개 이상인 경우 우선순위별 필터링
+                # 케이스 1: 컬럼B와 컬럼C 모두 매칭되는 행
+                case1_rows = [row for row in matching_rows if row['b_match'] and row['c_match']]
+                if case1_rows:
+                    # 케이스 1에 해당하는 행이 있으면 첫 번째 행만 선택
+                    output_rows_info.append({'data_row': case1_rows[0]['row'], 'make_yellow': True})
+                    print(f"  - 케이스1 적용: 컬럼B, 컬럼C 모두 매칭되는 행 선택 (총 {len(case1_rows)}개 중 1개)")
+                else:
+                    # 케이스 2: 컬럼B가 같은 행 선택
+                    case2_rows = [row for row in matching_rows if row['same_b_val']]
+                    if case2_rows:
+                        output_rows_info.append({'data_row': case2_rows[0]['row'], 'make_yellow': True})
+                        print(f"  - 케이스2 적용: 컬럼B 값이 같은 행 선택 (총 {len(case2_rows)}개 중 1개)")
+                    else:
+                        # 케이스 1, 2 모두 해당되지 않으면 모든 매칭 행 추가
+                        for row in matching_rows:
+                            output_rows_info.append({'data_row': row['row'], 'make_yellow': True})
+                        print(f"  - 케이스 미적용: 모든 매칭 행 {len(matching_rows)}개 추가")
+    
     print("행 재정렬 및 삽입 작업 완료.")
 
 # 최종 DataFrame 생성 (이전 코드와 동일)
