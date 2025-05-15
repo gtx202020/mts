@@ -1,6 +1,6 @@
 """
 파일명: iflist03.py
-버전: v5.0
+버전: v6.0
 작성일: 2023년 (실제 날짜 확인 필요)
 
 설명:
@@ -11,12 +11,13 @@
 1. 'iflist.sqlite' 데이터베이스 파일이 현재 디렉토리에 있어야 합니다.
 2. 'iflist' 테이블에 '송신시스템', '수신시스템', 'I/F명' 컬럼이 있어야 합니다.
 3. 명령행에서 다음과 같이 실행: 'python iflist03.py'
-4. 결과는 '{스크립트명}_reordered_v5.xlsx' 파일로 저장됩니다.
+4. 결과는 '{스크립트명}_reordered_v6.xlsx' 파일로 저장됩니다.
 
 필요 라이브러리:
 - sqlite3: SQLite 데이터베이스 액세스
 - pandas: 데이터 처리 및 조작
 - xlsxwriter: Excel 출력 및 서식 지정 (pip install xlsxwriter)
+- os.path: 파일 존재 여부 확인
 
 처리 로직:
 1. SQLite DB 연결 및 전체 테이블 로드
@@ -30,6 +31,7 @@
    - 케이스 2-1: 수신시스템 값이 같은 행
 5. 출력 Excel에서 매칭된 행은 노란색으로, 우선순위로 필터링된 행은 연두색으로 표시
 6. 각 행에 송신 파일 및 수신 파일 경로 정보를 포함한 컬럼 추가
+7. 생성된 파일 경로가 실제로 존재하는지 확인하고, 존재 여부를 추가 컬럼에 표시
 
 수정 이력:
 - v1.0: 초기 버전
@@ -37,12 +39,14 @@
 - v3.0: 다중 매칭 시 우선순위 적용 및 디버깅용 색상 구분 추가
 - v4.0: 디버깅 모드 토글 기능 추가
 - v5.0: 송신/수신 파일 경로 정보 컬럼 추가
+- v6.0: 파일 존재 여부 확인 기능 추가
 """
 
 import sqlite3
 import pandas as pd
 import sys
 import os
+import os.path
 
 # --- 설정 변수 ---
 db_filename = 'iflist.sqlite'
@@ -78,9 +82,9 @@ debug_mode = 1  # 기본값: 디버깅 모드 활성화 (모든 매칭 행 표�
 try:
     script_basename = os.path.basename(sys.argv[0])
     script_name_without_ext = os.path.splitext(script_basename)[0]
-    excel_filename = f"{script_name_without_ext}_reordered_v5.xlsx" # 버전 변경
+    excel_filename = f"{script_name_without_ext}_reordered_v6.xlsx" # 버전 변경
 except Exception:
-    excel_filename = "output_reordered_v5.xlsx"
+    excel_filename = "output_reordered_v6.xlsx"
     print(f"스크립트 이름을 감지할 수 없어 기본 파일명 '{excel_filename}'을 사용합니다.")
 
 df_complete_table = pd.DataFrame() # 원본 전체 테이블
@@ -264,7 +268,7 @@ def create_file_path(row, is_send=True):
     """
     try:
         # 기본 경로 시작
-        base_path = "C:\\BwProject\\"
+        base_path = "C:\\BwProject"
         
         # 사용할 컬럼 선택 (송신/수신에 따라)
         corp_col = column_send_corp_name if is_send else column_recv_corp_name
@@ -340,6 +344,26 @@ def create_file_path(row, is_send=True):
         print(f"파일 경로 생성 오류 ({('송신' if is_send else '수신')}): {e}")
         return "경로 생성 오류"
 
+# --- 파일 존재 여부 확인 함수 ---
+def check_file_exists(file_path):
+    """
+    주어진 파일 경로가 실제로 존재하는지 확인
+    
+    Args:
+        file_path: 확인할 파일 경로
+        
+    Returns:
+        파일 존재 여부 (1: 존재, 0: 존재하지 않음)
+    """
+    try:
+        if os.path.isfile(file_path):
+            return 1
+        else:
+            return 0
+    except Exception as e:
+        print(f"파일 존재 여부 확인 중 오류: {e}")
+        return 0
+
 # 최종 DataFrame 생성 (이전 코드와 동일)
 if output_rows_info:
     final_df_data = [item['data_row'] for item in output_rows_info]
@@ -354,6 +378,10 @@ if output_rows_info:
     # 송신/수신 파일 경로 컬럼 추가
     df_excel_output['송신파일경로'] = df_excel_output.apply(lambda row: create_file_path(row, is_send=True), axis=1)
     df_excel_output['수신파일경로'] = df_excel_output.apply(lambda row: create_file_path(row, is_send=False), axis=1)
+    
+    # 파일 존재 여부 확인 및 컬럼 추가
+    df_excel_output['송신파일존재'] = df_excel_output['송신파일경로'].apply(check_file_exists)
+    df_excel_output['수신파일존재'] = df_excel_output['수신파일경로'].apply(check_file_exists)
 
     # 색상 플래그에 따라 행 인덱스 분리
     yellow_row_indices = [idx for idx, item in enumerate(output_rows_info) if item['color_flag'] == 'yellow']
@@ -375,6 +403,12 @@ if not df_excel_output.empty:
                 print(f"행 {idx+1} - 송신: {df_excel_output.iloc[idx]['송신파일경로']}")
                 print(f"행 {idx+1} - 수신: {df_excel_output.iloc[idx]['수신파일경로']}")
         
+        print("파일 존재 여부를 확인합니다...")
+        send_exists_count = df_excel_output['송신파일존재'].sum()
+        recv_exists_count = df_excel_output['수신파일존재'].sum()
+        print(f"송신 파일 존재: {send_exists_count}/{len(df_excel_output)}개")
+        print(f"수신 파일 존재: {recv_exists_count}/{len(df_excel_output)}개")
+        
         with pd.ExcelWriter(excel_filename, engine='xlsxwriter') as writer:
             df_excel_output.to_excel(writer, sheet_name='ProcessedData', index=False)
 
@@ -382,6 +416,10 @@ if not df_excel_output.empty:
             worksheet = writer.sheets['ProcessedData']
             yellow_format = workbook.add_format({'bg_color': '#FFFF00'})  # 노란색
             green_format = workbook.add_format({'bg_color': '#90EE90'})  # 연두색(Light Green)
+            
+            # 파일 존재 여부에 따른 색상 형식 정의
+            exist_format = workbook.add_format({'bg_color': '#90EE90'})  # 연두색(Light Green)
+            not_exist_format = workbook.add_format({'bg_color': '#FFA500'})  # 주황색(Orange)
 
             # 노란색 행 적용
             if yellow_row_indices:
@@ -392,6 +430,26 @@ if not df_excel_output.empty:
             if green_row_indices:
                 for zero_based_row_idx in green_row_indices:
                     worksheet.set_row(zero_based_row_idx + 1, None, green_format)
+            
+            # 송신/수신 파일 존재 여부에 따른 색상 적용
+            send_file_exist_col = df_excel_output.columns.get_loc('송신파일존재')
+            recv_file_exist_col = df_excel_output.columns.get_loc('수신파일존재')
+            
+            for row_idx in range(len(df_excel_output)):
+                send_exists = df_excel_output.iloc[row_idx]['송신파일존재']
+                recv_exists = df_excel_output.iloc[row_idx]['수신파일존재']
+                
+                # 송신 파일 존재 여부에 따른 색상 적용
+                if send_exists == 1:
+                    worksheet.write(row_idx + 1, send_file_exist_col, 1, exist_format)
+                else:
+                    worksheet.write(row_idx + 1, send_file_exist_col, 0, not_exist_format)
+                
+                # 수신 파일 존재 여부에 따른 색상 적용
+                if recv_exists == 1:
+                    worksheet.write(row_idx + 1, recv_file_exist_col, 1, exist_format)
+                else:
+                    worksheet.write(row_idx + 1, recv_file_exist_col, 0, not_exist_format)
             
             for i, col_name_str in enumerate(df_excel_output.columns.astype(str)):
                 data_max_len_series = df_excel_output[col_name_str].astype(str).map(len)
@@ -406,6 +464,7 @@ if not df_excel_output.empty:
             print("매칭된 모든 행은 노란색으로, 우선순위로 필터링된 행은 연두색으로 표시됩니다.")
         else:
             print("우선순위로 필터링된 행은 연두색으로 표시됩니다.")
+        print("파일 존재 여부 컬럼: 존재하면 1(연두색), 존재하지 않으면 0(주황색)으로 표시됩니다.")
 
     except ImportError:
         print("Excel 파일 저장을 위해 'xlsxwriter' 라이브러리가 필요합니다. 'pip install xlsxwriter' 명령어로 설치해주세요.")
