@@ -21,9 +21,9 @@ replace_lz_with = 'VO'
 try:
     script_basename = os.path.basename(sys.argv[0])
     script_name_without_ext = os.path.splitext(script_basename)[0]
-    excel_filename = f"{script_name_without_ext}_reordered_v2.xlsx" # 버전 표시
+    excel_filename = f"{script_name_without_ext}_reordered_v3.xlsx" # 버전 변경
 except Exception:
-    excel_filename = "output_reordered_v2.xlsx"
+    excel_filename = "output_reordered_v3.xlsx"
     print(f"스크립트 이름을 감지할 수 없어 기본 파일명 '{excel_filename}'을 사용합니다.")
 
 df_complete_table = pd.DataFrame() # 원본 전체 테이블
@@ -148,7 +148,8 @@ if not df_filtered.empty and not df_complete_table.empty:
                     'row': target_row.copy(), 
                     'b_match': cond2_b_match_for_target,
                     'c_match': cond3_c_match_for_target,
-                    'same_b_val': target_b_val == current_b_val
+                    'same_b_val': target_b_val == current_b_val,
+                    'same_c_val': target_c_val == current_c_val
                 })
         
         # 매칭된 행이 있을 경우
@@ -177,7 +178,13 @@ if not df_filtered.empty and not df_complete_table.empty:
                         filtered_row = case2_rows[0]['row']
                         print(f"  - 케이스2 적용: 컬럼B 값이 같은 행 선택 (총 {len(case2_rows)}개 중 1개)")
                     else:
-                        print(f"  - 케이스 미적용: 모든 매칭 행 {len(matching_rows)}개 처리")
+                        # 케이스 2-1: 컬럼C가 같은 행 선택
+                        case2_1_rows = [row for row in matching_rows if row['same_c_val']]
+                        if case2_1_rows:
+                            filtered_row = case2_1_rows[0]['row']
+                            print(f"  - 케이스2-1 적용: 컬럼C 값이 같은 행 선택 (총 {len(case2_1_rows)}개 중 1개)")
+                        else:
+                            print(f"  - 케이스 미적용: 모든 매칭 행 {len(matching_rows)}개 처리")
                 
                 # 우선순위 필터링된 행을 연두색으로 추가 (케이스 미적용은 제외)
                 if filtered_row is not None:
