@@ -90,7 +90,7 @@ if not df_filtered.empty and not df_complete_table.empty:
 if not df_filtered.empty and not df_complete_table.empty:
     print("조건에 따라 행 재정렬 및 삽입 작업을 시작합니다 (비교 대상: 원본 전체 테이블)...")
     for idx_filtered, current_row in df_filtered.iterrows(): # current_row는 초기 필터링된 결과
-        output_rows_info.append({'data_row': current_row.copy(), 'make_yellow': False})
+        output_rows_info.append({'data_row': current_row.copy(), 'color_flag': None})
 
         current_d_val = str(current_row[column_d_name]) if pd.notna(current_row[column_d_name]) else ""
         current_d_val_stripped = current_d_val.strip()
@@ -151,30 +151,37 @@ if not df_filtered.empty and not df_complete_table.empty:
                     'same_b_val': target_b_val == current_b_val
                 })
         
-        # 매칭된 행이 있을 경우 우선순위에 따라 필터링
+        # 매칭된 행이 있을 경우
         if matching_rows:
-            # 매칭된 행이 1개이면 그대로 추가
+            # 매칭된 행이 1개일 경우 그냥 연두색으로 표시
             if len(matching_rows) == 1:
-                output_rows_info.append({'data_row': matching_rows[0]['row'], 'make_yellow': True})
+                output_rows_info.append({'data_row': matching_rows[0]['row'], 'color_flag': 'green'})
             else:
-                # 매칭된 행이 2개 이상인 경우 우선순위별 필터링
+                # 매칭된 행이 2개 이상인 경우
+                # 디버깅을 위해 모든 매칭 행을 노란색으로 먼저 추가
+                for row in matching_rows:
+                    output_rows_info.append({'data_row': row['row'], 'color_flag': 'yellow'})
+                
+                # 그 다음 우선순위별 필터링된 행을 연두색으로 추가
+                filtered_row = None
+                
                 # 케이스 1: 컬럼B와 컬럼C 모두 매칭되는 행
                 case1_rows = [row for row in matching_rows if row['b_match'] and row['c_match']]
                 if case1_rows:
-                    # 케이스 1에 해당하는 행이 있으면 첫 번째 행만 선택
-                    output_rows_info.append({'data_row': case1_rows[0]['row'], 'make_yellow': True})
+                    filtered_row = case1_rows[0]['row']
                     print(f"  - 케이스1 적용: 컬럼B, 컬럼C 모두 매칭되는 행 선택 (총 {len(case1_rows)}개 중 1개)")
                 else:
                     # 케이스 2: 컬럼B가 같은 행 선택
                     case2_rows = [row for row in matching_rows if row['same_b_val']]
                     if case2_rows:
-                        output_rows_info.append({'data_row': case2_rows[0]['row'], 'make_yellow': True})
+                        filtered_row = case2_rows[0]['row']
                         print(f"  - 케이스2 적용: 컬럼B 값이 같은 행 선택 (총 {len(case2_rows)}개 중 1개)")
                     else:
-                        # 케이스 1, 2 모두 해당되지 않으면 모든 매칭 행 추가
-                        for row in matching_rows:
-                            output_rows_info.append({'data_row': row['row'], 'make_yellow': True})
-                        print(f"  - 케이스 미적용: 모든 매칭 행 {len(matching_rows)}개 추가")
+                        print(f"  - 케이스 미적용: 모든 매칭 행 {len(matching_rows)}개 처리")
+                
+                # 우선순위 필터링된 행을 연두색으로 추가 (케이스 미적용은 제외)
+                if filtered_row is not None:
+                    output_rows_info.append({'data_row': filtered_row.copy(), 'color_flag': 'green'})
     
     print("행 재정렬 및 삽입 작업 완료.")
 
@@ -189,12 +196,15 @@ if output_rows_info:
     else: # 비상시
          df_excel_output = pd.DataFrame(final_df_data).reset_index(drop=True)
 
-    yellow_row_indices_in_final_df = [idx for idx, item in enumerate(output_rows_info) if item['make_yellow']]
+    # 색상 플래그에 따라 행 인덱스 분리
+    yellow_row_indices = [idx for idx, item in enumerate(output_rows_info) if item['color_flag'] == 'yellow']
+    green_row_indices = [idx for idx, item in enumerate(output_rows_info) if item['color_flag'] == 'green']
 else:
     df_excel_output = pd.DataFrame()
-    yellow_row_indices_in_final_df = []
+    yellow_row_indices = []
+    green_row_indices = []
 
-# --- DataFrame을 Excel 파일로 저장하고 스타일 적용 (이전 코드와 동일) ---
+# --- DataFrame을 Excel 파일로 저장하고 스타일 적용 ---
 if not df_excel_output.empty:
     try:
         with pd.ExcelWriter(excel_filename, engine='xlsxwriter') as writer:
@@ -202,11 +212,18 @@ if not df_excel_output.empty:
 
             workbook = writer.book
             worksheet = writer.sheets['ProcessedData']
-            yellow_format = workbook.add_format({'bg_color': '#FFFF00'})
+            yellow_format = workbook.add_format({'bg_color': '#FFFF00'})  # 노란색
+            green_format = workbook.add_format({'bg_color': '#90EE90'})  # 연두색(Light Green)
 
-            if yellow_row_indices_in_final_df:
-                for zero_based_row_idx in yellow_row_indices_in_final_df:
+            # 노란색 행 적용
+            if yellow_row_indices:
+                for zero_based_row_idx in yellow_row_indices:
                     worksheet.set_row(zero_based_row_idx + 1, None, yellow_format)
+            
+            # 연두색 행 적용
+            if green_row_indices:
+                for zero_based_row_idx in green_row_indices:
+                    worksheet.set_row(zero_based_row_idx + 1, None, green_format)
             
             for i, col_name_str in enumerate(df_excel_output.columns.astype(str)):
                 data_max_len_series = df_excel_output[col_name_str].astype(str).map(len)
@@ -217,7 +234,7 @@ if not df_excel_output.empty:
                 worksheet.set_column(i, i, column_width)
 
         print(f"\n결과가 '{excel_filename}' 파일로 저장되었습니다.")
-        print("삽입된 행들은 노란색으로 표시됩니다. 다른 특정 색상 서식은 적용되지 않았습니다.")
+        print("매칭된 모든 행은 노란색으로, 우선순위로 필터링된 행은 연두색으로 표시됩니다.")
 
     except ImportError:
         print("Excel 파일 저장을 위해 'xlsxwriter' 라이브러리가 필요합니다. 'pip install xlsxwriter' 명령어로 설치해주세요.")
