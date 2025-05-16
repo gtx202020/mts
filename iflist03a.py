@@ -347,8 +347,8 @@ def create_schema_file_path(row, is_send=True):
         # 사용할 컬럼 선택 (송신/수신에 따라)
         corp_col = column_send_corp_name if is_send else column_recv_corp_name
         pkg_col = column_send_pkg_name if is_send else column_recv_pkg_name
-        db_name_col = '송신\\nDB Name'
-        schema_col = '송신 \\nSchema'
+        db_name_col = '송신\nDB Name'
+        schema_col = '송신 \nSchema'
         
         # 안전하게 컬럼값 가져오기 (컬럼이 없는 경우 빈 문자열 반환)
         def safe_get_value(df_row, column_name):
@@ -752,6 +752,17 @@ else:
 # --- DataFrame을 Excel 파일로 저장하고 스타일 적용 ---
 if not df_excel_output.empty:
     try:
+        # "Unnamed: XX" 형식의 컬럼 중 XX가 10 이상인 컬럼 제외하기
+        cols_to_keep = [col for col in df_excel_output.columns 
+                        if not (isinstance(col, str) and 
+                               col.startswith('Unnamed:') and 
+                               len(col.split(':')) > 1 and 
+                               col.split(':')[1].strip().isdigit() and 
+                               int(col.split(':')[1].strip()) >= 10)]
+        
+        # 필터링된 컬럼만 유지
+        df_excel_output = df_excel_output[cols_to_keep]
+        
         # 송신/수신 파일 경로 생성 여부 확인 메시지
         print("\n송신 및 수신 파일 경로를 계산했습니다.")
         if debug_mode == 1:
