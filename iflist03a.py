@@ -1,6 +1,6 @@
 """
 파일명: iflist03a.py
-버전: v8.0
+버전: v8.1
 작성일: 2023년 (실제 날짜 확인 필요)
 
 설명:
@@ -14,7 +14,7 @@
 1. 'iflist.sqlite' 데이터베이스 파일이 현재 디렉토리에 있어야 합니다.
 2. 'iflist' 테이블에 '송신시스템', '수신시스템', 'I/F명' 컬럼이 있어야 합니다.
 3. 명령행에서 다음과 같이 실행: 'python iflist03a.py'
-4. 결과는 '{스크립트명}_reordered_v8.xlsx' 파일로 저장됩니다.
+4. 결과는 '{스크립트명}_reordered_v8.1.xlsx' 파일로 저장됩니다.
 
 필요 라이브러리:
 - sqlite3: SQLite 데이터베이스 액세스
@@ -61,12 +61,12 @@ column_c_name = '수신시스템'
 column_d_name = 'I/F명'
 
 # 추가 컬럼 이름 지정
-column_send_corp_name = '송신법인'
-column_recv_corp_name = '수신법인'
+column_send_corp_name = '송신\n법인'
+column_recv_corp_name = '수신\n법인'
 column_send_pkg_name = '송신패키지'
 column_recv_pkg_name = '수신패키지'
-column_send_task_name = '송신업무명'
-column_recv_task_name = '수신업무명'
+column_send_task_name = '송신\n업무명'
+column_recv_task_name = '수신\n업무명'
 column_ems_name = 'EMS명'
 column_group_id = 'Group ID'
 column_event_id = 'Event_ID'
@@ -79,7 +79,7 @@ replace_lz_with = 'VO'
 # 디버깅 모드 설정
 # debug_mode = 0 또는 2: 최종 필터링된 행(연두색)만 표시
 # debug_mode = 1: 모든 매칭 행(노란색)과 필터링된 행(연두색) 모두 표시
-debug_mode = 1  # 기본값: 디버깅 모드 활성화 (모든 매칭 행 표시)
+debug_mode = 2  # 기본값: 디버깅 모드 활성화 (모든 매칭 행 표시)
 
 # 오류 표시를 위한 주황색 배경 정의
 ORANGE_FILL = PatternFill(start_color='FFC000', end_color='FFC000', fill_type='solid')
@@ -89,9 +89,9 @@ ORANGE_FILL = PatternFill(start_color='FFC000', end_color='FFC000', fill_type='s
 try:
     script_basename = os.path.basename(sys.argv[0])
     script_name_without_ext = os.path.splitext(script_basename)[0]
-    excel_filename = f"{script_name_without_ext}_reordered_v8.xlsx" # 버전 변경
+    excel_filename = f"{script_name_without_ext}_reordered_v8.1.xlsx" # 버전 변경
 except Exception:
-    excel_filename = "output_reordered_v8.xlsx"
+    excel_filename = "output_reordered_v8.1.xlsx"
     print(f"스크립트 이름을 감지할 수 없어 기본 파일명 '{excel_filename}'을 사용합니다.")
 
 df_complete_table = pd.DataFrame() # 원본 전체 테이블
@@ -526,6 +526,10 @@ if output_rows_info:
     df_excel_output['송신DF'] = df_excel_output.apply(lambda row: calc_dir_file_count(row, is_send=True), axis=1)
     df_excel_output['수신DF'] = df_excel_output.apply(lambda row: calc_dir_file_count(row, is_send=False), axis=1)
 
+    # 송신/수신 스키마 파일 경로 추가
+    df_excel_output['송신SF'] = df_excel_output.apply(lambda row: create_schema_file_path(row, is_send=True), axis=1)
+    df_excel_output['수신SF'] = df_excel_output.apply(lambda row: create_schema_file_path(row, is_send=False), axis=1)
+
     # 색상 플래그에 따라 행 인덱스 분리
     yellow_row_indices = [idx for idx, item in enumerate(output_rows_info) if item['color_flag'] == 'yellow']
     green_row_indices = [idx for idx, item in enumerate(output_rows_info) if item['color_flag'] == 'green']
@@ -576,14 +580,14 @@ if output_rows_info:
                 comparison_log.append(result)
         
         # 5. 수신업무명 비교
-        if '수신업무명' in column_names:
-            result = check_business_name(base_row['수신업무명'], match_row['수신업무명'], '5.수신업무명')
+        if '수신\n업무명' in column_names:
+            result = check_business_name(base_row['수신\n업무명'], match_row['수신\n업무명'], '5.수신업무명')
             if result:
                 comparison_log.append(result)
         
         # 6. 송신업무명 비교
-        if '송신업무명' in column_names:
-            result = check_business_name(base_row['송신업무명'], match_row['송신업무명'], '6.송신업무명')
+        if '송신\n업무명' in column_names:
+            result = check_business_name(base_row['송신\n업무명'], match_row['송신\n업무명'], '6.송신업무명')
             if result:
                 comparison_log.append(result)
         
@@ -793,6 +797,7 @@ if not df_excel_output.empty:
         print("  - 파일 개수가 11-20개: 중간 파란색")
         print("  - 파일 개수가 21개 이상: 진한 파란색")
         print("'비교로그' 컬럼: 오류가 있으면 주황색으로 표시됩니다.")
+        print("'송신SF'와 '수신SF' 컬럼은 스키마 파일 경로를 나타냅니다.")
 
     except ImportError:
         print("Excel 파일 저장을 위해 'xlsxwriter' 라이브러리가 필요합니다. 'pip install xlsxwriter' 명령어로 설치해주세요.")
@@ -805,3 +810,90 @@ elif df_complete_table.empty : # 원본 데이터 자체가 없었던 경우
      print("원본 데이터(df_complete_table)가 없어 Excel 파일을 생성하지 않았습니다.")
 else: # 그 외 output_rows_info가 비어있는 경우
     print("조건에 맞는 데이터가 없어 최종적으로 Excel 파일에 저장할 내용이 없습니다.")
+
+# --- 스키마 파일 경로 생성 함수 ---
+def create_schema_file_path(row, is_send=True):
+    """
+    주어진 행 데이터로부터 스키마 파일 경로를 생성합니다.
+    
+    Args:
+        row: 데이터프레임의 행
+        is_send: 송신 스키마 파일 경로인지 여부 (False면 수신 스키마 파일 경로)
+        
+    Returns:
+        생성된 스키마 파일 경로 문자열
+    """
+    try:
+        # 기본 경로 시작
+        base_path = "C:\\BwProject"
+        
+        # 사용할 컬럼 선택 (송신/수신에 따라)
+        corp_col = column_send_corp_name if is_send else column_recv_corp_name
+        pkg_col = column_send_pkg_name if is_send else column_recv_pkg_name
+        db_name_col = '송신\\nDB Name' if is_send else '수신\\nDB Name'
+        schema_col = '송신\\nSchema' if is_send else '수신\\nSchema'
+        
+        # 안전하게 컬럼값 가져오기 (컬럼이 없는 경우 빈 문자열 반환)
+        def safe_get_value(df_row, column_name):
+            try:
+                val = df_row[column_name] if column_name in df_row.index else ""
+                return str(val) if pd.notna(val) else ""
+            except:
+                return ""
+        
+        # 필요한 값들 가져오기
+        corp_val = safe_get_value(row, corp_col)
+        pkg_val = safe_get_value(row, pkg_col)
+        db_name = safe_get_value(row, db_name_col)
+        schema = safe_get_value(row, schema_col)
+        source_table = safe_get_value(row, 'Source Table')
+        
+        # 1번 디렉토리 (법인 정보에 따라) - create_file_path와 동일 로직
+        dir1 = ""
+        if corp_val == "KR":
+            dir1 = "KR"
+        elif corp_val == "NJ":
+            dir1 = "CN"
+        elif corp_val == "VH":
+            dir1 = "VN"
+        else:
+            dir1 = "UNK"  # 알 수 없는 경우
+        
+        # 법인 정보에 따라 접미사 추가
+        if corp_val == "VH":
+            dir1 += "_TEST_SOURCE"
+        else:
+            dir1 += "_PROD_SOURCE"
+        
+        # 2번 디렉토리 (패키지의 첫 '_' 이전 부분) - create_file_path와 동일 로직
+        dir2 = pkg_val.split('_')[0] if '_' in pkg_val and pkg_val else pkg_val
+        
+        # 3번 디렉토리 (고정값)
+        dir3 = "SharedResources\\Schema\\source"
+        
+        # 4번 디렉토리 (DB Name)
+        dir4 = db_name
+        
+        # 5번 디렉토리 (Schema)
+        dir5 = schema
+        
+        # 파일명 생성
+        # Source Table을 '.'으로 분할해 두 번째 부분 추출 후 .xsd 확장자 추가
+        file_name = ""
+        if '.' in source_table:
+            file_name = source_table.split('.')[1] + '.xsd'
+        else:
+            file_name = source_table + '.xsd'  # '.'이 없는 경우 전체 이름 사용
+        
+        # 경로 구성
+        path_parts = [base_path, dir1, dir2, dir3, dir4, dir5, file_name]
+        
+        # 빈 값 제거
+        path_parts = [part for part in path_parts if part]
+        
+        # 경로 조합
+        return "\\".join(path_parts)
+    
+    except Exception as e:
+        print(f"스키마 파일 경로 생성 오류 ({('송신' if is_send else '수신')}): {e}")
+        return "경로 생성 오류"
