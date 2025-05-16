@@ -328,6 +328,94 @@ def count_files_in_directory(file_path):
         print(f"디렉토리 파일 개수 확인 중 오류: {e}")
         return 0
 
+# --- 스키마 파일 경로 생성 함수 ---
+def create_schema_file_path(row, is_send=True):
+    """
+    주어진 행 데이터로부터 스키마 파일 경로를 생성합니다.
+    
+    Args:
+        row: 데이터프레임의 행
+        is_send: 송신 스키마 파일 경로인지 여부 (False면 수신 스키마 파일 경로)
+        
+    Returns:
+        생성된 스키마 파일 경로 문자열
+    """
+    try:
+        # 기본 경로 시작
+        base_path = "C:\\BwProject"
+        
+        # 사용할 컬럼 선택 (송신/수신에 따라)
+        corp_col = column_send_corp_name if is_send else column_recv_corp_name
+        pkg_col = column_send_pkg_name if is_send else column_recv_pkg_name
+        db_name_col = '송신\\nDB Name' if is_send else '수신\\nDB Name'
+        schema_col = '송신 \\nSchema' if is_send else '수신 Schema'
+        
+        # 안전하게 컬럼값 가져오기 (컬럼이 없는 경우 빈 문자열 반환)
+        def safe_get_value(df_row, column_name):
+            try:
+                val = df_row[column_name] if column_name in df_row.index else ""
+                return str(val) if pd.notna(val) else ""
+            except:
+                return ""
+        
+        # 필요한 값들 가져오기
+        corp_val = safe_get_value(row, corp_col)
+        pkg_val = safe_get_value(row, pkg_col)
+        db_name = safe_get_value(row, db_name_col)
+        schema = safe_get_value(row, schema_col)
+        source_table = safe_get_value(row, 'Source Table')
+        
+        # 1번 디렉토리 (법인 정보에 따라) - create_file_path와 동일 로직
+        dir1 = ""
+        if corp_val == "KR":
+            dir1 = "KR"
+        elif corp_val == "NJ":
+            dir1 = "CN"
+        elif corp_val == "VH":
+            dir1 = "VN"
+        else:
+            dir1 = "UNK"  # 알 수 없는 경우
+        
+        # 법인 정보에 따라 접미사 추가
+        if corp_val == "VH":
+            dir1 += "_TEST_SOURCE"
+        else:
+            dir1 += "_PROD_SOURCE"
+        
+        # 2번 디렉토리 (패키지의 첫 '_' 이전 부분) - create_file_path와 동일 로직
+        dir2 = pkg_val.split('_')[0] if '_' in pkg_val and pkg_val else pkg_val
+        
+        # 3번 디렉토리 (고정값)
+        dir3 = "SharedResources\\Schema\\source"
+        
+        # 4번 디렉토리 (DB Name)
+        dir4 = db_name
+        
+        # 5번 디렉토리 (Schema)
+        dir5 = schema
+        
+        # 파일명 생성
+        # Source Table을 '.'으로 분할해 두 번째 부분 추출 후 .xsd 확장자 추가
+        file_name = ""
+        if '.' in source_table:
+            file_name = source_table.split('.')[1] + '.xsd'
+        else:
+            file_name = source_table + '.xsd'  # '.'이 없는 경우 전체 이름 사용
+        
+        # 경로 구성
+        path_parts = [base_path, dir1, dir2, dir3, dir4, dir5, file_name]
+        
+        # 빈 값 제거
+        path_parts = [part for part in path_parts if part]
+        
+        # 경로 조합
+        return "\\".join(path_parts)
+    
+    except Exception as e:
+        print(f"스키마 파일 경로 생성 오류 ({('송신' if is_send else '수신')}): {e}")
+        return "경로 생성 오류"
+
+
 # --- DB에서 전체 데이터 로드 및 df_filtered 생성 ---
 try:
     conn = sqlite3.connect(db_filename)
@@ -811,89 +899,3 @@ elif df_complete_table.empty : # 원본 데이터 자체가 없었던 경우
 else: # 그 외 output_rows_info가 비어있는 경우
     print("조건에 맞는 데이터가 없어 최종적으로 Excel 파일에 저장할 내용이 없습니다.")
 
-# --- 스키마 파일 경로 생성 함수 ---
-def create_schema_file_path(row, is_send=True):
-    """
-    주어진 행 데이터로부터 스키마 파일 경로를 생성합니다.
-    
-    Args:
-        row: 데이터프레임의 행
-        is_send: 송신 스키마 파일 경로인지 여부 (False면 수신 스키마 파일 경로)
-        
-    Returns:
-        생성된 스키마 파일 경로 문자열
-    """
-    try:
-        # 기본 경로 시작
-        base_path = "C:\\BwProject"
-        
-        # 사용할 컬럼 선택 (송신/수신에 따라)
-        corp_col = column_send_corp_name if is_send else column_recv_corp_name
-        pkg_col = column_send_pkg_name if is_send else column_recv_pkg_name
-        db_name_col = '송신\\nDB Name' if is_send else '수신\\nDB Name'
-        schema_col = '송신\\nSchema' if is_send else '수신\\nSchema'
-        
-        # 안전하게 컬럼값 가져오기 (컬럼이 없는 경우 빈 문자열 반환)
-        def safe_get_value(df_row, column_name):
-            try:
-                val = df_row[column_name] if column_name in df_row.index else ""
-                return str(val) if pd.notna(val) else ""
-            except:
-                return ""
-        
-        # 필요한 값들 가져오기
-        corp_val = safe_get_value(row, corp_col)
-        pkg_val = safe_get_value(row, pkg_col)
-        db_name = safe_get_value(row, db_name_col)
-        schema = safe_get_value(row, schema_col)
-        source_table = safe_get_value(row, 'Source Table')
-        
-        # 1번 디렉토리 (법인 정보에 따라) - create_file_path와 동일 로직
-        dir1 = ""
-        if corp_val == "KR":
-            dir1 = "KR"
-        elif corp_val == "NJ":
-            dir1 = "CN"
-        elif corp_val == "VH":
-            dir1 = "VN"
-        else:
-            dir1 = "UNK"  # 알 수 없는 경우
-        
-        # 법인 정보에 따라 접미사 추가
-        if corp_val == "VH":
-            dir1 += "_TEST_SOURCE"
-        else:
-            dir1 += "_PROD_SOURCE"
-        
-        # 2번 디렉토리 (패키지의 첫 '_' 이전 부분) - create_file_path와 동일 로직
-        dir2 = pkg_val.split('_')[0] if '_' in pkg_val and pkg_val else pkg_val
-        
-        # 3번 디렉토리 (고정값)
-        dir3 = "SharedResources\\Schema\\source"
-        
-        # 4번 디렉토리 (DB Name)
-        dir4 = db_name
-        
-        # 5번 디렉토리 (Schema)
-        dir5 = schema
-        
-        # 파일명 생성
-        # Source Table을 '.'으로 분할해 두 번째 부분 추출 후 .xsd 확장자 추가
-        file_name = ""
-        if '.' in source_table:
-            file_name = source_table.split('.')[1] + '.xsd'
-        else:
-            file_name = source_table + '.xsd'  # '.'이 없는 경우 전체 이름 사용
-        
-        # 경로 구성
-        path_parts = [base_path, dir1, dir2, dir3, dir4, dir5, file_name]
-        
-        # 빈 값 제거
-        path_parts = [part for part in path_parts if part]
-        
-        # 경로 조합
-        return "\\".join(path_parts)
-    
-    except Exception as e:
-        print(f"스키마 파일 경로 생성 오류 ({('송신' if is_send else '수신')}): {e}")
-        return "경로 생성 오류"
