@@ -1,6 +1,6 @@
 """
 파일명: iflist03a.py
-버전: v8.1
+버전: v8.2
 작성일: 2023년 (실제 날짜 확인 필요)
 
 설명:
@@ -14,7 +14,7 @@
 1. 'iflist.sqlite' 데이터베이스 파일이 현재 디렉토리에 있어야 합니다.
 2. 'iflist' 테이블에 '송신시스템', '수신시스템', 'I/F명' 컬럼이 있어야 합니다.
 3. 명령행에서 다음과 같이 실행: 'python iflist03a.py'
-4. 결과는 '{스크립트명}_reordered_v8.1.xlsx' 파일로 저장됩니다.
+4. 결과는 '{스크립트명}_reordered_v8.2.xlsx' 파일로 저장됩니다.
 
 필요 라이브러리:
 - sqlite3: SQLite 데이터베이스 액세스
@@ -89,9 +89,9 @@ ORANGE_FILL = PatternFill(start_color='FFC000', end_color='FFC000', fill_type='s
 try:
     script_basename = os.path.basename(sys.argv[0])
     script_name_without_ext = os.path.splitext(script_basename)[0]
-    excel_filename = f"{script_name_without_ext}_reordered_v8.1.xlsx" # 버전 변경
+    excel_filename = f"{script_name_without_ext}_reordered_v8.2.xlsx" # 버전 변경
 except Exception:
-    excel_filename = "output_reordered_v8.1.xlsx"
+    excel_filename = "output_reordered_v8.2.xlsx"
     print(f"스크립트 이름을 감지할 수 없어 기본 파일명 '{excel_filename}'을 사용합니다.")
 
 df_complete_table = pd.DataFrame() # 원본 전체 테이블
@@ -615,8 +615,12 @@ if output_rows_info:
     df_excel_output['수신DF'] = df_excel_output.apply(lambda row: calc_dir_file_count(row, is_send=False), axis=1)
 
     # 송신/수신 스키마 파일 경로 추가
-    df_excel_output['송신SF'] = df_excel_output.apply(lambda row: create_schema_file_path(row, is_send=True), axis=1)
-    df_excel_output['수신SF'] = df_excel_output.apply(lambda row: create_schema_file_path(row, is_send=False), axis=1)
+    df_excel_output['송신스키마파일명'] = df_excel_output.apply(lambda row: create_schema_file_path(row, is_send=True), axis=1)
+    df_excel_output['수신스키마파일명'] = df_excel_output.apply(lambda row: create_schema_file_path(row, is_send=False), axis=1)
+
+    # 스키마 파일 존재 여부 확인 및 컬럼 추가
+    df_excel_output['송신스키마파일존재'] = df_excel_output['송신스키마파일명'].apply(check_file_exists)
+    df_excel_output['수신스키마파일존재'] = df_excel_output['수신스키마파일명'].apply(check_file_exists)
 
     # 색상 플래그에 따라 행 인덱스 분리
     yellow_row_indices = [idx for idx, item in enumerate(output_rows_info) if item['color_flag'] == 'yellow']
@@ -760,8 +764,12 @@ if not df_excel_output.empty:
         print("파일 존재 여부를 확인합니다...")
         send_exists_count = df_excel_output['송신파일존재'].sum()
         recv_exists_count = df_excel_output['수신파일존재'].sum()
+        send_schema_exists_count = df_excel_output['송신스키마파일존재'].sum()
+        recv_schema_exists_count = df_excel_output['수신스키마파일존재'].sum()
         print(f"송신 파일 존재: {send_exists_count}/{len(df_excel_output)}개")
         print(f"수신 파일 존재: {recv_exists_count}/{len(df_excel_output)}개")
+        print(f"송신 스키마 파일 존재: {send_schema_exists_count}/{len(df_excel_output)}개")
+        print(f"수신 스키마 파일 존재: {recv_schema_exists_count}/{len(df_excel_output)}개")
         
         print("\n디렉토리 파일 개수를 계산합니다...")
         send_df_total = df_excel_output['송신DF'].sum()
@@ -812,6 +820,10 @@ if not df_excel_output.empty:
             send_df_col = df_excel_output.columns.get_loc('송신DF')
             recv_df_col = df_excel_output.columns.get_loc('수신DF')
             
+            # 스키마 파일 존재 여부 열 인덱스 찾기
+            send_schema_exist_col = df_excel_output.columns.get_loc('송신스키마파일존재')
+            recv_schema_exist_col = df_excel_output.columns.get_loc('수신스키마파일존재')
+            
             # 비교로그 열 인덱스 찾기
             log_col_idx = df_excel_output.columns.get_loc('비교로그') if '비교로그' in df_excel_output.columns else -1
             
@@ -820,6 +832,10 @@ if not df_excel_output.empty:
                 recv_exists = df_excel_output.iloc[row_idx]['수신파일존재']
                 send_df_count = df_excel_output.iloc[row_idx]['송신DF']
                 recv_df_count = df_excel_output.iloc[row_idx]['수신DF']
+                
+                # 스키마 파일 존재 여부
+                send_schema_exists = df_excel_output.iloc[row_idx]['송신스키마파일존재']
+                recv_schema_exists = df_excel_output.iloc[row_idx]['수신스키마파일존재']
                 
                 # 송신 파일 존재 여부에 따른 색상 적용
                 if send_exists == 1:
@@ -832,6 +848,18 @@ if not df_excel_output.empty:
                     worksheet.write(row_idx + 1, recv_file_exist_col, 1, exist_format)
                 else:
                     worksheet.write(row_idx + 1, recv_file_exist_col, 0, not_exist_format)
+                
+                # 송신 스키마 파일 존재 여부에 따른 색상 적용
+                if send_schema_exists == 1:
+                    worksheet.write(row_idx + 1, send_schema_exist_col, 1, exist_format)
+                else:
+                    worksheet.write(row_idx + 1, send_schema_exist_col, 0, not_exist_format)
+                
+                # 수신 스키마 파일 존재 여부에 따른 색상 적용
+                if recv_schema_exists == 1:
+                    worksheet.write(row_idx + 1, recv_schema_exist_col, 1, exist_format)
+                else:
+                    worksheet.write(row_idx + 1, recv_schema_exist_col, 0, not_exist_format)
                 
                 # 송신 디렉토리 파일 개수에 따른 색상 적용
                 if send_df_count == 0:
@@ -878,6 +906,8 @@ if not df_excel_output.empty:
         else:
             print("우선순위로 필터링된 행은 연두색으로 표시됩니다.")
         print("파일 존재 여부 컬럼: 존재하면 1(연두색), 존재하지 않으면 0(주황색)으로 표시됩니다.")
+        print("'송신스키마파일존재'/'수신스키마파일존재' 컬럼: 존재하면 1(연두색), 존재하지 않으면 0(주황색)으로 표시됩니다.")
+        print("'송신스키마파일명'/'수신스키마파일명' 컬럼: 스키마 파일 경로를 나타냅니다.")
         print("'송신DF'와 '수신DF' 컬럼은 각 파일이 위치한 디렉토리의 파일 개수를 나타냅니다.")
         print("  - 파일 개수가 0개: 회색")
         print("  - 파일 개수가 1-3개: 매우 밝은 파란색")
@@ -885,7 +915,6 @@ if not df_excel_output.empty:
         print("  - 파일 개수가 11-20개: 중간 파란색")
         print("  - 파일 개수가 21개 이상: 진한 파란색")
         print("'비교로그' 컬럼: 오류가 있으면 주황색으로 표시됩니다.")
-        print("'송신SF'와 '수신SF' 컬럼은 스키마 파일 경로를 나타냅니다.")
 
     except ImportError:
         print("Excel 파일 저장을 위해 'xlsxwriter' 라이브러리가 필요합니다. 'pip install xlsxwriter' 명령어로 설치해주세요.")
