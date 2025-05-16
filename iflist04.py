@@ -133,7 +133,7 @@ def validate_excel_file(input_file):
         df['비교로그'] = ''
         
         # 기본행과 매칭행 비교
-        for i in range(1, len(df), 2):
+        for i in range(0, len(df), 2):
             if i+1 >= len(df):
                 print(f"경고: 행 {i}의 매칭행이 없습니다. 건너뜁니다.")
                 continue
@@ -163,7 +163,7 @@ def validate_excel_file(input_file):
             
             # 4. Event_ID 비교
             if 'Event_ID' in column_names:
-                result = check_table_or_routing(base_row['Event_ID'], match_row['Event_ID'], '4.Event_ID')
+                result = check_table_with_split(base_row['Event_ID'], match_row['Event_ID'], '4.Event_ID')
                 if result:
                     comparison_log.append(result)
             
