@@ -347,8 +347,8 @@ def create_schema_file_path(row, is_send=True):
         # 사용할 컬럼 선택 (송신/수신에 따라)
         corp_col = column_send_corp_name if is_send else column_recv_corp_name
         pkg_col = column_send_pkg_name if is_send else column_recv_pkg_name
-        db_name_col = '송신\\nDB Name' if is_send else '수신\\nDB Name'
-        schema_col = '송신 \\nSchema' if is_send else '수신 Schema'
+        db_name_col = '송신\\nDB Name'
+        schema_col = '송신 \\nSchema'
         
         # 안전하게 컬럼값 가져오기 (컬럼이 없는 경우 빈 문자열 반환)
         def safe_get_value(df_row, column_name):
