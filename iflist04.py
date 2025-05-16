@@ -91,6 +91,32 @@ def check_table_or_routing(base_value, match_value, column_name):
         return f"{column_name} 비교오류"
     return ""
 
+def check_table_with_split(base_value, match_value, column_name):
+    """Source Table, Destination Table용 비교 로직 (단어 분할 후 LY/LZ 확인)"""
+    if not isinstance(base_value, str) or not isinstance(match_value, str):
+        if pd.isna(base_value) and pd.isna(match_value):
+            return ""
+        return f"{column_name} 비교오류 (비어있는 값)"
+    
+    # 기본값으로 단순 비교 
+    should_check_ly_lz = False
+    
+    # '.'과 '_'로 분할하여 단어 확인
+    words = re.split('[._]', base_value)
+    for word in words:
+        if word.startswith('LY') or word.startswith('LZ'):
+            should_check_ly_lz = True
+            break
+    
+    if should_check_ly_lz:
+        expected_value = replace_ly_lz(base_value)
+        if expected_value != match_value:
+            return f"{column_name} 비교오류"
+    elif base_value.strip() != match_value.strip():
+        return f"{column_name} 비교오류"
+    
+    return ""
+
 def validate_excel_file(input_file):
     """엑셀 파일을 읽고 검증을 수행하는 함수"""
     try:
@@ -137,7 +163,7 @@ def validate_excel_file(input_file):
             
             # 4. Event_ID 비교
             if 'Event_ID' in column_names:
-                result = check_same_content(base_row['Event_ID'], match_row['Event_ID'], '4.Event_ID')
+                result = check_table_or_routing(base_row['Event_ID'], match_row['Event_ID'], '4.Event_ID')
                 if result:
                     comparison_log.append(result)
             
@@ -173,13 +199,13 @@ def validate_excel_file(input_file):
             
             # 10. Source Table 비교
             if 'Source Table' in column_names:
-                result = check_table_or_routing(base_row['Source Table'], match_row['Source Table'], '10.Source Table')
+                result = check_table_with_split(base_row['Source Table'], match_row['Source Table'], '10.Source Table')
                 if result:
                     comparison_log.append(result)
             
             # 11. Destination Table 비교
             if 'Destination Table' in column_names:
-                result = check_table_or_routing(base_row['Destination Table'], match_row['Destination Table'], '11.Destination Table')
+                result = check_table_with_split(base_row['Destination Table'], match_row['Destination Table'], '11.Destination Table')
                 if result:
                     comparison_log.append(result)
             
