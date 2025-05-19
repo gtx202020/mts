@@ -607,29 +607,11 @@ if output_rows_info:
     df_excel_output['송신파일존재'] = df_excel_output['송신파일경로'].apply(check_file_exists)
     df_excel_output['수신파일존재'] = df_excel_output['수신파일경로'].apply(check_file_exists)
 
-    # 송신파일생성여부와 수신파일생성여부 컬럼의 셀 색상 설정
-    send_gen_col = df_excel_output.columns.get_loc('송신파일생성여부')
-    recv_gen_col = df_excel_output.columns.get_loc('수신파일생성여부')
-    send_exist_col = df_excel_output.columns.get_loc('송신파일존재')
-    recv_exist_col = df_excel_output.columns.get_loc('수신파일존재')
+    # 송신파일생성여부 컬럼 추가
+    df_excel_output['송신파일생성여부'] = df_excel_output.apply(lambda row: '' if row.get('color_flag') is not None else ('1' if row.get('개발구분') == '신규' else ''), axis=1)
 
-    for row_idx in range(len(df_excel_output)):
-        send_gen_val = df_excel_output.iloc[row_idx]['송신파일생성여부']
-        recv_gen_val = df_excel_output.iloc[row_idx]['수신파일생성여부']
-        send_exist_val = df_excel_output.iloc[row_idx]['송신파일존재']
-        recv_exist_val = df_excel_output.iloc[row_idx]['수신파일존재']
-
-        if send_gen_val == '1':
-            if send_exist_val == 1:
-                worksheet.write(row_idx + 1, send_gen_col, send_gen_val, workbook.add_format({'bg_color': '#FFA500'}))  # 주황색
-            else:
-                worksheet.write(row_idx + 1, send_gen_col, send_gen_val, workbook.add_format({'bg_color': '#90EE90'}))  # 연두색
-
-        if recv_gen_val == '1':
-            if recv_exist_val == 1:
-                worksheet.write(row_idx + 1, recv_gen_col, recv_gen_val, workbook.add_format({'bg_color': '#FFA500'}))  # 주황색
-            else:
-                worksheet.write(row_idx + 1, recv_gen_col, recv_gen_val, workbook.add_format({'bg_color': '#90EE90'}))  # 연두색
+    # 수신파일생성여부 컬럼 추가
+    df_excel_output['수신파일생성여부'] = df_excel_output.apply(lambda row: '' if row.get('color_flag') is not None else '1', axis=1)
 
     # 송신/수신 디렉토리 파일 개수 계산 함수
     def calc_dir_file_count(row, is_send=True):
@@ -943,6 +925,31 @@ if not df_excel_output.empty:
                 if pd.isna(data_max_len): data_max_len = 0
                 column_width = max(int(data_max_len), header_len) + 2
                 worksheet.set_column(i, i, column_width)
+
+            # 송신파일생성여부/수신파일생성여부 셀 색상 처리
+            send_gen_col = df_excel_output.columns.get_loc('송신파일생성여부')
+            recv_gen_col = df_excel_output.columns.get_loc('수신파일생성여부')
+            send_exist_col = df_excel_output.columns.get_loc('송신파일존재')
+            recv_exist_col = df_excel_output.columns.get_loc('수신파일존재')
+            for row_idx in range(len(df_excel_output)):
+                # 기본행(white row)만 처리
+                color_flag = df_excel_output.iloc[row_idx].get('color_flag')
+                if color_flag is not None:
+                    continue
+                send_gen_val = df_excel_output.iloc[row_idx]['송신파일생성여부']
+                recv_gen_val = df_excel_output.iloc[row_idx]['수신파일생성여부']
+                send_exist_val = df_excel_output.iloc[row_idx]['송신파일존재']
+                recv_exist_val = df_excel_output.iloc[row_idx]['수신파일존재']
+                if send_gen_val == '1':
+                    if send_exist_val == 1:
+                        worksheet.write(row_idx + 1, send_gen_col, send_gen_val, workbook.add_format({'bg_color': '#FFA500'}))  # 주황색
+                    else:
+                        worksheet.write(row_idx + 1, send_gen_col, send_gen_val, workbook.add_format({'bg_color': '#90EE90'}))  # 연두색
+                if recv_gen_val == '1':
+                    if recv_exist_val == 1:
+                        worksheet.write(row_idx + 1, recv_gen_col, recv_gen_val, workbook.add_format({'bg_color': '#FFA500'}))  # 주황색
+                    else:
+                        worksheet.write(row_idx + 1, recv_gen_col, recv_gen_val, workbook.add_format({'bg_color': '#90EE90'}))  # 연두색
 
         print(f"\n결과가 '{excel_filename}' 파일로 저장되었습니다.")
         if debug_mode == 1:
