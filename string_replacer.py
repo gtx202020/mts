@@ -10,6 +10,9 @@ def generate_yaml_from_excel(excel_path, yaml_path):
     # pandas로 엑셀 파일 읽기
     df = pd.read_excel(excel_path, engine='openpyxl')
     
+    # 전체 YAML 구조를 저장할 딕셔너리
+    full_yaml_structure = {}
+    
     # 2행씩 처리 (일반행, 매칭행)
     for i in range(0, len(df), 2):
         if i + 1 >= len(df):  # 마지막 행이 홀수인 경우 처리
@@ -25,52 +28,69 @@ def generate_yaml_from_excel(excel_path, yaml_path):
             f"{i//2 + 1}번째 행": {}
         }
         
+        def modify_path(path):
+            """파일 경로를 수정하는 함수 (테스트용)"""
+            if isinstance(path, str) and path.startswith("C:\\BwProject"):
+                return path.replace("C:\\BwProject", "C:\\TBwProject")
+            return path
+        
         # 1. 송신파일경로 처리
         if pd.notna(normal_row.get('송신파일생성여부')) and float(normal_row['송신파일생성여부']) == 1.0:
             yaml_structure[f"{i//2 + 1}번째 행"]["송신파일경로"] = {
                 "원본파일": match_row['송신파일경로'],
-                "복사파일": normal_row['송신파일경로']
+                "복사파일": modify_path(normal_row['송신파일경로'])  # 경로 수정
             }
             print("\n[송신파일경로 생성]")
             print(f"  원본파일: {match_row['송신파일경로']}")
-            print(f"  복사파일: {normal_row['송신파일경로']}")
+            print(f"  복사파일: {modify_path(normal_row['송신파일경로'])}")
         
         # 2. 수신파일경로 처리
         if pd.notna(normal_row.get('수신파일생성여부')) and float(normal_row['수신파일생성여부']) == 1.0:
             yaml_structure[f"{i//2 + 1}번째 행"]["수신파일경로"] = {
                 "원본파일": match_row['수신파일경로'],
-                "복사파일": normal_row['수신파일경로']
+                "복사파일": modify_path(normal_row['수신파일경로'])  # 경로 수정
             }
             print("\n[수신파일경로 생성]")
             print(f"  원본파일: {match_row['수신파일경로']}")
-            print(f"  복사파일: {normal_row['수신파일경로']}")
+            print(f"  복사파일: {modify_path(normal_row['수신파일경로'])}")
         
         # 3. 송신스키마파일명 처리
         if pd.notna(normal_row.get('송신스키마파일생성여부')) and float(normal_row['송신스키마파일생성여부']) == 1.0:
             yaml_structure[f"{i//2 + 1}번째 행"]["송신스키마파일명"] = {
                 "원본파일": match_row['송신스키마파일명'],
-                "복사파일": normal_row['송신스키마파일명']
+                "복사파일": modify_path(normal_row['송신스키마파일명'])  # 경로 수정
             }
             print("\n[송신스키마파일명 생성]")
             print(f"  원본파일: {match_row['송신스키마파일명']}")
-            print(f"  복사파일: {normal_row['송신스키마파일명']}")
+            print(f"  복사파일: {modify_path(normal_row['송신스키마파일명'])}")
         
         # 4. 수신스키마파일명 처리
         if pd.notna(normal_row.get('수신스키마파일생성여부')) and float(normal_row['수신스키마파일생성여부']) == 1.0:
             yaml_structure[f"{i//2 + 1}번째 행"]["수신스키마파일명"] = {
                 "원본파일": match_row['수신스키마파일명'],
-                "복사파일": normal_row['수신스키마파일명']
+                "복사파일": modify_path(normal_row['수신스키마파일명'])  # 경로 수정
             }
             print("\n[수신스키마파일명 생성]")
             print(f"  원본파일: {match_row['수신스키마파일명']}")
-            print(f"  복사파일: {normal_row['수신스키마파일명']}")
+            print(f"  복사파일: {modify_path(normal_row['수신스키마파일명'])}")
         
         # YAML 구조 출력
         print("\n[YAML 구조]")
         print(yaml.dump(yaml_structure, allow_unicode=True, sort_keys=False))
         print("=" * 50)
-
-    return 0  # 임시로 0 반환
+        
+        # 전체 YAML 구조에 현재 구조 추가
+        full_yaml_structure.update(yaml_structure)
+    
+    # YAML 파일 생성
+    try:
+        with open(yaml_path, 'w', encoding='utf-8') as yf:
+            yaml.dump(full_yaml_structure, yf, allow_unicode=True, sort_keys=False)
+        print(f"\nYAML 파일이 생성되었습니다: {yaml_path}")
+        return len(full_yaml_structure)  # 생성된 작업 수 반환
+    except Exception as e:
+        print(f"\nYAML 파일 생성 중 오류 발생: {str(e)}")
+        return 0
 
 def apply_replacements(text, replacements):
     """여러 치환 규칙을 순차적으로 적용하여 새로운 텍스트 반환."""
