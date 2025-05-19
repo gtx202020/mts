@@ -1,6 +1,6 @@
 """
 파일명: iflist03a.py
-버전: v8.2
+버전: v8.3
 작성일: 2023년 (실제 날짜 확인 필요)
 
 설명:
@@ -14,7 +14,7 @@
 1. 'iflist.sqlite' 데이터베이스 파일이 현재 디렉토리에 있어야 합니다.
 2. 'iflist' 테이블에 '송신시스템', '수신시스템', 'I/F명' 컬럼이 있어야 합니다.
 3. 명령행에서 다음과 같이 실행: 'python iflist03a.py'
-4. 결과는 '{스크립트명}_reordered_v8.2.xlsx' 파일로 저장됩니다.
+4. 결과는 '{스크립트명}_reordered_v8.3.xlsx' 파일로 저장됩니다.
 
 필요 라이브러리:
 - sqlite3: SQLite 데이터베이스 액세스
@@ -89,9 +89,9 @@ ORANGE_FILL = PatternFill(start_color='FFC000', end_color='FFC000', fill_type='s
 try:
     script_basename = os.path.basename(sys.argv[0])
     script_name_without_ext = os.path.splitext(script_basename)[0]
-    excel_filename = f"{script_name_without_ext}_reordered_v8.2.xlsx" # 버전 변경
+    excel_filename = f"{script_name_without_ext}_reordered_v8.3.xlsx" # 버전 변경
 except Exception:
-    excel_filename = "output_reordered_v8.2.xlsx"
+    excel_filename = "output_reordered_v8.3.xlsx"
     print(f"스크립트 이름을 감지할 수 없어 기본 파일명 '{excel_filename}'을 사용합니다.")
 
 df_complete_table = pd.DataFrame() # 원본 전체 테이블
@@ -754,11 +754,12 @@ if not df_excel_output.empty:
     try:
         # "Unnamed: XX" 형식의 컬럼 중 XX가 10 이상인 컬럼 제외하기
         cols_to_keep = [col for col in df_excel_output.columns 
-                        if not (isinstance(col, str) and 
+                        if not ((isinstance(col, str) and 
                                col.startswith('Unnamed:') and 
                                len(col.split(':')) > 1 and 
                                col.split(':')[1].strip().isdigit() and 
-                               int(col.split(':')[1].strip()) >= 10)]
+                               int(col.split(':')[1].strip()) >= 10) or
+                               col.startswith('XXXXX'))]
         
         # 필터링된 컬럼만 유지
         df_excel_output = df_excel_output[cols_to_keep]
