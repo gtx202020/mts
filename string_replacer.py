@@ -19,48 +19,57 @@ def generate_yaml_from_excel(excel_path, yaml_path):
         match_row = df.iloc[i+1]  # 매칭행
         
         print(f"\n=== {i//2 + 1}번째 행 쌍 ===")
-        print("일반행:")
-        print(f"  송신파일경로: {normal_row['송신파일경로']}")
-        print(f"  수신파일경로: {normal_row['수신파일경로']}")
-        print(f"  송신스키마파일명: {normal_row['송신스키마파일명']}")
-        print(f"  수신스키마파일명: {normal_row['수신스키마파일명']}")
         
-        print("\n매칭행:")
-        print(f"  송신파일경로: {match_row['송신파일경로']}")
-        print(f"  수신파일경로: {match_row['수신파일경로']}")
-        print(f"  송신스키마파일명: {match_row['송신스키마파일명']}")
-        print(f"  수신스키마파일명: {match_row['수신스키마파일명']}")
+        # 파일 생성 여부 확인 및 YAML 구조 생성
+        yaml_structure = {
+            f"{i//2 + 1}번째 행": {}
+        }
+        
+        # 1. 송신파일경로 처리
+        if pd.notna(normal_row.get('송신파일생성여부')) and str(normal_row['송신파일생성여부']).strip() == '1':
+            yaml_structure[f"{i//2 + 1}번째 행"]["송신파일경로"] = {
+                "원본파일": match_row['송신파일경로'],
+                "복사파일": normal_row['송신파일경로']
+            }
+            print("\n[송신파일경로 생성]")
+            print(f"  원본파일: {match_row['송신파일경로']}")
+            print(f"  복사파일: {normal_row['송신파일경로']}")
+        
+        # 2. 수신파일경로 처리
+        if pd.notna(normal_row.get('수신파일생성여부')) and str(normal_row['수신파일생성여부']).strip() == '1':
+            yaml_structure[f"{i//2 + 1}번째 행"]["수신파일경로"] = {
+                "원본파일": match_row['수신파일경로'],
+                "복사파일": normal_row['수신파일경로']
+            }
+            print("\n[수신파일경로 생성]")
+            print(f"  원본파일: {match_row['수신파일경로']}")
+            print(f"  복사파일: {normal_row['수신파일경로']}")
+        
+        # 3. 송신스키마파일명 처리
+        if pd.notna(normal_row.get('송신스키마파일생성여부')) and str(normal_row['송신스키마파일생성여부']).strip() == '1':
+            yaml_structure[f"{i//2 + 1}번째 행"]["송신스키마파일명"] = {
+                "원본파일": match_row['송신스키마파일명'],
+                "복사파일": normal_row['송신스키마파일명']
+            }
+            print("\n[송신스키마파일명 생성]")
+            print(f"  원본파일: {match_row['송신스키마파일명']}")
+            print(f"  복사파일: {normal_row['송신스키마파일명']}")
+        
+        # 4. 수신스키마파일명 처리
+        if pd.notna(normal_row.get('수신스키마파일생성여부')) and str(normal_row['수신스키마파일생성여부']).strip() == '1':
+            yaml_structure[f"{i//2 + 1}번째 행"]["수신스키마파일명"] = {
+                "원본파일": match_row['수신스키마파일명'],
+                "복사파일": normal_row['수신스키마파일명']
+            }
+            print("\n[수신스키마파일명 생성]")
+            print(f"  원본파일: {match_row['수신스키마파일명']}")
+            print(f"  복사파일: {normal_row['수신스키마파일명']}")
+        
+        # YAML 구조 출력
+        print("\n[YAML 구조]")
+        print(yaml.dump(yaml_structure, allow_unicode=True, sort_keys=False))
         print("=" * 50)
 
-    # 기존 코드는 일단 주석 처리
-    """
-    wb = openpyxl.load_workbook(excel_path)
-    sheet = wb.active  # 첫 번째 시트를 사용
-    jobs_dict = {}  # (source, dest)를 키로 치환 리스트를 모음
-
-    for row in sheet.iter_rows(min_row=2, values_only=True):  # 2행부터 데이터 읽기 (1행은 헤더)
-        source_file, destination_file, from_str, to_str = row
-        if source_file is None or destination_file is None or from_str is None or to_str is None:
-            continue  # 빈 행은 건너뜀
-        key = (str(source_file).strip(), str(destination_file).strip())
-        if key not in jobs_dict:
-            jobs_dict[key] = []
-        jobs_dict[key].append({"from": str(from_str), "to": str(to_str)})
-
-    # jobs_dict를 YAML용 구조로 변환
-    jobs = []
-    for (source, dest), replacements in jobs_dict.items():
-        jobs.append({
-            "source": source,
-            "destination": dest,
-            "replacements": replacements
-        })
-
-    # YAML 파일로 저장
-    with open(yaml_path, 'w', encoding='utf-8') as yf:
-        yaml.safe_dump({"jobs": jobs}, yf, allow_unicode=True)
-    return len(jobs)
-    """
     return 0  # 임시로 0 반환
 
 def apply_replacements(text, replacements):
