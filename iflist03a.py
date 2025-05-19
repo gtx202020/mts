@@ -636,6 +636,12 @@ if output_rows_info:
     df_excel_output['송신스키마파일존재'] = df_excel_output['송신스키마파일명'].apply(check_file_exists)
     df_excel_output['수신스키마파일존재'] = df_excel_output['수신스키마파일명'].apply(check_file_exists)
 
+    # 송신스키마파일생성여부 컬럼 추가
+    df_excel_output['송신스키마파일생성여부'] = df_excel_output.apply(lambda row: '' if row.get('color_flag') is not None else ('1' if row.get('개발구분') == '신규' else ''), axis=1)
+
+    # 수신스키마파일생성여부 컬럼 추가
+    df_excel_output['수신스키마파일생성여부'] = df_excel_output.apply(lambda row: '' if row.get('color_flag') is not None else '1', axis=1)
+
     # 색상 플래그에 따라 행 인덱스 분리
     yellow_row_indices = [idx for idx, item in enumerate(output_rows_info) if item['color_flag'] == 'yellow']
     green_row_indices = [idx for idx, item in enumerate(output_rows_info) if item['color_flag'] == 'green']
@@ -953,6 +959,33 @@ if not df_excel_output.empty:
                         worksheet.write(row_idx + 1, recv_gen_col, recv_gen_val, workbook.add_format({'bg_color': '#FFA500'}))  # 주황색
                     else:
                         worksheet.write(row_idx + 1, recv_gen_col, recv_gen_val, workbook.add_format({'bg_color': '#90EE90'}))  # 연두색
+
+            # 송신스키마파일생성여부/수신스키마파일생성여부 셀 색상 처리
+            send_schema_gen_col = df_excel_output.columns.get_loc('송신스키마파일생성여부')
+            recv_schema_gen_col = df_excel_output.columns.get_loc('수신스키마파일생성여부')
+            send_schema_exist_col = df_excel_output.columns.get_loc('송신스키마파일존재')
+            recv_schema_exist_col = df_excel_output.columns.get_loc('수신스키마파일존재')
+            for row_idx in range(len(df_excel_output)):
+                color_flag = df_excel_output.iloc[row_idx].get('color_flag')
+                if color_flag is not None:
+                    # 매칭행인 경우 흰색으로 칠하기
+                    worksheet.write(row_idx + 1, send_schema_gen_col, df_excel_output.iloc[row_idx]['송신스키마파일생성여부'], white_format)
+                    worksheet.write(row_idx + 1, recv_schema_gen_col, df_excel_output.iloc[row_idx]['수신스키마파일생성여부'], white_format)
+                    continue
+                send_schema_gen_val = df_excel_output.iloc[row_idx]['송신스키마파일생성여부']
+                recv_schema_gen_val = df_excel_output.iloc[row_idx]['수신스키마파일생성여부']
+                send_schema_exist_val = df_excel_output.iloc[row_idx]['송신스키마파일존재']
+                recv_schema_exist_val = df_excel_output.iloc[row_idx]['수신스키마파일존재']
+                if send_schema_gen_val == '1':
+                    if send_schema_exist_val == 1:
+                        worksheet.write(row_idx + 1, send_schema_gen_col, send_schema_gen_val, workbook.add_format({'bg_color': '#FFA500'}))  # 주황색
+                    else:
+                        worksheet.write(row_idx + 1, send_schema_gen_col, send_schema_gen_val, workbook.add_format({'bg_color': '#90EE90'}))  # 연두색
+                if recv_schema_gen_val == '1':
+                    if recv_schema_exist_val == 1:
+                        worksheet.write(row_idx + 1, recv_schema_gen_col, recv_schema_gen_val, workbook.add_format({'bg_color': '#FFA500'}))  # 주황색
+                    else:
+                        worksheet.write(row_idx + 1, recv_schema_gen_col, recv_schema_gen_val, workbook.add_format({'bg_color': '#90EE90'}))  # 연두색
 
         print(f"\n결과가 '{excel_filename}' 파일로 저장되었습니다.")
         if debug_mode == 1:
