@@ -26,7 +26,7 @@ def generate_yaml_from_excel(excel_path, yaml_path):
         }
         
         # 1. 송신파일경로 처리
-        if pd.notna(normal_row.get('송신파일생성여부')) and str(normal_row['송신파일생성여부']).strip() == '1':
+        if pd.notna(normal_row.get('송신파일생성여부')) and float(normal_row['송신파일생성여부']) == 1.0:
             yaml_structure[f"{i//2 + 1}번째 행"]["송신파일경로"] = {
                 "원본파일": match_row['송신파일경로'],
                 "복사파일": normal_row['송신파일경로']
@@ -36,7 +36,7 @@ def generate_yaml_from_excel(excel_path, yaml_path):
             print(f"  복사파일: {normal_row['송신파일경로']}")
         
         # 2. 수신파일경로 처리
-        if pd.notna(normal_row.get('수신파일생성여부')) and str(normal_row['수신파일생성여부']).strip() == '1':
+        if pd.notna(normal_row.get('수신파일생성여부')) and float(normal_row['수신파일생성여부']) == 1.0:
             yaml_structure[f"{i//2 + 1}번째 행"]["수신파일경로"] = {
                 "원본파일": match_row['수신파일경로'],
                 "복사파일": normal_row['수신파일경로']
@@ -46,7 +46,7 @@ def generate_yaml_from_excel(excel_path, yaml_path):
             print(f"  복사파일: {normal_row['수신파일경로']}")
         
         # 3. 송신스키마파일명 처리
-        if pd.notna(normal_row.get('송신스키마파일생성여부')) and str(normal_row['송신스키마파일생성여부']).strip() == '1':
+        if pd.notna(normal_row.get('송신스키마파일생성여부')) and float(normal_row['송신스키마파일생성여부']) == 1.0:
             yaml_structure[f"{i//2 + 1}번째 행"]["송신스키마파일명"] = {
                 "원본파일": match_row['송신스키마파일명'],
                 "복사파일": normal_row['송신스키마파일명']
@@ -56,7 +56,7 @@ def generate_yaml_from_excel(excel_path, yaml_path):
             print(f"  복사파일: {normal_row['송신스키마파일명']}")
         
         # 4. 수신스키마파일명 처리
-        if pd.notna(normal_row.get('수신스키마파일생성여부')) and str(normal_row['수신스키마파일생성여부']).strip() == '1':
+        if pd.notna(normal_row.get('수신스키마파일생성여부')) and float(normal_row['수신스키마파일생성여부']) == 1.0:
             yaml_structure[f"{i//2 + 1}번째 행"]["수신스키마파일명"] = {
                 "원본파일": match_row['수신스키마파일명'],
                 "복사파일": normal_row['수신스키마파일명']
