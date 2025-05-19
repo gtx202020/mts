@@ -195,13 +195,14 @@ def check_table_with_split(base_value, match_value, column_name):
     return ""
 
 # --- 파일 경로 생성 함수 ---
-def create_file_path(row, is_send=True):
+def create_file_path(row, is_send=True, color_flag=None):
     """
     주어진 행 데이터로부터 파일 경로를 생성합니다.
     
     Args:
         row: 데이터프레임의 행
         is_send: 송신 파일 경로인지 여부 (False면 수신 파일 경로)
+        color_flag: 행의 색상 정보 (None: 기본행, 'yellow'/'green': 매칭행)
         
     Returns:
         생성된 파일 경로 문자열
@@ -243,10 +244,10 @@ def create_file_path(row, is_send=True):
         else:
             dir1 = "UNK"  # 알 수 없는 경우
         
-        # 법인 정보에 따라 접미사 추가
-        if corp_val == "VH":
+        # 접미사 결정 (기본행은 _TEST_SOURCE, 매칭행은 _PROD_SOURCE)
+        if color_flag is None:  # 기본행
             dir1 += "_TEST_SOURCE"
-        else:
+        else:  # 매칭행
             dir1 += "_PROD_SOURCE"
         
         # 2번 디렉토리 (패키지의 첫 '_' 이전 부분)
@@ -329,13 +330,14 @@ def count_files_in_directory(file_path):
         return 0
 
 # --- 스키마 파일 경로 생성 함수 ---
-def create_schema_file_path(row, is_send=True):
+def create_schema_file_path(row, is_send=True, color_flag=None):
     """
     주어진 행 데이터로부터 스키마 파일 경로를 생성합니다.
     
     Args:
         row: 데이터프레임의 행
         is_send: 송신 스키마 파일 경로인지 여부 (False면 수신 스키마 파일 경로)
+        color_flag: 행의 색상 정보 (None: 기본행, 'yellow'/'green': 매칭행)
         
     Returns:
         생성된 스키마 파일 경로 문자열
@@ -376,10 +378,10 @@ def create_schema_file_path(row, is_send=True):
         else:
             dir1 = "UNK"  # 알 수 없는 경우
         
-        # 법인 정보에 따라 접미사 추가
-        if corp_val == "VH":
+        # 접미사 결정 (기본행은 _TEST_SOURCE, 매칭행은 _PROD_SOURCE)
+        if color_flag is None:  # 기본행
             dir1 += "_TEST_SOURCE"
-        else:
+        else:  # 매칭행
             dir1 += "_PROD_SOURCE"
         
         # 2번 디렉토리 (패키지의 첫 '_' 이전 부분) - create_file_path와 동일 로직
@@ -592,8 +594,8 @@ if output_rows_info:
          df_excel_output = pd.DataFrame(final_df_data).reset_index(drop=True)
 
     # 송신/수신 파일 경로 컬럼 추가
-    df_excel_output['송신파일경로'] = df_excel_output.apply(lambda row: create_file_path(row, is_send=True), axis=1)
-    df_excel_output['수신파일경로'] = df_excel_output.apply(lambda row: create_file_path(row, is_send=False), axis=1)
+    df_excel_output['송신파일경로'] = df_excel_output.apply(lambda row: create_file_path(row, is_send=True, color_flag=row.get('color_flag')), axis=1)
+    df_excel_output['수신파일경로'] = df_excel_output.apply(lambda row: create_file_path(row, is_send=False, color_flag=row.get('color_flag')), axis=1)
     
     # 파일 존재 여부 확인 및 컬럼 추가
     df_excel_output['송신파일존재'] = df_excel_output['송신파일경로'].apply(check_file_exists)
@@ -615,8 +617,8 @@ if output_rows_info:
     df_excel_output['수신DF'] = df_excel_output.apply(lambda row: calc_dir_file_count(row, is_send=False), axis=1)
 
     # 송신/수신 스키마 파일 경로 추가
-    df_excel_output['송신스키마파일명'] = df_excel_output.apply(lambda row: create_schema_file_path(row, is_send=True), axis=1)
-    df_excel_output['수신스키마파일명'] = df_excel_output.apply(lambda row: create_schema_file_path(row, is_send=False), axis=1)
+    df_excel_output['송신스키마파일명'] = df_excel_output.apply(lambda row: create_schema_file_path(row, is_send=True, color_flag=row.get('color_flag')), axis=1)
+    df_excel_output['수신스키마파일명'] = df_excel_output.apply(lambda row: create_schema_file_path(row, is_send=False, color_flag=row.get('color_flag')), axis=1)
 
     # 스키마 파일 존재 여부 확인 및 컬럼 추가
     df_excel_output['송신스키마파일존재'] = df_excel_output['송신스키마파일명'].apply(check_file_exists)
