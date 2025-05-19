@@ -3,9 +3,37 @@ import yaml
 import difflib
 import os
 import datetime
+import pandas as pd
 
 def generate_yaml_from_excel(excel_path, yaml_path):
     """엑셀 파일을 읽어 YAML 파일을 생성한다."""
+    # pandas로 엑셀 파일 읽기
+    df = pd.read_excel(excel_path, engine='openpyxl')
+    
+    # 2행씩 처리 (일반행, 매칭행)
+    for i in range(0, len(df), 2):
+        if i + 1 >= len(df):  # 마지막 행이 홀수인 경우 처리
+            break
+            
+        normal_row = df.iloc[i]  # 일반행
+        match_row = df.iloc[i+1]  # 매칭행
+        
+        print(f"\n=== {i//2 + 1}번째 행 쌍 ===")
+        print("일반행:")
+        print(f"  송신파일경로: {normal_row['송신파일경로']}")
+        print(f"  수신파일경로: {normal_row['수신파일경로']}")
+        print(f"  송신스키마파일명: {normal_row['송신스키마파일명']}")
+        print(f"  수신스키마파일명: {normal_row['수신스키마파일명']}")
+        
+        print("\n매칭행:")
+        print(f"  송신파일경로: {match_row['송신파일경로']}")
+        print(f"  수신파일경로: {match_row['수신파일경로']}")
+        print(f"  송신스키마파일명: {match_row['송신스키마파일명']}")
+        print(f"  수신스키마파일명: {match_row['수신스키마파일명']}")
+        print("=" * 50)
+
+    # 기존 코드는 일단 주석 처리
+    """
     wb = openpyxl.load_workbook(excel_path)
     sheet = wb.active  # 첫 번째 시트를 사용
     jobs_dict = {}  # (source, dest)를 키로 치환 리스트를 모음
@@ -32,6 +60,8 @@ def generate_yaml_from_excel(excel_path, yaml_path):
     with open(yaml_path, 'w', encoding='utf-8') as yf:
         yaml.safe_dump({"jobs": jobs}, yf, allow_unicode=True)
     return len(jobs)
+    """
+    return 0  # 임시로 0 반환
 
 def apply_replacements(text, replacements):
     """여러 치환 규칙을 순차적으로 적용하여 새로운 텍스트 반환."""

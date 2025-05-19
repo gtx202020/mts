@@ -165,8 +165,10 @@ def main():
         choice = input("\n원하는 작업을 선택하세요: ").strip()
         
         if choice == "1":
-            excel_path = input("엑셀 파일 경로를 입력하세요: ").strip()
-            yaml_path = input("생성할 YAML 파일 경로를 입력하세요: ").strip()
+            # excel_path = input("엑셀 파일 경로를 입력하세요: ").strip()
+            # yaml_path = input("생성할 YAML 파일 경로를 입력하세요: ").strip()
+            excel_path = 'iflist03a_reordered_v8.3.xlsx'
+            yaml_path = 'iflist05.yaml'
             try:
                 job_count = generate_yaml_from_excel(excel_path, yaml_path)
                 print(f"YAML 파일 생성 완료 (총 {job_count}개 작업)")
