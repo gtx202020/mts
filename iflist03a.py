@@ -585,14 +585,19 @@ if not df_filtered.empty and not df_complete_table.empty:
 
 # 최종 DataFrame 생성
 if output_rows_info:
+    # 각 행의 data_row에 color_flag를 컬럼으로 추가
+    for item in output_rows_info:
+        item['data_row']['color_flag'] = item['color_flag']
     final_df_data = [item['data_row'] for item in output_rows_info]
     # DataFrame 생성 시 컬럼 순서 유지를 위해 df_complete_table의 컬럼 사용 (데이터가 있을 경우)
     # 또는 df_filtered의 컬럼 사용 (output_rows_info의 첫번째 요소 기준도 가능)
     cols_for_final_df = column_names_from_db if 'column_names_from_db' in locals() and column_names_from_db else (df_filtered.columns if not df_filtered.empty else None)
+    # color_flag 컬럼을 명시적으로 추가
     if cols_for_final_df is not None:
-         df_excel_output = pd.DataFrame(final_df_data, columns=cols_for_final_df).reset_index(drop=True)
+        cols_for_final_df = list(cols_for_final_df) + ['color_flag'] if 'color_flag' not in cols_for_final_df else list(cols_for_final_df)
+        df_excel_output = pd.DataFrame(final_df_data, columns=cols_for_final_df).reset_index(drop=True)
     else: # 비상시
-         df_excel_output = pd.DataFrame(final_df_data).reset_index(drop=True)
+        df_excel_output = pd.DataFrame(final_df_data).reset_index(drop=True)
 
     # 송신/수신 파일 경로 컬럼 추가
     df_excel_output['송신파일경로'] = df_excel_output.apply(lambda row: create_file_path(row, is_send=True, color_flag=row.get('color_flag')), axis=1)
