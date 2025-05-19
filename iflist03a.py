@@ -603,10 +603,34 @@ if output_rows_info:
     df_excel_output['송신파일경로'] = df_excel_output.apply(lambda row: create_file_path(row, is_send=True, color_flag=row.get('color_flag')), axis=1)
     df_excel_output['수신파일경로'] = df_excel_output.apply(lambda row: create_file_path(row, is_send=False, color_flag=row.get('color_flag')), axis=1)
     
-    # 파일 존재 여부 확인 및 컬럼 추가
+    # 송신/수신 파일 존재 여부 확인 및 컬럼 추가
     df_excel_output['송신파일존재'] = df_excel_output['송신파일경로'].apply(check_file_exists)
     df_excel_output['수신파일존재'] = df_excel_output['수신파일경로'].apply(check_file_exists)
-    
+
+    # 송신파일생성여부와 수신파일생성여부 컬럼의 셀 색상 설정
+    send_gen_col = df_excel_output.columns.get_loc('송신파일생성여부')
+    recv_gen_col = df_excel_output.columns.get_loc('수신파일생성여부')
+    send_exist_col = df_excel_output.columns.get_loc('송신파일존재')
+    recv_exist_col = df_excel_output.columns.get_loc('수신파일존재')
+
+    for row_idx in range(len(df_excel_output)):
+        send_gen_val = df_excel_output.iloc[row_idx]['송신파일생성여부']
+        recv_gen_val = df_excel_output.iloc[row_idx]['수신파일생성여부']
+        send_exist_val = df_excel_output.iloc[row_idx]['송신파일존재']
+        recv_exist_val = df_excel_output.iloc[row_idx]['수신파일존재']
+
+        if send_gen_val == '1':
+            if send_exist_val == 1:
+                worksheet.write(row_idx + 1, send_gen_col, send_gen_val, workbook.add_format({'bg_color': '#FFA500'}))  # 주황색
+            else:
+                worksheet.write(row_idx + 1, send_gen_col, send_gen_val, workbook.add_format({'bg_color': '#90EE90'}))  # 연두색
+
+        if recv_gen_val == '1':
+            if recv_exist_val == 1:
+                worksheet.write(row_idx + 1, recv_gen_col, recv_gen_val, workbook.add_format({'bg_color': '#FFA500'}))  # 주황색
+            else:
+                worksheet.write(row_idx + 1, recv_gen_col, recv_gen_val, workbook.add_format({'bg_color': '#90EE90'}))  # 연두색
+
     # 송신/수신 디렉토리 파일 개수 계산 함수
     def calc_dir_file_count(row, is_send=True):
         column_name = '송신파일존재' if is_send else '수신파일존재'
