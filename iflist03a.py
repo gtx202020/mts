@@ -756,6 +756,7 @@ if not df_excel_output.empty:
         cols_to_keep = [col for col in df_excel_output.columns 
                         if not ((isinstance(col, str) and 
                                col.startswith('Unnamed:') and 
+                               col.startswith('') and
                                len(col.split(':')) > 1 and 
                                col.split(':')[1].strip().isdigit() and 
                                int(col.split(':')[1].strip()) >= 10) or
