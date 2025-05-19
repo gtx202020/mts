@@ -207,6 +207,7 @@ def create_file_path(row, is_send=True, color_flag=None):
     Returns:
         생성된 파일 경로 문자열
     """
+    print(f"color_flag: {color_flag}")  # color_flag 값 출력
     try:
         # 기본 경로 시작
         base_path = "C:\\BwProject"
