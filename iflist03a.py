@@ -219,7 +219,7 @@ def create_file_path(row, is_send=True):
         def safe_get_value(df_row, column_name):
             try:
                 val = df_row[column_name] if column_name in df_row.index else ""
-                return str(val) if pd.notna(val) else ""
+                return str(val).strip() if pd.notna(val) else ""
             except:
                 return ""
         
@@ -354,7 +354,7 @@ def create_schema_file_path(row, is_send=True):
         def safe_get_value(df_row, column_name):
             try:
                 val = df_row[column_name] if column_name in df_row.index else ""
-                return str(val) if pd.notna(val) else ""
+                return str(val).strip() if pd.notna(val) else ""
             except:
                 return ""
         
@@ -753,10 +753,9 @@ else:
 if not df_excel_output.empty:
     try:
         # "Unnamed: XX" 형식의 컬럼 중 XX가 10 이상인 컬럼 제외하기
-        cols_to_keep = [col for col in df_excel_output.columns 
+        cols_to_keep = [col for col in df_excel_output.columns
                         if not ((isinstance(col, str) and 
                                col.startswith('Unnamed:') and 
-                               col.startswith('') and
                                len(col.split(':')) > 1 and 
                                col.split(':')[1].strip().isdigit() and 
                                int(col.split(':')[1].strip()) >= 10) or
