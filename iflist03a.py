@@ -931,10 +931,13 @@ if not df_excel_output.empty:
             recv_gen_col = df_excel_output.columns.get_loc('수신파일생성여부')
             send_exist_col = df_excel_output.columns.get_loc('송신파일존재')
             recv_exist_col = df_excel_output.columns.get_loc('수신파일존재')
+            white_format = workbook.add_format({'bg_color': '#FFFFFF'})  # 흰색
             for row_idx in range(len(df_excel_output)):
-                # 기본행(white row)만 처리
                 color_flag = df_excel_output.iloc[row_idx].get('color_flag')
                 if color_flag is not None:
+                    # 매칭행인 경우 흰색으로 칠하기
+                    worksheet.write(row_idx + 1, send_gen_col, df_excel_output.iloc[row_idx]['송신파일생성여부'], white_format)
+                    worksheet.write(row_idx + 1, recv_gen_col, df_excel_output.iloc[row_idx]['수신파일생성여부'], white_format)
                     continue
                 send_gen_val = df_excel_output.iloc[row_idx]['송신파일생성여부']
                 recv_gen_val = df_excel_output.iloc[row_idx]['수신파일생성여부']
