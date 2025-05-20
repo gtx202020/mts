@@ -177,7 +177,7 @@ def generate_yaml_from_excel(excel_path, yaml_path):
 
             # IFID 치환 규칙 추가
             origin_ifid = f"{match_row['Group ID']}.{match_row['Event_ID']}"
-            dest_ifid = f"{normal_row['Group ID']}.{normal_row['Event_ID']}"
+            dest_ifid = f"{normal_row['Group ID']}.{match_row['Event_ID']}"
             
             # IFID가 다른 경우에만 치환 규칙 추가
             if origin_ifid != dest_ifid:
@@ -209,7 +209,52 @@ def generate_yaml_from_excel(excel_path, yaml_path):
                     }
                 })
 
-            # 송신업무명 치환 규칙 추가
+            # Group ID &quot; 형식 치환 규칙 추가
+            if match_row['Group ID'] != normal_row['Group ID']:
+                replacements.append({
+                    "설명": "Group ID &quot; 형식 치환",
+                    "조건": {
+                        "파일명패턴": source_filename
+                    },
+                    "찾기": {
+                        "정규식": f'&quot;{match_row["Group ID"]}&quot;'
+                    },
+                    "교체": {
+                        "값": f'&quot;{normal_row["Group ID"]}&quot;'
+                    }
+                })
+
+            # 송신업무명 &quot; 형식 치환 규칙 추가
+            if match_row['송신\n업무명'] != normal_row['송신\n업무명']:
+                replacements.append({
+                    "설명": "송신업무명 &quot; 형식 치환",
+                    "조건": {
+                        "파일명패턴": source_filename
+                    },
+                    "찾기": {
+                        "정규식": f'&quot;{match_row["송신\n업무명"]}&quot;'
+                    },
+                    "교체": {
+                        "값": f'&quot;{normal_row["송신\n업무명"]}&quot;'
+                    }
+                })
+
+            # 수신업무명 &quot; 형식 치환 규칙 추가
+            if match_row['수신\n업무명'] != normal_row['수신\n업무명']:
+                replacements.append({
+                    "설명": "수신업무명 &quot; 형식 치환",
+                    "조건": {
+                        "파일명패턴": source_filename
+                    },
+                    "찾기": {
+                        "정규식": f'&quot;{match_row["수신\n업무명"]}&quot;'
+                    },
+                    "교체": {
+                        "값": f'&quot;{normal_row["수신\n업무명"]}&quot;'
+                    }
+                })
+
+            # 송신업무명 치환 규칙 추가 (pd:from/to Check 형식)
             if match_row['송신\n업무명'] != normal_row['송신\n업무명']:
                 # pd:from 태그 치환
                 replacements.append({
@@ -240,7 +285,7 @@ def generate_yaml_from_excel(excel_path, yaml_path):
                     }
                 })
 
-            # 수신업무명 치환 규칙 추가
+            # 수신업무명 치환 규칙 추가 (pd:from/to Check 형식)
             if match_row['수신\n업무명'] != normal_row['수신\n업무명']:
                 # pd:from 태그 치환
                 replacements.append({
