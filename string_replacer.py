@@ -83,7 +83,7 @@ def generate_yaml_from_excel(excel_path, yaml_path):
                     "속성": ["namespace"]
                 },
                 "찾기": {
-                    "정규식": f'(\\bnamespace\\s*=\\s*")[^"]*{base_name}[^"]*(")' 
+                    "정규식": f'(\\bnamespace\\s*=\\s*")[^"]*{base_name}[^"]*(")'
                 },
                 "교체": {
                     "값": namespace
@@ -97,10 +97,24 @@ def generate_yaml_from_excel(excel_path, yaml_path):
                     "속성": ["schemaLocation"]
                 },
                 "찾기": {
-                    "정규식": f'(\\bschemaLocation\\s*=\\s*")[^"]*{base_name}[^"]*(")' 
+                    "정규식": f'(\\bschemaLocation\\s*=\\s*")[^"]*{base_name}[^"]*(")'
                 },
                 "교체": {
                     "값": schema_location
+                }
+            },
+            {
+                "설명": "ProcessDefinition namespace 치환",
+                "조건": {
+                    "파일명패턴": filename,
+                    "태그": "pd:ProcessDefinition",
+                    "속성": ["xmlns:pfx3"]
+                },
+                "찾기": {
+                    "정규식": f'(\\bxmlns:pfx3\\s*=\\s*")[^"]*{base_name}[^"]*(")'
+                },
+                "교체": {
+                    "값": namespace
                 }
             }]
         
