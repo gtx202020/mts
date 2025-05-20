@@ -142,10 +142,12 @@ def generate_yaml_from_excel(excel_path, yaml_path):
             
             return relative_path
 
-        def create_process_replacements(source_path, target_path):
+        def create_process_replacements(source_path, target_path, match_row, normal_row):
             """프로세스 파일의 치환 목록 생성
             source_path: 매칭행의 파일 경로 (패턴 매칭용)
             target_path: 기본행의 파일 경로 (교체용)
+            match_row: 매칭행 데이터
+            normal_row: 기본행 데이터
             """
             if not isinstance(source_path, str) or not isinstance(target_path, str):
                 return []
@@ -158,7 +160,7 @@ def generate_yaml_from_excel(excel_path, yaml_path):
             if not source_filename or not target_process_path:
                 return []
             
-            return [{
+            replacements = [{
                 "설명": "프로세스 이름 치환",
                 "조건": {
                     "파일명패턴": source_filename,  # 매칭행의 파일명으로 패턴 매칭
@@ -173,6 +175,42 @@ def generate_yaml_from_excel(excel_path, yaml_path):
                 }
             }]
 
+            # IFID 치환 규칙 추가
+            origin_ifid = f"{match_row['Group ID']}.{match_row['Event_ID']}"
+            dest_ifid = f"{normal_row['Group ID']}.{normal_row['Event_ID']}"
+            
+            # IFID가 다른 경우에만 치환 규칙 추가
+            if origin_ifid != dest_ifid:
+                replacements.append({
+                    "설명": "IFID 치환",
+                    "조건": {
+                        "파일명패턴": source_filename
+                    },
+                    "찾기": {
+                        "정규식": origin_ifid.replace(".", "\\.")  # 점(.)을 이스케이프
+                    },
+                    "교체": {
+                        "값": dest_ifid
+                    }
+                })
+            
+            # Event_ID 치환 규칙 추가
+            if match_row['Event_ID'] != normal_row['Event_ID']:
+                replacements.append({
+                    "설명": "Event_ID 치환",
+                    "조건": {
+                        "파일명패턴": source_filename
+                    },
+                    "찾기": {
+                        "정규식": match_row['Event_ID']
+                    },
+                    "교체": {
+                        "값": normal_row['Event_ID']
+                    }
+                })
+            
+            return replacements
+
         # 1. 송신파일경로 처리
         if pd.notna(normal_row.get('송신파일생성여부')) and float(normal_row['송신파일생성여부']) == 1.0:
             yaml_structure[f"{i//2 + 1}번째 행"]["송신파일경로"] = {
@@ -183,7 +221,9 @@ def generate_yaml_from_excel(excel_path, yaml_path):
                     normal_row['송신스키마파일명']
                 ) + create_process_replacements(
                     match_row['송신파일경로'],    # 매칭행의 경로로 패턴 매칭
-                    normal_row['송신파일경로']    # 기본행의 경로로 교체
+                    normal_row['송신파일경로'],    # 기본행의 경로로 교체
+                    match_row,
+                    normal_row
                 )
             }
             print("\n[송신파일경로 생성]")
@@ -200,7 +240,9 @@ def generate_yaml_from_excel(excel_path, yaml_path):
                     normal_row['수신스키마파일명']
                 ) + create_process_replacements(
                     match_row['수신파일경로'],    # 매칭행의 경로로 패턴 매칭
-                    normal_row['수신파일경로']    # 기본행의 경로로 교체
+                    normal_row['수신파일경로'],    # 기본행의 경로로 교체
+                    match_row,
+                    normal_row
                 )
             }
             print("\n[수신파일경로 생성]")
