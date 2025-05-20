@@ -127,20 +127,26 @@ def generate_yaml_from_excel(excel_path, yaml_path):
             # 디렉토리 구분자 변경
             return filename.replace('\\', '/')
 
-        def create_process_replacements(process_path):
-            """프로세스 파일의 치환 목록 생성"""
-            if not isinstance(process_path, str):
+        def create_process_replacements(source_path, target_path):
+            """프로세스 파일의 치환 목록 생성
+            source_path: 매칭행의 파일 경로 (패턴 매칭용)
+            target_path: 기본행의 파일 경로 (교체용)
+            """
+            if not isinstance(source_path, str) or not isinstance(target_path, str):
                 return []
             
-            # 프로세스 파일명 추출 (디렉토리 구분자 '/'로 변경)
-            process_filename = extract_process_filename(process_path)
-            if not process_filename:
+            # 매칭행의 파일명으로 패턴 매칭 (찾을 패턴)
+            source_filename = extract_process_filename(source_path)
+            # 기본행의 파일명으로 교체 (교체할 값)
+            target_filename = extract_process_filename(target_path)
+            
+            if not source_filename or not target_filename:
                 return []
             
             return [{
                 "설명": "프로세스 이름 치환",
                 "조건": {
-                    "파일명패턴": process_filename,
+                    "파일명패턴": source_filename,  # 매칭행의 파일명으로 패턴 매칭
                     "태그": "pd:ProcessDefinition/pd:name",
                     "속성": []
                 },
@@ -148,7 +154,7 @@ def generate_yaml_from_excel(excel_path, yaml_path):
                     "정규식": f'(<pd:name>Processes/)[^<]*(</pd:name>)'
                 },
                 "교체": {
-                    "값": process_filename
+                    "값": target_filename  # 기본행의 파일명으로 교체
                 }
             }]
 
@@ -160,7 +166,10 @@ def generate_yaml_from_excel(excel_path, yaml_path):
                 "치환목록": create_schema_replacements(
                     extract_filename(normal_row['송신스키마파일명']),
                     normal_row['송신스키마파일명']
-                ) + create_process_replacements(normal_row['송신파일경로'])
+                ) + create_process_replacements(
+                    match_row['송신파일경로'],    # 매칭행의 경로로 패턴 매칭
+                    normal_row['송신파일경로']    # 기본행의 경로로 교체
+                )
             }
             print("\n[송신파일경로 생성]")
             print(f"  원본파일: {match_row['송신파일경로']}")
@@ -174,7 +183,10 @@ def generate_yaml_from_excel(excel_path, yaml_path):
                 "치환목록": create_schema_replacements(
                     extract_filename(normal_row['수신스키마파일명']),
                     normal_row['수신스키마파일명']
-                ) + create_process_replacements(normal_row['수신파일경로'])
+                ) + create_process_replacements(
+                    match_row['수신파일경로'],    # 매칭행의 경로로 패턴 매칭
+                    normal_row['수신파일경로']    # 기본행의 경로로 교체
+                )
             }
             print("\n[수신파일경로 생성]")
             print(f"  원본파일: {match_row['수신파일경로']}")
