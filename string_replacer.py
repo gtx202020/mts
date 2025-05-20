@@ -4,6 +4,7 @@ import difflib
 import os
 import datetime
 import pandas as pd
+import shutil
 
 def generate_yaml_from_excel(excel_path, yaml_path):
     """엑셀 파일을 읽어 YAML 파일을 생성한다."""
@@ -109,7 +110,7 @@ def generate_yaml_from_excel(excel_path, yaml_path):
                 "원본파일": match_row['송신파일경로'],
                 "복사파일": modify_path(normal_row['송신파일경로']),  # 경로 수정
                 "치환목록": create_schema_replacements(
-                    extract_filename(normal_row['송신파일경로']),
+                    extract_filename(normal_row['송신스키마파일명']),
                     normal_row['송신스키마파일명']  # 송신스키마파일명 사용
                 )
             }
@@ -123,7 +124,7 @@ def generate_yaml_from_excel(excel_path, yaml_path):
                 "원본파일": match_row['수신파일경로'],
                 "복사파일": modify_path(normal_row['수신파일경로']),  # 경로 수정
                 "치환목록": create_schema_replacements(
-                    extract_filename(normal_row['수신파일경로']),
+                    extract_filename(normal_row['수신스키마파일명']),
                     normal_row['수신스키마파일명']  # 수신스키마파일명 사용
                 )
             }
@@ -222,8 +223,63 @@ def preview_diff(yaml_path):
         for line in diff_lines:
             print(line, end='')
 
+def copy_file_with_check(source, dest):
+    """파일을 복사하되, 대상 파일이 이미 존재하면 경고를 출력합니다."""
+    try:
+        # 대상 디렉토리가 없으면 생성
+        os.makedirs(os.path.dirname(dest), exist_ok=True)
+        
+        # 대상 파일이 이미 존재하는지 확인
+        if os.path.exists(dest):
+            print(f"경고: 파일이 이미 존재합니다 - {dest}")
+            return False
+            
+        # 파일 복사
+        shutil.copy2(source, dest)
+        print(f"파일 복사 완료: {source} -> {dest}")
+        return True
+    except Exception as e:
+        print(f"파일 복사 중 오류 발생: {str(e)}")
+        return False
+
+def apply_schema_replacements(file_path, replacements):
+    """파일에 치환 목록을 적용합니다."""
+    try:
+        # 파일 읽기
+        with open(file_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+            
+        modified = False
+        # 각 치환 규칙 적용
+        for repl in replacements:
+            import re
+            pattern = repl['찾기']['정규식']
+            replacement = repl['교체']['값']
+            
+            # 정규식에서 캡처 그룹을 사용하는 경우
+            if '(' in pattern and ')' in pattern:
+                # 첫 번째와 마지막 캡처 그룹을 유지하면서 중간 값만 교체
+                new_content = re.sub(pattern, r'\1' + replacement + r'\2', content)
+            else:
+                new_content = re.sub(pattern, replacement, content)
+                
+            if new_content != content:
+                content = new_content
+                modified = True
+                print(f"치환 적용: {repl['설명']}")
+        
+        # 변경된 경우에만 파일 저장
+        if modified:
+            with open(file_path, 'w', encoding='utf-8') as f:
+                f.write(content)
+            print(f"파일 치환 완료: {file_path}")
+            return True
+    except Exception as e:
+        print(f"파일 치환 중 오류 발생: {str(e)}")
+    return False
+
 def execute_replacements(yaml_path, log_path, summary_path):
-    """YAML에 정의된 치환 작업을 실행하고 로그를 생성한다."""
+    """YAML에 정의된 복사 및 치환 작업을 실행하고 로그를 생성합니다."""
     try:
         with open(yaml_path, 'r', encoding='utf-8') as yf:
             data = yaml.safe_load(yf)
@@ -231,65 +287,61 @@ def execute_replacements(yaml_path, log_path, summary_path):
         print(f"YAML 파일을 찾을 수 없습니다: {yaml_path}")
         return
 
-    jobs = data.get("jobs", []) if data else []
-    if not jobs:
+    if not data:
         print("실행할 작업이 없습니다.")
         return
 
     # 로그 파일 초기화
     with open(log_path, 'w', encoding='utf-8') as lf:
-        lf.write(f"[{datetime.datetime.now()}] 치환 작업 시작 (총 {len(jobs)}개 작업)\n")
+        lf.write(f"[{datetime.datetime.now()}] 작업 시작\n")
 
-    total_replacements = 0
     summary_data = []
+    total_copies = 0
+    total_replacements = 0
 
-    for i, job in enumerate(jobs, 1):
-        source = job.get("source")
-        dest = job.get("destination")
-        replacements = job.get("replacements", [])
-        if not source or not dest or not replacements:
-            continue
-
-        try:
-            with open(source, 'r', encoding='utf-8') as sf:
-                original_text = sf.read()
-        except FileNotFoundError:
+    # 각 행 처리
+    for row_key, row_data in data.items():
+        print(f"\n=== {row_key} 처리 중 ===")
+        
+        # 각 파일 타입 처리 (송신파일경로, 수신파일경로 등)
+        for file_type, file_info in row_data.items():
+            source = file_info.get('원본파일')
+            dest = file_info.get('복사파일')
+            replacements = file_info.get('치환목록', [])
+            
+            if not source or not dest:
+                continue
+                
+            # 1. 파일 복사
+            if copy_file_with_check(source, dest):
+                total_copies += 1
+                
+                # 2. 치환 목록이 있는 경우 치환 수행
+                if replacements:
+                    if apply_schema_replacements(dest, replacements):
+                        total_replacements += 1
+                        
+            # 작업 결과 기록
+            summary = f"{file_type}: {source} -> {dest}"
+            if replacements:
+                summary += f" (치환: {len(replacements)}개 규칙)"
+            summary_data.append(summary)
+            
+            # 로그 기록
             with open(log_path, 'a', encoding='utf-8') as lf:
-                lf.write(f"[{datetime.datetime.now()}] [오류] 원본 파일을 찾을 수 없습니다: {source}\n")
-            continue
-
-        # 치환 적용
-        modified_text = apply_replacements(original_text, replacements)
-
-        # 치환 횟수 계산
-        job_replacements = 0
-        for repl in replacements:
-            from_str = repl.get("from", "")
-            if from_str:
-                count = original_text.count(from_str)
-                job_replacements += count
-                with open(log_path, 'a', encoding='utf-8') as lf:
-                    lf.write(f"[{datetime.datetime.now()}] {source} -> {dest}: '{from_str}' -> '{repl.get('to', '')}' {count}건 치환\n")
-
-        # 대상 파일 저장
-        os.makedirs(os.path.dirname(dest), exist_ok=True)
-        with open(dest, 'w', encoding='utf-8') as df:
-            df.write(modified_text)
-
-        total_replacements += job_replacements
-        summary_data.append(f"{source} -> {dest}: {job_replacements}건 치환")
-
-        with open(log_path, 'a', encoding='utf-8') as lf:
-            lf.write(f"[{datetime.datetime.now()}] 작업 {i} 완료: {job_replacements}건 치환\n")
+                lf.write(f"[{datetime.datetime.now()}] {summary}\n")
 
     # 요약 파일 생성
     with open(summary_path, 'w', encoding='utf-8') as sf:
-        sf.write("치환 작업 요약:\n")
+        sf.write("작업 요약:\n")
         for line in summary_data:
             sf.write(line + "\n")
-        sf.write(f"\n총 파일 수: {len(jobs)}, 총 치환 횟수: {total_replacements}")
+        sf.write(f"\n총 복사 파일 수: {total_copies}")
+        sf.write(f"\n총 치환 파일 수: {total_replacements}")
 
-    print(f"치환 작업이 완료되었습니다. (총 {total_replacements}건 치환)")
+    print(f"\n작업이 완료되었습니다.")
+    print(f"총 복사 파일 수: {total_copies}")
+    print(f"총 치환 파일 수: {total_replacements}")
 
 def main():
     while True:
