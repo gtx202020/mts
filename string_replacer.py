@@ -118,6 +118,40 @@ def generate_yaml_from_excel(excel_path, yaml_path):
                 }
             }]
         
+        def extract_process_filename(file_path):
+            """프로세스 파일 경로에서 파일명만 추출하고 디렉토리 구분자를 변경"""
+            if not isinstance(file_path, str):
+                return ""
+            # 파일명 추출
+            filename = os.path.basename(file_path)
+            # 디렉토리 구분자 변경
+            return filename.replace('\\', '/')
+
+        def create_process_replacements(process_path):
+            """프로세스 파일의 치환 목록 생성"""
+            if not isinstance(process_path, str):
+                return []
+            
+            # 프로세스 파일명 추출 (디렉토리 구분자 '/'로 변경)
+            process_filename = extract_process_filename(process_path)
+            if not process_filename:
+                return []
+            
+            return [{
+                "설명": "프로세스 이름 치환",
+                "조건": {
+                    "파일명패턴": process_filename,
+                    "태그": "pd:ProcessDefinition/pd:name",
+                    "속성": []
+                },
+                "찾기": {
+                    "정규식": f'(<pd:name>Processes/)[^<]*(</pd:name>)'
+                },
+                "교체": {
+                    "값": process_filename
+                }
+            }]
+
         # 1. 송신파일경로 처리
         if pd.notna(normal_row.get('송신파일생성여부')) and float(normal_row['송신파일생성여부']) == 1.0:
             yaml_structure[f"{i//2 + 1}번째 행"]["송신파일경로"] = {
@@ -125,8 +159,8 @@ def generate_yaml_from_excel(excel_path, yaml_path):
                 "복사파일": modify_path(normal_row['송신파일경로']),  # 경로 수정
                 "치환목록": create_schema_replacements(
                     extract_filename(normal_row['송신스키마파일명']),
-                    normal_row['송신스키마파일명']  # 송신스키마파일명 사용
-                )
+                    normal_row['송신스키마파일명']
+                ) + create_process_replacements(normal_row['송신파일경로'])
             }
             print("\n[송신파일경로 생성]")
             print(f"  원본파일: {match_row['송신파일경로']}")
@@ -139,8 +173,8 @@ def generate_yaml_from_excel(excel_path, yaml_path):
                 "복사파일": modify_path(normal_row['수신파일경로']),  # 경로 수정
                 "치환목록": create_schema_replacements(
                     extract_filename(normal_row['수신스키마파일명']),
-                    normal_row['수신스키마파일명']  # 수신스키마파일명 사용
-                )
+                    normal_row['수신스키마파일명']
+                ) + create_process_replacements(normal_row['수신파일경로'])
             }
             print("\n[수신파일경로 생성]")
             print(f"  원본파일: {match_row['수신파일경로']}")
