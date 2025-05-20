@@ -41,6 +41,12 @@ def generate_yaml_from_excel(excel_path, yaml_path):
                 return ""
             return os.path.basename(path)
 
+        def extract_process_filename(path):
+            """프로세스 파일 경로에서 파일명만 추출"""
+            if not isinstance(path, str):
+                return ""
+            return os.path.basename(path)
+
         def process_schema_path(schema_path):
             """스키마 파일 경로를 처리하여 namespace와 schemaLocation 생성"""
             if not isinstance(schema_path, str):
