@@ -208,6 +208,68 @@ def generate_yaml_from_excel(excel_path, yaml_path):
                         "값": normal_row['Event_ID']
                     }
                 })
+
+            # 송신업무명 치환 규칙 추가
+            if match_row['송신업무명'] != normal_row['송신업무명']:
+                # pd:from 태그 치환
+                replacements.append({
+                    "설명": "송신업무명 from 태그 치환",
+                    "조건": {
+                        "파일명패턴": source_filename,
+                        "태그": "pd:from"
+                    },
+                    "찾기": {
+                        "정규식": f'(<pd:from>Check {match_row["송신업무명"]})'
+                    },
+                    "교체": {
+                        "값": f'<pd:from>Check {normal_row["송신업무명"]}'
+                    }
+                })
+                # pd:to 태그 치환
+                replacements.append({
+                    "설명": "송신업무명 to 태그 치환",
+                    "조건": {
+                        "파일명패턴": source_filename,
+                        "태그": "pd:to"
+                    },
+                    "찾기": {
+                        "정규식": f'(<pd:to>Check {match_row["송신업무명"]})'
+                    },
+                    "교체": {
+                        "값": f'<pd:to>Check {normal_row["송신업무명"]}'
+                    }
+                })
+
+            # 수신업무명 치환 규칙 추가
+            if match_row['수신업무명'] != normal_row['수신업무명']:
+                # pd:from 태그 치환
+                replacements.append({
+                    "설명": "수신업무명 from 태그 치환",
+                    "조건": {
+                        "파일명패턴": source_filename,
+                        "태그": "pd:from"
+                    },
+                    "찾기": {
+                        "정규식": f'(<pd:from>Check {match_row["수신업무명"]})'
+                    },
+                    "교체": {
+                        "값": f'<pd:from>Check {normal_row["수신업무명"]}'
+                    }
+                })
+                # pd:to 태그 치환
+                replacements.append({
+                    "설명": "수신업무명 to 태그 치환",
+                    "조건": {
+                        "파일명패턴": source_filename,
+                        "태그": "pd:to"
+                    },
+                    "찾기": {
+                        "정규식": f'(<pd:to>Check {match_row["수신업무명"]})'
+                    },
+                    "교체": {
+                        "값": f'<pd:to>Check {normal_row["수신업무명"]}'
+                    }
+                })
             
             return replacements
 
