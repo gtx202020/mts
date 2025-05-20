@@ -40,25 +40,66 @@ def generate_yaml_from_excel(excel_path, yaml_path):
                 return ""
             return os.path.basename(path)
 
-        def create_schema_replacements(filename):
+        def process_schema_path(schema_path):
+            """스키마 파일 경로를 처리하여 namespace와 schemaLocation 생성"""
+            if not isinstance(schema_path, str):
+                return None, None
+            
+            # 1. 경로 구분자 변경
+            normalized_path = schema_path.replace('\\', '/')
+            
+            # 2. '/SharedResources' 이후 부분 추출
+            shared_idx = normalized_path.find('/SharedResources')
+            if shared_idx == -1:
+                return None, None
+                
+            # BB 부분을 포함한 경로 추출
+            bb_start = normalized_path.rfind('/', 0, shared_idx)
+            if bb_start == -1:
+                return None, None
+                
+            relative_path = normalized_path[bb_start:]  # /BB/SharedResources/...
+            schema_location = relative_path[relative_path.find('/SharedResources'):]  # /SharedResources/...
+            namespace = f"http://www.tibco.com/schemas{relative_path}"
+            
+            return namespace, schema_location
+
+        def create_schema_replacements(filename, schema_path):
             """스키마 파일 치환 목록 생성"""
             if not filename.endswith('.xsd'):
                 return []
             
+            namespace, schema_location = process_schema_path(schema_path)
+            if not namespace or not schema_location:
+                return []
+                
             base_name = os.path.splitext(filename)[0]
             return [{
-                "설명": "스키마 namespace와 schemaLocation 치환",
+                "설명": "스키마 namespace 치환",
                 "조건": {
                     "파일명패턴": filename,
                     "태그": "xsd:import",
-                    "속성": ["namespace", "schemaLocation"]
+                    "속성": ["namespace"]
                 },
                 "찾기": {
-                    "정규식": f'<\\s*xsd:import\\b(?=[^>]*\\bnamespace\\s*=\\s*"[^"]*{base_name}[^"]*")(?=[^>]*\\bschemaLocation\\s*=\\s*"[^"]*{base_name}[^"]*")[^>]*/>'
+                    "정규식": f'(\\bnamespace\\s*=\\s*")[^"]*{base_name}[^"]*(")' 
                 },
                 "교체": {
-                    "namespace": f"http://www.aa.com/ns/{base_name}.xsd",
-                    "schemaLocation": f"/ns/{base_name}.xsd"
+                    "값": namespace
+                }
+            },
+            {
+                "설명": "스키마 schemaLocation 치환",
+                "조건": {
+                    "파일명패턴": filename,
+                    "태그": "xsd:import",
+                    "속성": ["schemaLocation"]
+                },
+                "찾기": {
+                    "정규식": f'(\\bschemaLocation\\s*=\\s*")[^"]*{base_name}[^"]*(")' 
+                },
+                "교체": {
+                    "값": schema_location
                 }
             }]
         
@@ -67,7 +108,10 @@ def generate_yaml_from_excel(excel_path, yaml_path):
             yaml_structure[f"{i//2 + 1}번째 행"]["송신파일경로"] = {
                 "원본파일": match_row['송신파일경로'],
                 "복사파일": modify_path(normal_row['송신파일경로']),  # 경로 수정
-                "치환목록": create_schema_replacements(extract_filename(normal_row['송신파일경로']))
+                "치환목록": create_schema_replacements(
+                    extract_filename(normal_row['송신파일경로']),
+                    normal_row['송신스키마파일명']  # 송신스키마파일명 사용
+                )
             }
             print("\n[송신파일경로 생성]")
             print(f"  원본파일: {match_row['송신파일경로']}")
@@ -78,7 +122,10 @@ def generate_yaml_from_excel(excel_path, yaml_path):
             yaml_structure[f"{i//2 + 1}번째 행"]["수신파일경로"] = {
                 "원본파일": match_row['수신파일경로'],
                 "복사파일": modify_path(normal_row['수신파일경로']),  # 경로 수정
-                "치환목록": create_schema_replacements(extract_filename(normal_row['수신파일경로']))
+                "치환목록": create_schema_replacements(
+                    extract_filename(normal_row['수신파일경로']),
+                    normal_row['수신스키마파일명']  # 수신스키마파일명 사용
+                )
             }
             print("\n[수신파일경로 생성]")
             print(f"  원본파일: {match_row['수신파일경로']}")
@@ -88,8 +135,7 @@ def generate_yaml_from_excel(excel_path, yaml_path):
         if pd.notna(normal_row.get('송신스키마파일생성여부')) and float(normal_row['송신스키마파일생성여부']) == 1.0:
             yaml_structure[f"{i//2 + 1}번째 행"]["송신스키마파일명"] = {
                 "원본파일": match_row['송신스키마파일명'],
-                "복사파일": modify_path(normal_row['송신스키마파일명']),  # 경로 수정
-                "치환목록": create_schema_replacements(extract_filename(normal_row['송신스키마파일명']))
+                "복사파일": modify_path(normal_row['송신스키마파일명'])  # 경로 수정
             }
             print("\n[송신스키마파일명 생성]")
             print(f"  원본파일: {match_row['송신스키마파일명']}")
@@ -99,8 +145,7 @@ def generate_yaml_from_excel(excel_path, yaml_path):
         if pd.notna(normal_row.get('수신스키마파일생성여부')) and float(normal_row['수신스키마파일생성여부']) == 1.0:
             yaml_structure[f"{i//2 + 1}번째 행"]["수신스키마파일명"] = {
                 "원본파일": match_row['수신스키마파일명'],
-                "복사파일": modify_path(normal_row['수신스키마파일명']),  # 경로 수정
-                "치환목록": create_schema_replacements(extract_filename(normal_row['수신스키마파일명']))
+                "복사파일": modify_path(normal_row['수신스키마파일명'])  # 경로 수정
             }
             print("\n[수신스키마파일명 생성]")
             print(f"  원본파일: {match_row['수신스키마파일명']}")
