@@ -118,14 +118,23 @@ def generate_yaml_from_excel(excel_path, yaml_path):
                 }
             }]
         
-        def extract_process_filename(file_path):
-            """프로세스 파일 경로에서 파일명만 추출하고 디렉토리 구분자를 변경"""
+        def extract_process_path(file_path):
+            """프로세스 파일 경로에서 'Processes' 이후의 경로를 추출하고 디렉토리 구분자를 변경"""
             if not isinstance(file_path, str):
                 return ""
-            # 파일명 추출
-            filename = os.path.basename(file_path)
-            # 디렉토리 구분자 변경
-            return filename.replace('\\', '/')
+            
+            # 디렉토리 구분자를 '/'로 통일
+            normalized_path = file_path.replace('\\', '/')
+            
+            # 'Processes' 위치 찾기
+            processes_idx = normalized_path.find('Processes/')
+            if processes_idx == -1:
+                return ""
+            
+            # 'Processes/' 이후의 경로 추출
+            relative_path = normalized_path[processes_idx + len('Processes/'):]
+            
+            return relative_path
 
         def create_process_replacements(source_path, target_path):
             """프로세스 파일의 치환 목록 생성
@@ -137,10 +146,10 @@ def generate_yaml_from_excel(excel_path, yaml_path):
             
             # 매칭행의 파일명으로 패턴 매칭 (찾을 패턴)
             source_filename = extract_process_filename(source_path)
-            # 기본행의 파일명으로 교체 (교체할 값)
-            target_filename = extract_process_filename(target_path)
+            # 기본행의 경로에서 Processes 이후 경로 추출 (교체할 값)
+            target_process_path = extract_process_path(target_path)
             
-            if not source_filename or not target_filename:
+            if not source_filename or not target_process_path:
                 return []
             
             return [{
@@ -154,7 +163,7 @@ def generate_yaml_from_excel(excel_path, yaml_path):
                     "정규식": f'(<pd:name>Processes/)[^<]*(</pd:name>)'
                 },
                 "교체": {
-                    "값": target_filename  # 기본행의 파일명으로 교체
+                    "값": target_process_path  # Processes 이후의 전체 경로로 교체
                 }
             }]
 
