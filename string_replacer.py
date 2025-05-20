@@ -175,6 +175,59 @@ def generate_yaml_from_excel(excel_path, yaml_path):
                 }
             }]
 
+            # 고정 문자열 치환 규칙 추가
+            fixed_replacements = [
+                {
+                    "설명": "LHMES_MGR 치환",
+                    "조건": {
+                        "파일명패턴": source_filename
+                    },
+                    "찾기": {
+                        "정규식": "LHMES_MGR"
+                    },
+                    "교체": {
+                        "값": "LYMES_MGR"
+                    }
+                },
+                {
+                    "설명": "VOMES_MGR 치환",
+                    "조건": {
+                        "파일명패턴": source_filename
+                    },
+                    "찾기": {
+                        "정규식": "VOMES_MGR"
+                    },
+                    "교체": {
+                        "값": "LZMES_MGR"
+                    }
+                },
+                {
+                    "설명": "LH 문자열 치환",
+                    "조건": {
+                        "파일명패턴": source_filename
+                    },
+                    "찾기": {
+                        "정규식": "'LH'"
+                    },
+                    "교체": {
+                        "값": "'LY'"
+                    }
+                },
+                {
+                    "설명": "VO 문자열 치환",
+                    "조건": {
+                        "파일명패턴": source_filename
+                    },
+                    "찾기": {
+                        "정규식": "'VO'"
+                    },
+                    "교체": {
+                        "값": "'LZ'"
+                    }
+                }
+            ]
+            replacements.extend(fixed_replacements)
+
             # IFID 치환 규칙 추가
             origin_ifid = f"{match_row['Group ID']}.{match_row['Event_ID']}"
             dest_ifid = f"{normal_row['Group ID']}.{match_row['Event_ID']}"
