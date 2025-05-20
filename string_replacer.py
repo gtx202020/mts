@@ -223,6 +223,15 @@ def preview_diff(yaml_path):
         for line in diff_lines:
             print(line, end='')
 
+def detect_encoding(file_path):
+    """파일의 인코딩을 감지합니다."""
+    import chardet
+    
+    with open(file_path, 'rb') as f:
+        raw = f.read()
+        result = chardet.detect(raw)
+        return result['encoding']
+
 def copy_file_with_check(source, dest):
     """파일을 복사하되, 대상 파일이 이미 존재하면 경고를 출력합니다."""
     try:
@@ -234,8 +243,9 @@ def copy_file_with_check(source, dest):
             print(f"경고: 파일이 이미 존재합니다 - {dest}")
             return False
             
-        # 파일 복사
-        shutil.copy2(source, dest)
+        # 바이너리 모드로 파일 복사
+        with open(source, 'rb') as src, open(dest, 'wb') as dst:
+            dst.write(src.read())
         print(f"파일 복사 완료: {source} -> {dest}")
         return True
     except Exception as e:
@@ -245,10 +255,19 @@ def copy_file_with_check(source, dest):
 def apply_schema_replacements(file_path, replacements):
     """파일에 치환 목록을 적용합니다."""
     try:
-        # 파일 읽기
-        with open(file_path, 'r', encoding='utf-8') as f:
-            content = f.read()
+        # 파일 인코딩 감지
+        encoding = detect_encoding(file_path)
+        if not encoding:
+            print(f"경고: 파일의 인코딩을 감지할 수 없습니다 - {file_path}")
+            encoding = 'utf-8'  # 기본값으로 utf-8 사용
+        
+        # 바이너리 모드로 파일 읽기
+        with open(file_path, 'rb') as f:
+            content_bytes = f.read()
             
+        # 디코딩
+        content = content_bytes.decode(encoding)
+        
         modified = False
         # 각 치환 규칙 적용
         for repl in replacements:
@@ -270,8 +289,10 @@ def apply_schema_replacements(file_path, replacements):
         
         # 변경된 경우에만 파일 저장
         if modified:
-            with open(file_path, 'w', encoding='utf-8') as f:
-                f.write(content)
+            # 인코딩하여 바이너리 모드로 저장
+            content_bytes = content.encode(encoding)
+            with open(file_path, 'wb') as f:
+                f.write(content_bytes)
             print(f"파일 치환 완료: {file_path}")
             return True
     except Exception as e:
@@ -348,7 +369,7 @@ def main():
         print("\n=== 문자열 치환 도구 ===")
         print("1. YAML 생성 (엑셀 -> YAML)")
         print("2. 미리보기 (YAML 기반 diff 출력)")
-        print("3. 실행 (치환 적용 및 로그 저장)")
+        print("3. 실행 (파일 복사 및 치환)")
         print("0. 종료")
         
         choice = input("\n원하는 작업을 선택하세요: ").strip()
