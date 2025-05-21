@@ -120,10 +120,10 @@ def generate_yaml_from_excel(excel_path, yaml_path):
             {
                 "설명": "ProcessDefinition namespace 치환",
                 "찾기": {
-                    "정규식": f'(\\bxmlns:pfx3\\s*=\\s*")[^"]*{base_name}[^"]*(")'
+                    "정규식": f'xmlns:pfx3\\s*=\\s*"[^"]*{base_name}[^"]*"'
                 },
                 "교체": {
-                    "값": namespace
+                    "값": f'xmlns:pfx3="{namespace}"'
                 }
             }]
         
