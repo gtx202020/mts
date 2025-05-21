@@ -551,37 +551,33 @@ def copy_file_with_check(source, dest):
 def apply_schema_replacements(file_path, replacements):
     """파일에 치환 목록을 적용합니다."""
     try:
-        # 파일 인코딩 감지
         debug_print(f"\n=== 파일 치환 시작: {file_path} ===")
+        
+        # 파일 인코딩 감지 및 읽기
         encoding = detect_encoding(file_path)
         if not encoding:
             debug_print(f"경고: 파일의 인코딩을 감지할 수 없습니다 - {file_path}")
-            encoding = 'utf-8'  # 기본값으로 utf-8 사용
+            encoding = 'utf-8'
         debug_print(f"감지된 인코딩: {encoding}")
         
-        # 바이너리 모드로 파일 읽기
-        debug_print("파일 읽기 시작 (바이너리 모드)")
+        # 파일 읽기
         with open(file_path, 'rb') as f:
             content_bytes = f.read()
             debug_print(f"파일 크기: {len(content_bytes)} bytes")
             
         # 디코딩
-        debug_print(f"파일 디코딩 시도 ({encoding})")
         try:
             content = content_bytes.decode(encoding)
             debug_print("디코딩 성공")
-        except UnicodeDecodeError as e:
-            debug_print(f"디코딩 오류 발생: {str(e)}")
+        except UnicodeDecodeError:
             debug_print("utf-8로 재시도")
             try:
                 content = content_bytes.decode('utf-8')
                 encoding = 'utf-8'
-                debug_print("utf-8 디코딩 성공")
             except UnicodeDecodeError:
-                debug_print("utf-8 디코딩 실패, latin-1로 시도")
+                debug_print("latin-1로 시도")
                 content = content_bytes.decode('latin-1')
                 encoding = 'latin-1'
-                debug_print("latin-1 디코딩 성공")
         
         modified = False
         # 각 치환 규칙 적용
@@ -595,14 +591,6 @@ def apply_schema_replacements(file_path, replacements):
             debug_print(f"정규식 패턴: {pattern}")
             debug_print(f"교체할 값: {replacement}")
             
-            # 파일명 패턴 조건 확인
-            if '조건' in repl and '파일명패턴' in repl['조건']:
-                filename = os.path.basename(file_path)
-                if filename != repl['조건']['파일명패턴']:
-                    debug_print(f"파일명 패턴 불일치. 건너뜀 (예상: {repl['조건']['파일명패턴']}, 실제: {filename})")
-                    continue
-                debug_print("파일명 패턴 일치")
-            
             # 패턴이 파일에 존재하는지 확인
             matches = list(re.finditer(pattern, content))
             if not matches:
@@ -610,50 +598,29 @@ def apply_schema_replacements(file_path, replacements):
                 continue
             debug_print(f"패턴 매칭 수: {len(matches)}")
             
-            # 첫 번째 매칭 내용 출력 (디버깅용)
-            if matches and DEBUG_MODE:
+            # 첫 번째 매칭 내용 출력
+            if matches:
                 first_match = matches[0]
                 debug_print("첫 번째 매칭:")
                 debug_print(f"  위치: {first_match.start()}-{first_match.end()}")
                 debug_print(f"  내용: {first_match.group()}")
             
-            # 정규식에서 캡처 그룹을 사용하는 경우
-            if '(' in pattern and ')' in pattern:
-                debug_print("캡처 그룹이 있는 패턴 감지됨")
-                try:
-                    # 첫 번째와 마지막 캡처 그룹을 유지하면서 중간 값만 교체
-                    new_content = re.sub(pattern, r'\1' + replacement + r'\2', content)
-                    if new_content == content:
-                        debug_print("캡처 그룹 방식 치환 후 변경사항 없음")
-                    else:
-                        debug_print("캡처 그룹 방식 치환 성공")
-                except Exception as e:
-                    debug_print(f"캡처 그룹 치환 중 오류 발생: {str(e)}")
-                    continue
-            else:
-                debug_print("일반 패턴 감지됨")
-                try:
-                    # 일반 정규식 치환
-                    new_content = re.sub(pattern, replacement, content)
-                    if new_content == content:
-                        debug_print("일반 방식 치환 후 변경사항 없음")
-                    else:
-                        debug_print("일반 방식 치환 성공")
-                except Exception as e:
-                    debug_print(f"일반 치환 중 오류 발생: {str(e)}")
-                    continue
-                
-            if new_content != content:
-                content = new_content
-                modified = True
-                debug_print(f"치환 규칙 {idx} 적용 완료")
-            else:
-                debug_print(f"치환 규칙 {idx}: 내용이 변경되지 않음")
+            try:
+                # 정규식 치환 수행
+                new_content = re.sub(pattern, replacement, content)
+                if new_content == content:
+                    debug_print("치환 후 변경사항 없음")
+                else:
+                    content = new_content
+                    modified = True
+                    debug_print("치환 성공")
+            except Exception as e:
+                debug_print(f"치환 중 오류 발생: {str(e)}")
+                continue
         
         # 변경된 경우에만 파일 저장
         if modified:
             debug_print("\n파일 저장 시작")
-            # 인코딩하여 바이너리 모드로 저장
             content_bytes = content.encode(encoding)
             with open(file_path, 'wb') as f:
                 f.write(content_bytes)
@@ -662,6 +629,7 @@ def apply_schema_replacements(file_path, replacements):
         else:
             debug_print("\n변경사항이 없어 파일을 저장하지 않음")
             return False
+            
     except Exception as e:
         debug_print(f"치환 작업 중 예외 발생: {str(e)}")
         return False
