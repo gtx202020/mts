@@ -125,15 +125,6 @@ def generate_yaml_from_excel(excel_path, yaml_path):
                 "교체": {
                     "값": f'xmlns:pfx3="{namespace}"'
                 }
-            },
-            {
-                "설명": "xs:schema xmlns 치환",
-                "찾기": {
-                    "정규식": f'<xs:schema[^>]*xmlns\\s*=\\s*"[^"]*{base_name}[^"]*"'
-                },
-                "교체": {
-                    "값": f'<xs:schema xmlns="{namespace}"'
-                }
             }]
         
         def extract_process_path(file_path):
