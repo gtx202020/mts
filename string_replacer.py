@@ -102,10 +102,10 @@ def generate_yaml_from_excel(excel_path, yaml_path):
             return [{
                 "설명": "스키마 namespace 치환",
                 "찾기": {
-                    "정규식": f'(\\bnamespace\\s*=\\s*")[^"]*{base_name}[^"]*(")'
+                    "정규식": f'namespace\\s*=\\s*"[^"]*{base_name}[^"]*"'
                 },
                 "교체": {
-                    "값": namespace
+                    "값": f'namespace="{namespace}"'
                 }
             },
             {
