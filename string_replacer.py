@@ -295,7 +295,7 @@ def generate_yaml_from_excel(excel_path, yaml_path):
                         "값": f'<pd:to>Check {normal_row["송신\n업무명"]}'
                     }
                 })
-                # pd:activity name 태그 치환 추가
+                # pd:activity name 태그 치환
                 replacements.append({
                     "설명": "송신업무명 activity name 태그 치환",
                     "찾기": {
@@ -303,6 +303,16 @@ def generate_yaml_from_excel(excel_path, yaml_path):
                     },
                     "교체": {
                         "값": f'<pd:activity name="Check {normal_row["송신\n업무명"]}"'
+                    }
+                })
+                # sharedjdbc 치환 추가
+                replacements.append({
+                    "설명": "송신업무명 sharedjdbc 치환",
+                    "찾기": {
+                        "정규식": f'{match_row["송신\n업무명"]}\\.sharedjdbc'
+                    },
+                    "교체": {
+                        "값": f'{normal_row["송신\n업무명"]}.sharedjdbc'
                     }
                 })
 
@@ -328,7 +338,7 @@ def generate_yaml_from_excel(excel_path, yaml_path):
                         "값": f'<pd:to>Check {normal_row["수신\n업무명"]}'
                     }
                 })
-                # pd:activity name 태그 치환 추가
+                # pd:activity name 태그 치환
                 replacements.append({
                     "설명": "수신업무명 activity name 태그 치환",
                     "찾기": {
@@ -336,6 +346,16 @@ def generate_yaml_from_excel(excel_path, yaml_path):
                     },
                     "교체": {
                         "값": f'<pd:activity name="Check {normal_row["수신\n업무명"]}"'
+                    }
+                })
+                # sharedjdbc 치환 추가
+                replacements.append({
+                    "설명": "수신업무명 sharedjdbc 치환",
+                    "찾기": {
+                        "정규식": f'{match_row["수신\n업무명"]}\\.sharedjdbc'
+                    },
+                    "교체": {
+                        "값": f'{normal_row["수신\n업무명"]}.sharedjdbc'
                     }
                 })
             
