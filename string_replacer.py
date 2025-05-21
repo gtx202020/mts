@@ -209,6 +209,22 @@ def generate_yaml_from_excel(excel_path, yaml_path):
             ]
             replacements.extend(fixed_replacements)
 
+            # IFID와 수신업무명 조합 치환 규칙 추가
+            origin_ifid_with_susin = f"{match_row['Group ID']}.{match_row['Event_ID']}.{match_row['수신\n업무명']}"
+            dest_ifid_with_susin = f"{normal_row['Group ID']}.{match_row['Event_ID']}.{normal_row['수신\n업무명']}"
+            
+            # IFID와 수신업무명 조합이 다른 경우에만 치환 규칙 추가
+            if origin_ifid_with_susin != dest_ifid_with_susin:
+                replacements.append({
+                    "설명": "IFID와 수신업무명 조합 치환",
+                    "찾기": {
+                        "정규식": origin_ifid_with_susin.replace(".", "\\.")
+                    },
+                    "교체": {
+                        "값": dest_ifid_with_susin
+                    }
+                })
+
             # IFID 치환 규칙 추가
             origin_ifid = f"{match_row['Group ID']}.{match_row['Event_ID']}"
             dest_ifid = f"{normal_row['Group ID']}.{match_row['Event_ID']}"
@@ -224,7 +240,7 @@ def generate_yaml_from_excel(excel_path, yaml_path):
                         "값": dest_ifid
                     }
                 })
-            
+
             # Event_ID 치환 규칙 추가
             if match_row['Event_ID'] != normal_row['Event_ID']:
                 replacements.append({
