@@ -403,7 +403,7 @@ def generate_yaml_from_excel(excel_path, yaml_path):
                 "복사파일": modify_path(normal_row['수신파일경로']),  # 경로 수정
                 "치환목록": create_schema_replacements(
                     extract_filename(normal_row['수신스키마파일명']),
-                    normal_row['수신스키마파일명']
+                    normal_row['송신스키마파일명']
                 ) + create_process_replacements(
                     match_row['수신파일경로'],    # 매칭행의 경로로 패턴 매칭
                     normal_row['수신파일경로'],    # 기본행의 경로로 교체
@@ -442,7 +442,7 @@ def generate_yaml_from_excel(excel_path, yaml_path):
         if pd.notna(normal_row.get('수신스키마파일생성여부')) and float(normal_row['수신스키마파일생성여부']) == 1.0:
             # 스키마 파일의 base_name과 namespace 추출
             base_name = os.path.splitext(os.path.basename(normal_row['수신스키마파일명']))[0]
-            namespace, _ = process_schema_path(normal_row['수신스키마파일명'])
+            namespace, _ = process_schema_path(normal_row['송신스키마파일명'])
             
             yaml_structure[f"{i//2 + 1}번째 행"]["수신스키마파일명"] = {
                 "원본파일": match_row['수신스키마파일명'],
