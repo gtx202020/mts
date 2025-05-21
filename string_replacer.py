@@ -101,11 +101,6 @@ def generate_yaml_from_excel(excel_path, yaml_path):
             base_name = os.path.splitext(filename)[0]
             return [{
                 "설명": "스키마 namespace 치환",
-                "조건": {
-                    "파일명패턴": filename,
-                    "태그": "xsd:import",
-                    "속성": ["namespace"]
-                },
                 "찾기": {
                     "정규식": f'(\\bnamespace\\s*=\\s*")[^"]*{base_name}[^"]*(")'
                 },
@@ -115,11 +110,6 @@ def generate_yaml_from_excel(excel_path, yaml_path):
             },
             {
                 "설명": "스키마 schemaLocation 치환",
-                "조건": {
-                    "파일명패턴": filename,
-                    "태그": "xsd:import",
-                    "속성": ["schemaLocation"]
-                },
                 "찾기": {
                     "정규식": f'(\\bschemaLocation\\s*=\\s*")[^"]*{base_name}[^"]*(")'
                 },
@@ -129,11 +119,6 @@ def generate_yaml_from_excel(excel_path, yaml_path):
             },
             {
                 "설명": "ProcessDefinition namespace 치환",
-                "조건": {
-                    "파일명패턴": filename,
-                    "태그": "pd:ProcessDefinition",
-                    "속성": ["xmlns:pfx3"]
-                },
                 "찾기": {
                     "정규식": f'(\\bxmlns:pfx3\\s*=\\s*")[^"]*{base_name}[^"]*(")'
                 },
@@ -161,12 +146,7 @@ def generate_yaml_from_excel(excel_path, yaml_path):
             return relative_path
 
         def create_process_replacements(source_path, target_path, match_row, normal_row):
-            """프로세스 파일의 치환 목록 생성
-            source_path: 매칭행의 파일 경로 (패턴 매칭용)
-            target_path: 기본행의 파일 경로 (교체용)
-            match_row: 매칭행 데이터
-            normal_row: 기본행 데이터
-            """
+            """프로세스 파일의 치환 목록 생성"""
             if not isinstance(source_path, str) or not isinstance(target_path, str):
                 return []
             
@@ -180,16 +160,11 @@ def generate_yaml_from_excel(excel_path, yaml_path):
             
             replacements = [{
                 "설명": "프로세스 이름 치환",
-                "조건": {
-                    "파일명패턴": source_filename,  # 매칭행의 파일명으로 패턴 매칭
-                    "태그": "pd:ProcessDefinition/pd:name",
-                    "속성": []
-                },
                 "찾기": {
                     "정규식": f'(<pd:name>Processes/)[^<]*(</pd:name>)'
                 },
                 "교체": {
-                    "값": target_process_path  # Processes 이후의 전체 경로로 교체
+                    "값": target_process_path
                 }
             }]
 
@@ -197,9 +172,6 @@ def generate_yaml_from_excel(excel_path, yaml_path):
             fixed_replacements = [
                 {
                     "설명": "LHMES_MGR 치환",
-                    "조건": {
-                        "파일명패턴": source_filename
-                    },
                     "찾기": {
                         "정규식": "LHMES_MGR"
                     },
@@ -209,9 +181,6 @@ def generate_yaml_from_excel(excel_path, yaml_path):
                 },
                 {
                     "설명": "VOMES_MGR 치환",
-                    "조건": {
-                        "파일명패턴": source_filename
-                    },
                     "찾기": {
                         "정규식": "VOMES_MGR"
                     },
@@ -221,9 +190,6 @@ def generate_yaml_from_excel(excel_path, yaml_path):
                 },
                 {
                     "설명": "LH 문자열 치환",
-                    "조건": {
-                        "파일명패턴": source_filename
-                    },
                     "찾기": {
                         "정규식": "'LH'"
                     },
@@ -233,9 +199,6 @@ def generate_yaml_from_excel(excel_path, yaml_path):
                 },
                 {
                     "설명": "VO 문자열 치환",
-                    "조건": {
-                        "파일명패턴": source_filename
-                    },
                     "찾기": {
                         "정규식": "'VO'"
                     },
@@ -254,11 +217,8 @@ def generate_yaml_from_excel(excel_path, yaml_path):
             if origin_ifid != dest_ifid:
                 replacements.append({
                     "설명": "IFID 치환",
-                    "조건": {
-                        "파일명패턴": source_filename
-                    },
                     "찾기": {
-                        "정규식": origin_ifid.replace(".", "\\.")  # 점(.)을 이스케이프
+                        "정규식": origin_ifid.replace(".", "\\.")
                     },
                     "교체": {
                         "값": dest_ifid
@@ -269,9 +229,6 @@ def generate_yaml_from_excel(excel_path, yaml_path):
             if match_row['Event_ID'] != normal_row['Event_ID']:
                 replacements.append({
                     "설명": "Event_ID 치환",
-                    "조건": {
-                        "파일명패턴": source_filename
-                    },
                     "찾기": {
                         "정규식": match_row['Event_ID']
                     },
@@ -284,9 +241,6 @@ def generate_yaml_from_excel(excel_path, yaml_path):
             if match_row['Group ID'] != normal_row['Group ID']:
                 replacements.append({
                     "설명": "Group ID &quot; 형식 치환",
-                    "조건": {
-                        "파일명패턴": source_filename
-                    },
                     "찾기": {
                         "정규식": f'&quot;{match_row["Group ID"]}&quot;'
                     },
@@ -299,9 +253,6 @@ def generate_yaml_from_excel(excel_path, yaml_path):
             if match_row['송신\n업무명'] != normal_row['송신\n업무명']:
                 replacements.append({
                     "설명": "송신업무명 &quot; 형식 치환",
-                    "조건": {
-                        "파일명패턴": source_filename
-                    },
                     "찾기": {
                         "정규식": f'&quot;{match_row["송신\n업무명"]}&quot;'
                     },
@@ -314,9 +265,6 @@ def generate_yaml_from_excel(excel_path, yaml_path):
             if match_row['수신\n업무명'] != normal_row['수신\n업무명']:
                 replacements.append({
                     "설명": "수신업무명 &quot; 형식 치환",
-                    "조건": {
-                        "파일명패턴": source_filename
-                    },
                     "찾기": {
                         "정규식": f'&quot;{match_row["수신\n업무명"]}&quot;'
                     },
@@ -330,10 +278,6 @@ def generate_yaml_from_excel(excel_path, yaml_path):
                 # pd:from 태그 치환
                 replacements.append({
                     "설명": "송신업무명 from 태그 치환",
-                    "조건": {
-                        "파일명패턴": source_filename,
-                        "태그": "pd:from"
-                    },
                     "찾기": {
                         "정규식": f'(<pd:from>Check {match_row["송신\n업무명"]})'
                     },
@@ -344,10 +288,6 @@ def generate_yaml_from_excel(excel_path, yaml_path):
                 # pd:to 태그 치환
                 replacements.append({
                     "설명": "송신업무명 to 태그 치환",
-                    "조건": {
-                        "파일명패턴": source_filename,
-                        "태그": "pd:to"
-                    },
                     "찾기": {
                         "정규식": f'(<pd:to>Check {match_row["송신\n업무명"]})'
                     },
@@ -361,10 +301,6 @@ def generate_yaml_from_excel(excel_path, yaml_path):
                 # pd:from 태그 치환
                 replacements.append({
                     "설명": "수신업무명 from 태그 치환",
-                    "조건": {
-                        "파일명패턴": source_filename,
-                        "태그": "pd:from"
-                    },
                     "찾기": {
                         "정규식": f'(<pd:from>Check {match_row["수신\n업무명"]})'
                     },
@@ -375,10 +311,6 @@ def generate_yaml_from_excel(excel_path, yaml_path):
                 # pd:to 태그 치환
                 replacements.append({
                     "설명": "수신업무명 to 태그 치환",
-                    "조건": {
-                        "파일명패턴": source_filename,
-                        "태그": "pd:to"
-                    },
                     "찾기": {
                         "정규식": f'(<pd:to>Check {match_row["수신\n업무명"]})'
                     },
