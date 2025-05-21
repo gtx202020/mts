@@ -161,10 +161,10 @@ def generate_yaml_from_excel(excel_path, yaml_path):
             replacements = [{
                 "설명": "프로세스 이름 치환",
                 "찾기": {
-                    "정규식": f'(<pd:name>Processes/)[^<]*(</pd:name>)'
+                    "정규식": f'<pd:name>Processes/[^<]*</pd:name>'
                 },
                 "교체": {
-                    "값": target_process_path
+                    "값": f'<pd:name>Processes/{target_process_path}</pd:name>'
                 }
             }]
 
