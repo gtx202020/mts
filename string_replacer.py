@@ -273,8 +273,29 @@ def generate_yaml_from_excel(excel_path, yaml_path):
                     }
                 })
 
-            # 송신업무명 치환 규칙 추가 (pd:activity name Check 형식)
+            # 송신업무명 치환 규칙 추가 (pd:from/to Check 형식)
             if match_row['송신\n업무명'] != normal_row['송신\n업무명']:
+                # pd:from 태그 치환
+                replacements.append({
+                    "설명": "송신업무명 from 태그 치환",
+                    "찾기": {
+                        "정규식": f'(<pd:from>Check {match_row["송신\n업무명"]})'
+                    },
+                    "교체": {
+                        "값": f'<pd:from>Check {normal_row["송신\n업무명"]}'
+                    }
+                })
+                # pd:to 태그 치환
+                replacements.append({
+                    "설명": "송신업무명 to 태그 치환",
+                    "찾기": {
+                        "정규식": f'(<pd:to>Check {match_row["송신\n업무명"]})'
+                    },
+                    "교체": {
+                        "값": f'<pd:to>Check {normal_row["송신\n업무명"]}'
+                    }
+                })
+                # pd:activity name 태그 치환 추가
                 replacements.append({
                     "설명": "송신업무명 activity name 태그 치환",
                     "찾기": {
@@ -285,8 +306,29 @@ def generate_yaml_from_excel(excel_path, yaml_path):
                     }
                 })
 
-            # 수신업무명 치환 규칙 추가 (pd:activity name Check 형식)
+            # 수신업무명 치환 규칙 추가 (pd:from/to Check 형식)
             if match_row['수신\n업무명'] != normal_row['수신\n업무명']:
+                # pd:from 태그 치환
+                replacements.append({
+                    "설명": "수신업무명 from 태그 치환",
+                    "찾기": {
+                        "정규식": f'(<pd:from>Check {match_row["수신\n업무명"]})'
+                    },
+                    "교체": {
+                        "값": f'<pd:from>Check {normal_row["수신\n업무명"]}'
+                    }
+                })
+                # pd:to 태그 치환
+                replacements.append({
+                    "설명": "수신업무명 to 태그 치환",
+                    "찾기": {
+                        "정규식": f'(<pd:to>Check {match_row["수신\n업무명"]})'
+                    },
+                    "교체": {
+                        "값": f'<pd:to>Check {normal_row["수신\n업무명"]}'
+                    }
+                })
+                # pd:activity name 태그 치환 추가
                 replacements.append({
                     "설명": "수신업무명 activity name 태그 치환",
                     "찾기": {
