@@ -432,6 +432,15 @@ def generate_yaml_from_excel(excel_path, yaml_path):
                     "교체": {
                         "값": f'<xs:schema xmlns="{namespace}"'
                     }
+                },
+                {
+                    "설명": "xs:schema targetNamespace 치환",
+                    "찾기": {
+                        "정규식": f'<xs:schema[^>]*targetNamespace\\s*=\\s*"[^"]*{base_name}[^"]*"'
+                    },
+                    "교체": {
+                        "값": f'<xs:schema targetNamespace="{namespace}"'
+                    }
                 }]
             }
             print("\n[송신스키마파일명 생성]")
@@ -454,6 +463,15 @@ def generate_yaml_from_excel(excel_path, yaml_path):
                     },
                     "교체": {
                         "값": f'<xs:schema xmlns="{namespace}"'
+                    }
+                },
+                {
+                    "설명": "xs:schema targetNamespace 치환",
+                    "찾기": {
+                        "정규식": f'<xs:schema[^>]*targetNamespace\\s*=\\s*"[^"]*{base_name}[^"]*"'
+                    },
+                    "교체": {
+                        "값": f'<xs:schema targetNamespace="{namespace}"'
                     }
                 }]
             }
