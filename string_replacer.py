@@ -428,7 +428,16 @@ def generate_yaml_from_excel(excel_path, yaml_path):
         if pd.notna(normal_row.get('송신스키마파일생성여부')) and float(normal_row['송신스키마파일생성여부']) == 1.0:
             yaml_structure[f"{i//2 + 1}번째 행"]["송신스키마파일명"] = {
                 "원본파일": match_row['송신스키마파일명'],
-                "복사파일": modify_path(normal_row['송신스키마파일명'])  # 경로 수정
+                "복사파일": modify_path(normal_row['송신스키마파일명']),  # 경로 수정
+                "치환목록": [{
+                    "설명": "xs:schema xmlns 치환",
+                    "찾기": {
+                        "정규식": f'<xs:schema[^>]*xmlns\\s*=\\s*"[^"]*{os.path.splitext(os.path.basename(normal_row["송신스키마파일명"]))[0]}[^"]*"'
+                    },
+                    "교체": {
+                        "값": f'<xs:schema xmlns="{process_schema_path(normal_row["송신스키마파일명"])[0]}"'
+                    }
+                }]
             }
             print("\n[송신스키마파일명 생성]")
             print(f"  원본파일: {match_row['송신스키마파일명']}")
@@ -438,7 +447,16 @@ def generate_yaml_from_excel(excel_path, yaml_path):
         if pd.notna(normal_row.get('수신스키마파일생성여부')) and float(normal_row['수신스키마파일생성여부']) == 1.0:
             yaml_structure[f"{i//2 + 1}번째 행"]["수신스키마파일명"] = {
                 "원본파일": match_row['수신스키마파일명'],
-                "복사파일": modify_path(normal_row['수신스키마파일명'])  # 경로 수정
+                "복사파일": modify_path(normal_row['수신스키마파일명']),  # 경로 수정
+                "치환목록": [{
+                    "설명": "xs:schema xmlns 치환",
+                    "찾기": {
+                        "정규식": f'<xs:schema[^>]*xmlns\\s*=\\s*"[^"]*{os.path.splitext(os.path.basename(normal_row["수신스키마파일명"]))[0]}[^"]*"'
+                    },
+                    "교체": {
+                        "값": f'<xs:schema xmlns="{process_schema_path(normal_row["수신스키마파일명"])[0]}"'
+                    }
+                }]
             }
             print("\n[수신스키마파일명 생성]")
             print(f"  원본파일: {match_row['수신스키마파일명']}")
