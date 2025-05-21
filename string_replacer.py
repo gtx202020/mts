@@ -111,10 +111,10 @@ def generate_yaml_from_excel(excel_path, yaml_path):
             {
                 "설명": "스키마 schemaLocation 치환",
                 "찾기": {
-                    "정규식": f'(\\bschemaLocation\\s*=\\s*")[^"]*{base_name}[^"]*(")'
+                    "정규식": f'schemaLocation\\s*=\\s*"[^"]*{base_name}[^"]*"'
                 },
                 "교체": {
-                    "값": schema_location
+                    "값": f'schemaLocation="{schema_location}"'
                 }
             },
             {
