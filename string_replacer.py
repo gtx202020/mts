@@ -333,10 +333,10 @@ def generate_yaml_from_excel(excel_path, yaml_path):
                 replacements.append({
                     "설명": "송신업무명 activity name 태그 치환",
                     "찾기": {
-                        "정규식": f'<pd:activity\\s+name="Check {re.escape(match_row["송신\n업무명"])}(?:[_0-9A-Za-z]*)"\\s*/?>'
+                        "정규식": f'(<pd:activity\\s+name="Check {match_row["송신\n업무명"]})'
                     },
                     "교체": {
-                        "값": f'<pd:activity name="Check {normal_row["송신\n업무명"]}"'
+                        "값": f'<pd:activity name="Check {normal_row["송신\n업무명"]}'
                     }
                 })
                 # sharedjdbc 치환
@@ -376,10 +376,10 @@ def generate_yaml_from_excel(excel_path, yaml_path):
                 replacements.append({
                     "설명": "수신업무명 activity name 태그 치환",
                     "찾기": {
-                        "정규식": f'<pd:activity\\s+name="Check {re.escape(match_row["수신\n업무명"])}(?:[_0-9A-Za-z]*)"\\s*/?>'
+                        "정규식": f'(<pd:activity\\s+name="Check {match_row["수신\n업무명"]})'
                     },
                     "교체": {
-                        "값": f'<pd:activity name="Check {normal_row["수신\n업무명"]}"'
+                        "값": f'<pd:activity name="Check {normal_row["수신\n업무명"]}'
                     }
                 })
                 # sharedjdbc 치환
