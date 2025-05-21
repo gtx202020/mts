@@ -427,19 +427,19 @@ def generate_yaml_from_excel(excel_path, yaml_path):
                 "치환목록": [{
                     "설명": "xs:schema xmlns 치환",
                     "찾기": {
-                        "정규식": f'<xs:schema[^>]*xmlns\\s*=\\s*"[^"]*{base_name}[^"]*"'
+                        "정규식": f'xmlns\\s*=\\s*"[^"]*{base_name}[^"]*"'
                     },
                     "교체": {
-                        "값": f'<xs:schema xmlns="{namespace}"'
+                        "값": f'xmlns="{namespace}"'
                     }
                 },
                 {
                     "설명": "xs:schema targetNamespace 치환",
                     "찾기": {
-                        "정규식": f'<xs:schema[^>]*targetNamespace\\s*=\\s*"[^"]*{base_name}[^"]*"'
+                        "정규식": f'targetNamespace\\s*=\\s*"[^"]*{base_name}[^"]*"'
                     },
                     "교체": {
-                        "값": f'<xs:schema targetNamespace="{namespace}"'
+                        "값": f'targetNamespace="{namespace}"'
                     }
                 }]
             }
@@ -459,19 +459,19 @@ def generate_yaml_from_excel(excel_path, yaml_path):
                 "치환목록": [{
                     "설명": "xs:schema xmlns 치환",
                     "찾기": {
-                        "정규식": f'<xs:schema[^>]*xmlns\\s*=\\s*"[^"]*{base_name}[^"]*"'
+                        "정규식": f'xmlns\\s*=\\s*"[^"]*{base_name}[^"]*"'
                     },
                     "교체": {
-                        "값": f'<xs:schema xmlns="{namespace}"'
+                        "값": f'xmlns="{namespace}"'
                     }
                 },
                 {
                     "설명": "xs:schema targetNamespace 치환",
                     "찾기": {
-                        "정규식": f'<xs:schema[^>]*targetNamespace\\s*=\\s*"[^"]*{base_name}[^"]*"'
+                        "정규식": f'targetNamespace\\s*=\\s*"[^"]*{base_name}[^"]*"'
                     },
                     "교체": {
-                        "값": f'<xs:schema targetNamespace="{namespace}"'
+                        "값": f'targetNamespace="{namespace}"'
                     }
                 }]
             }
