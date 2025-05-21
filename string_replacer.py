@@ -205,6 +205,24 @@ def generate_yaml_from_excel(excel_path, yaml_path):
                     "교체": {
                         "값": "'LZ'"
                     }
+                },
+                {
+                    "설명": "LH 따옴표 문자열 치환",
+                    "찾기": {
+                        "정규식": "&quot;LH&quot;"
+                    },
+                    "교체": {
+                        "값": "&quot;LY&quot;"
+                    }
+                },
+                {
+                    "설명": "VO 따옴표 문자열 치환",
+                    "찾기": {
+                        "정규식": "&quot;VO&quot;"
+                    },
+                    "교체": {
+                        "값": "&quot;LZ&quot;"
+                    }
                 }
             ]
             replacements.extend(fixed_replacements)
