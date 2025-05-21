@@ -417,16 +417,20 @@ def generate_yaml_from_excel(excel_path, yaml_path):
         
         # 3. 송신스키마파일명 처리
         if pd.notna(normal_row.get('송신스키마파일생성여부')) and float(normal_row['송신스키마파일생성여부']) == 1.0:
+            # 스키마 파일의 base_name과 namespace 추출
+            base_name = os.path.splitext(os.path.basename(normal_row['송신스키마파일명']))[0]
+            namespace, _ = process_schema_path(normal_row['송신스키마파일명'])
+            
             yaml_structure[f"{i//2 + 1}번째 행"]["송신스키마파일명"] = {
                 "원본파일": match_row['송신스키마파일명'],
                 "복사파일": modify_path(normal_row['송신스키마파일명']),  # 경로 수정
                 "치환목록": [{
                     "설명": "xs:schema xmlns 치환",
                     "찾기": {
-                        "정규식": f'<xs:schema[^>]*xmlns\\s*=\\s*"[^"]*{os.path.splitext(os.path.basename(normal_row["송신스키마파일명"]))[0]}[^"]*"'
+                        "정규식": f'<xs:schema[^>]*xmlns\\s*=\\s*"[^"]*{base_name}[^"]*"'
                     },
                     "교체": {
-                        "값": f'<xs:schema xmlns="{process_schema_path(normal_row["송신스키마파일명"])[0]}"'
+                        "값": f'<xs:schema xmlns="{namespace}"'
                     }
                 }]
             }
@@ -436,16 +440,20 @@ def generate_yaml_from_excel(excel_path, yaml_path):
         
         # 4. 수신스키마파일명 처리
         if pd.notna(normal_row.get('수신스키마파일생성여부')) and float(normal_row['수신스키마파일생성여부']) == 1.0:
+            # 스키마 파일의 base_name과 namespace 추출
+            base_name = os.path.splitext(os.path.basename(normal_row['수신스키마파일명']))[0]
+            namespace, _ = process_schema_path(normal_row['수신스키마파일명'])
+            
             yaml_structure[f"{i//2 + 1}번째 행"]["수신스키마파일명"] = {
                 "원본파일": match_row['수신스키마파일명'],
                 "복사파일": modify_path(normal_row['수신스키마파일명']),  # 경로 수정
                 "치환목록": [{
                     "설명": "xs:schema xmlns 치환",
                     "찾기": {
-                        "정규식": f'<xs:schema[^>]*xmlns\\s*=\\s*"[^"]*{os.path.splitext(os.path.basename(normal_row["수신스키마파일명"]))[0]}[^"]*"'
+                        "정규식": f'<xs:schema[^>]*xmlns\\s*=\\s*"[^"]*{base_name}[^"]*"'
                     },
                     "교체": {
-                        "값": f'<xs:schema xmlns="{process_schema_path(normal_row["수신스키마파일명"])[0]}"'
+                        "값": f'<xs:schema xmlns="{namespace}"'
                     }
                 }]
             }
