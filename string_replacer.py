@@ -688,6 +688,8 @@ def generate_delete_batch(data, batch_path):
     """생성된 파일들을 삭제하는 배치 파일을 생성합니다."""
     with open(batch_path, 'w', encoding='utf-8') as f:
         f.write('@echo off\n')
+        f.write('chcp 949\n')  # 코드 페이지를 한글이 지원되는 949로 설정
+        f.write('cls\n')  # 화면 지우기
         f.write('echo 파일 삭제를 시작합니다...\n')
         f.write('echo.\n\n')
         
