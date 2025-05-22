@@ -290,70 +290,71 @@ iflist03a.py는 iflist03.py와 iflist04.py의 기능을 통합한 파일입니�
 
 ---
 
-# 문자열 치환 도구 작업 내용
+# 문자열 치환 도구 작업 내용 정리
 
-## 1. 기본 기능
-- 엑셀 파일에서 YAML 파일 생성
-- 파일 복사 및 문자열 치환 기능
-- 인코딩과 개행 문자(LF/CRLF) 보존 처리
-- 파일 복사 시 overwrite 옵션 (기본: 경고 출력)
-- chardet를 사용한 파일 인코딩 자동 감지
-- 바이너리 모드로 파일 읽기/쓰기
+## 1. 스키마 파일 치환 규칙 수정
+### 1.1 xmlns와 targetNamespace 치환 규칙 개선
+- xmlns 속성 치환 패턴 수정
+  - 기존: `<xs:schema[^>]*xmlns\s*=\s*"[^"]*{base_name}[^"]*"`
+  - 변경: `xmlns\s*=\s*"[^"]*{base_name}[^"]*"`
+  - 교체값도 태그 제외하고 속성만 포함하도록 수정
 
-## 2. 치환 규칙 목록
+- targetNamespace 속성 치환 규칙 추가
+  - 패턴: `targetNamespace\s*=\s*"[^"]*{base_name}[^"]*"`
+  - 교체값: `targetNamespace="{namespace}"`
 
-### 2.1 프로세스 이름 치환
-- 매칭행의 파일명으로 패턴 매칭
-- 기본행의 경로에서 'Processes/' 이후 경로 추출
-- 디렉토리 구분자 '\' → '/' 변환
+## 2. 프로세스 파일 치환 규칙 수정
+### 2.1 activity name 태그 치환 패턴 개선
+- 송신업무명 activity name 태그 치환
+  - 기존: `<pd:activity\s+name="Check {re.escape(match_row["송신\n업무명"])}(?:[_0-9A-Za-z]*)"\\s*/?>`
+  - 변경: `(<pd:activity\s+name="Check {match_row["송신\n업무명"]})`
+  - 교체값에서 닫는 따옴표 제거
 
-### 2.2 IFID 관련 치환
-- origin_ifid: 매칭행의 'Group ID' + '.' + 'Event_ID'
-- dest_ifid: 기본행의 'Group ID' + '.' + 매칭행의 'Event_ID'
-- IFID가 다른 경우에만 치환
+- 수신업무명 activity name 태그 치환
+  - 기존: `<pd:activity\s+name="Check {re.escape(match_row["수신\n업무명"])}(?:[_0-9A-Za-z]*)"\\s*/?>`
+  - 변경: `(<pd:activity\s+name="Check {match_row["수신\n업무명"]})`
+  - 교체값에서 닫는 따옴표 제거
 
-### 2.3 Event_ID 치환
-- 매칭행과 기본행의 'Event_ID'가 다른 경우 치환
+### 2.2 고정 문자열 치환 규칙 추가
+기존 규칙:
+```python
+{
+    "설명": "LHMES_MGR 치환",
+    "찾기": {"정규식": "LHMES_MGR"},
+    "교체": {"값": "LYMES_MGR"}
+},
+{
+    "설명": "VOMES_MGR 치환",
+    "찾기": {"정규식": "VOMES_MGR"},
+    "교체": {"값": "LZMES_MGR"}
+},
+{
+    "설명": "LH 문자열 치환",
+    "찾기": {"정규식": "'LH'"},
+    "교체": {"값": "'LY'"}
+},
+{
+    "설명": "VO 문자열 치환",
+    "찾기": {"정규식": "'VO'"},
+    "교체": {"값": "'LZ'"}
+}
+```
 
-### 2.4 Group ID 치환
-- 매칭행과 기본행의 'Group ID'가 다른 경우 치환
-- 형식: `&quot;Group ID&quot;`
+추가된 규칙:
+```python
+{
+    "설명": "LH 따옴표 문자열 치환",
+    "찾기": {"정규식": "&quot;LH&quot;"},
+    "교체": {"값": "&quot;LY&quot;"}
+},
+{
+    "설명": "VO 따옴표 문자열 치환",
+    "찾기": {"정규식": "&quot;VO&quot;"},
+    "교체": {"값": "&quot;LZ&quot;"}
+}
+```
 
-### 2.5 업무명 치환
-
-#### 2.5.1 송신업무명
-1. &quot; 형식 치환
-   - `&quot;매칭행_송신업무명&quot;` → `&quot;기본행_송신업무명&quot;`
-
-2. pd:from/to Check 형식 치환
-   - `<pd:from>Check 매칭행_송신업무명` → `<pd:from>Check 기본행_송신업무명`
-   - `<pd:to>Check 매칭행_송신업무명` → `<pd:to>Check 기본행_송신업무명`
-
-#### 2.5.2 수신업무명
-1. &quot; 형식 치환
-   - `&quot;매칭행_수신업무명&quot;` → `&quot;기본행_수신업무명&quot;`
-
-2. pd:from/to Check 형식 치환
-   - `<pd:from>Check 매칭행_수신업무명` → `<pd:from>Check 기본행_수신업무명`
-   - `<pd:to>Check 매칭행_수신업무명` → `<pd:to>Check 기본행_수신업무명`
-
-### 2.6 고정 문자열 치환
-1. `LHMES_MGR` → `LYMES_MGR`
-2. `VOMES_MGR` → `LZMES_MGR`
-3. `'LH'` → `'LY'`
-4. `'VO'` → `'LZ'`
-
-## 3. 주의사항
-- 엑셀의 컬럼명에 개행문자가 포함됨 ('송신\n업무명', '수신\n업무명')
-- 치환 시 정확한 매칭을 위해 정규식 사용
-- 파일명 패턴 조건 포함하여 치환 범위 제한
-- 작은따옴표가 있는 경우 작은따옴표까지 포함하여 치환
-
-## 4. 구현된 함수
-- `generate_yaml_from_excel`: 엑셀 파일을 읽어 YAML 파일 생성
-- `create_process_replacements`: 프로세스 파일의 치환 목록 생성
-- `extract_process_path`: 프로세스 파일 경로에서 'Processes' 이후의 경로 추출
-- `extract_process_filename`: 프로세스 파일 경로에서 파일명 추출
-- `apply_schema_replacements`: 파일에 치환 목록 적용
-- `copy_file_with_check`: 파일 복사 (overwrite 체크)
-- `detect_encoding`: 파일 인코딩 감지
+## 다음 작업 예정
+- 추가적인 치환 규칙이 필요한 경우 계속해서 업데이트
+- 치환 규칙의 정확성 검증
+- 예외 케이스 처리 보완
