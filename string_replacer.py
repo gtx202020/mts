@@ -684,6 +684,45 @@ def apply_schema_replacements(file_path, replacements):
         debug_print(f"치환 작업 중 예외 발생: {str(e)}")
         return False
 
+def generate_delete_batch(data, batch_path):
+    """생성된 파일들을 삭제하는 배치 파일을 생성합니다."""
+    with open(batch_path, 'w', encoding='utf-8') as f:
+        f.write('@echo off\n')
+        f.write('echo 파일 삭제를 시작합니다...\n')
+        f.write('echo.\n\n')
+        
+        delete_count = 0
+        # 각 행 처리
+        for row_key, row_data in data.items():
+            # 파일 타입별 처리
+            file_types = ['송신파일경로', '수신파일경로', '송신스키마파일명', '수신스키마파일명']
+            
+            for file_type in file_types:
+                if file_type in row_data:
+                    file_info = row_data[file_type]
+                    copy_file = file_info.get('복사파일', '')
+                    
+                    # 파일이 실제로 존재하는 경우에만 삭제 명령 추가
+                    if copy_file and os.path.exists(copy_file):
+                        delete_count += 1
+                        f.write(f'echo {file_type} 삭제 중: {copy_file}\n')
+                        f.write(f'del /f "{copy_file}"\n')
+                        f.write('if errorlevel 1 (\n')
+                        f.write(f'    echo 경고: {copy_file} 삭제 실패\n')
+                        f.write(') else (\n')
+                        f.write(f'    echo 성공: {copy_file} 삭제 완료\n')
+                        f.write(')\n')
+                        f.write('echo.\n')
+        
+        if delete_count == 0:
+            f.write('echo 삭제할 파일이 없습니다.\n')
+        else:
+            f.write('\necho 모든 파일 삭제가 완료되었습니다.\n')
+        
+        f.write('pause\n')
+    
+    print(f"\n삭제 배치 파일이 생성되었습니다: {batch_path}")
+
 def execute_replacements(yaml_path, log_path, summary_path):
     """YAML에 정의된 복사 및 치환 작업을 실행하고 로그를 생성합니다."""
     try:
@@ -779,6 +818,10 @@ def execute_replacements(yaml_path, log_path, summary_path):
     # 엑셀 로그 파일 생성
     excel_path = os.path.splitext(log_path)[0] + '.xlsx'
     generate_excel_log(data, excel_path)
+
+    # 삭제 배치 파일 생성
+    batch_path = os.path.splitext(log_path)[0] + '_delete.bat'
+    generate_delete_batch(data, batch_path)
 
     debug_print("\n=== 전체 작업 완료 ===")
     debug_print(f"총 복사 파일 수: {total_copies}")
