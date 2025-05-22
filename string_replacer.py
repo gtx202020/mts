@@ -815,7 +815,53 @@ def generate_excel_log(data, excel_path):
     df = df[['파일타입', '원본파일경로', '복사파일경로', '생성여부']]
     
     # 엑셀 파일 저장
-    df.to_excel(excel_path, index=False)
+    writer = pd.ExcelWriter(excel_path, engine='openpyxl')
+    df.to_excel(writer, index=False)
+    
+    # 워크시트 가져오기
+    worksheet = writer.sheets['Sheet1']
+    
+    # 폰트 크기를 10으로 설정
+    from openpyxl.styles import Font, PatternFill, Alignment
+    font_10 = Font(size=10)
+    
+    # 헤더(첫 행) 스타일 설정
+    light_blue_fill = PatternFill(start_color='B8CCE4', end_color='B8CCE4', fill_type='solid')
+    header_font = Font(size=10, bold=True)
+    
+    # 모든 셀에 대해 폰트 크기 10 적용
+    for row in worksheet.iter_rows():
+        for cell in row:
+            cell.font = font_10
+    
+    # 헤더 행에 스타일 적용
+    for cell in worksheet[1]:
+        cell.fill = light_blue_fill
+        cell.font = header_font
+    
+    # 생성여부 컬럼 가운데 정렬
+    for row in worksheet.iter_rows(min_row=2):  # 헤더 제외
+        row[-1].alignment = Alignment(horizontal='center')  # 마지막 컬럼(생성여부)
+    
+    # 컬럼 너비 자동 조절
+    for column in worksheet.columns:
+        max_length = 0
+        column_letter = openpyxl.utils.get_column_letter(column[0].column)
+        
+        # 각 셀의 길이를 확인하여 최대 길이 계산
+        for cell in column:
+            try:
+                if len(str(cell.value)) > max_length:
+                    max_length = len(str(cell.value))
+            except:
+                pass
+        
+        # 컬럼 너비 설정 (최대 길이 + 여유 공간)
+        adjusted_width = (max_length + 2)
+        worksheet.column_dimensions[column_letter].width = adjusted_width
+    
+    # 파일 저장
+    writer.close()
     print(f"\n엑셀 로그 파일이 생성되었습니다: {excel_path}")
 
 def main():
