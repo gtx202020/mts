@@ -795,58 +795,26 @@ def generate_excel_log(data, excel_path):
     
     # 각 행 처리
     for row_key, row_data in data.items():
-        # 송신 정보 행
-        if '송신파일경로' in row_data:
-            send_info = row_data['송신파일경로']
-            send_row = {
-                '송신시스템': 'LH',  # 기본값, 실제로는 데이터에서 가져와야 함
-                '수신시스템': 'VO',  # 기본값, 실제로는 데이터에서 가져와야 함
-                'I/F명': '',  # 실제 데이터에서 가져와야 함
-                'Group ID': '',  # 실제 데이터에서 가져와야 함
-                'Event_ID': '',  # 실제 데이터에서 가져와야 함
-                '송신파일경로(기본행)': send_info.get('복사파일', ''),
-                '송신파일경로(매칭행)': send_info.get('원본파일', ''),
-                '송신파일경로 생성여부': 'O' if os.path.exists(send_info.get('복사파일', '')) else 'X'
-            }
-            
-            # 송신 스키마 정보가 있는 경우
-            if '송신스키마파일명' in row_data:
-                schema_info = row_data['송신스키마파일명']
-                send_row.update({
-                    '송신스키마파일명(기본행)': schema_info.get('복사파일', ''),
-                    '송신스키마파일명(매칭행)': schema_info.get('원본파일', ''),
-                    '송신스키마파일명 생성여부': 'O' if os.path.exists(schema_info.get('복사파일', '')) else 'X'
-                })
-            
-            excel_rows.append(send_row)
+        # 파일 타입별 처리
+        file_types = ['송신파일경로', '수신파일경로', '송신스키마파일명', '수신스키마파일명']
         
-        # 수신 정보 행
-        if '수신파일경로' in row_data:
-            recv_info = row_data['수신파일경로']
-            recv_row = {
-                '송신시스템': 'LH',  # 기본값, 실제로는 데이터에서 가져와야 함
-                '수신시스템': 'VO',  # 기본값, 실제로는 데이터에서 가져와야 함
-                'I/F명': '',  # 실제 데이터에서 가져와야 함
-                'Group ID': '',  # 실제 데이터에서 가져와야 함
-                'Event_ID': '',  # 실제 데이터에서 가져와야 함
-                '수신파일경로(기본행)': recv_info.get('복사파일', ''),
-                '수신파일경로(매칭행)': recv_info.get('원본파일', ''),
-                '수신파일경로 생성여부': 'O' if os.path.exists(recv_info.get('복사파일', '')) else 'X'
-            }
-            
-            # 수신 스키마 정보가 있는 경우
-            if '수신스키마파일명' in row_data:
-                schema_info = row_data['수신스키마파일명']
-                recv_row.update({
-                    '수신스키마파일명(기본행)': schema_info.get('복사파일', ''),
-                    '수신스키마파일명(매칭행)': schema_info.get('원본파일', ''),
-                    '수신스키마파일명 생성여부': 'O' if os.path.exists(schema_info.get('복사파일', '')) else 'X'
+        for file_type in file_types:
+            if file_type in row_data:
+                file_info = row_data[file_type]
+                excel_rows.append({
+                    '파일타입': file_type,
+                    '원본파일경로': file_info.get('원본파일', ''),
+                    '복사파일경로': file_info.get('복사파일', ''),
+                    '생성여부': 'O' if os.path.exists(file_info.get('복사파일', '')) else 'X'
                 })
-            
-            excel_rows.append(recv_row)
     
-    # DataFrame 생성 및 엑셀 파일 저장
+    # DataFrame 생성
     df = pd.DataFrame(excel_rows)
+    
+    # 컬럼 순서 지정
+    df = df[['파일타입', '원본파일경로', '복사파일경로', '생성여부']]
+    
+    # 엑셀 파일 저장
     df.to_excel(excel_path, index=False)
     print(f"\n엑셀 로그 파일이 생성되었습니다: {excel_path}")
 
