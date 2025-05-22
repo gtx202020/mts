@@ -690,11 +690,16 @@ def generate_delete_batch(data, batch_path):
         f.write('@echo off\n')
         f.write('chcp 949\n')  # 코드 페이지를 한글이 지원되는 949로 설정
         f.write('cls\n')  # 화면 지우기
-        f.write('echo 파일 삭제를 시작합니다...\n')
-        f.write('echo.\n\n')
         
-        delete_count = 0
-        # 각 행 처리
+        # 삭제 대상 파일 목록을 주석으로 먼저 작성
+        f.write('rem ===================================================================\n')
+        f.write('rem 삭제 대상 파일 목록\n')
+        f.write('rem ===================================================================\n')
+        
+        # 삭제 대상 파일을 저장할 리스트
+        delete_files = []
+        
+        # 각 행 처리하여 삭제 대상 파일 수집
         for row_key, row_data in data.items():
             # 파일 타입별 처리
             file_types = ['송신파일경로', '수신파일경로', '송신스키마파일명', '수신스키마파일명']
@@ -704,19 +709,31 @@ def generate_delete_batch(data, batch_path):
                     file_info = row_data[file_type]
                     copy_file = file_info.get('복사파일', '')
                     
-                    # 파일이 실제로 존재하는 경우에만 삭제 명령 추가
+                    # 파일이 실제로 존재하는 경우에만 목록에 추가
                     if copy_file and os.path.exists(copy_file):
-                        delete_count += 1
-                        f.write(f'echo {file_type} 삭제 중: {copy_file}\n')
-                        f.write(f'del /f "{copy_file}"\n')
-                        f.write('if errorlevel 1 (\n')
-                        f.write(f'    echo 경고: {copy_file} 삭제 실패\n')
-                        f.write(') else (\n')
-                        f.write(f'    echo 성공: {copy_file} 삭제 완료\n')
-                        f.write(')\n')
-                        f.write('echo.\n')
+                        delete_files.append((file_type, copy_file))
+                        f.write(f'rem [{file_type}] {copy_file}\n')
         
-        if delete_count == 0:
+        f.write(f'rem 총 삭제 대상 파일 수: {len(delete_files)}개\n')
+        f.write('rem ===================================================================\n\n')
+        
+        # 실제 삭제 명령어 작성
+        f.write('echo 파일 삭제를 시작합니다...\n')
+        f.write(f'echo 총 {len(delete_files)}개의 파일을 삭제합니다.\n')
+        f.write('echo.\n\n')
+        
+        # 각 파일 삭제 명령어 작성
+        for file_type, copy_file in delete_files:
+            f.write(f'echo {file_type} 삭제 중: {copy_file}\n')
+            f.write(f'del /f "{copy_file}"\n')
+            f.write('if errorlevel 1 (\n')
+            f.write(f'    echo 경고: {copy_file} 삭제 실패\n')
+            f.write(') else (\n')
+            f.write(f'    echo 성공: {copy_file} 삭제 완료\n')
+            f.write(')\n')
+            f.write('echo.\n')
+        
+        if not delete_files:
             f.write('echo 삭제할 파일이 없습니다.\n')
         else:
             f.write('\necho 모든 파일 삭제가 완료되었습니다.\n')
@@ -724,6 +741,7 @@ def generate_delete_batch(data, batch_path):
         f.write('pause\n')
     
     print(f"\n삭제 배치 파일이 생성되었습니다: {batch_path}")
+    print(f"삭제 대상 파일 수: {len(delete_files)}개")
 
 def execute_replacements(yaml_path, log_path, summary_path):
     """YAML에 정의된 복사 및 치환 작업을 실행하고 로그를 생성합니다."""
