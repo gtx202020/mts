@@ -121,25 +121,26 @@ class InterfaceExcelReader:
         Returns:
             Optional[Dict[str, Any]]: 인터페이스 정보 딕셔너리, 빈 블록이면 None
         """
-        try:
-            # 기본 구조 생성
-            interface_info = {
-                'interface_name': '',
-                'interface_id': '',
-                'send': {
-                    'owner': None,
-                    'table_name': None,
-                    'columns': [],
-                    'db_info': {}
-                },
-                'recv': {
-                    'owner': None,
-                    'table_name': None,
-                    'columns': [],
-                    'db_info': {}
-                }
+        # 기본 구조 생성
+        interface_info = {
+            'interface_name': '',
+            'interface_id': '',
+            'send': {
+                'owner': None,
+                'table_name': None,
+                'columns': [],
+                'db_info': {}
+            },
+            'recv': {
+                'owner': None,
+                'table_name': None,
+                'columns': [],
+                'db_info': {}
             }
-            
+        }
+        
+        # 1단계: 필수 정보만 먼저 체크 (interface_name, interface_id)
+        try:
             # 1행: 인터페이스명 읽기
             interface_name_cell = worksheet.cell(row=1, column=start_col)
             interface_info['interface_name'] = interface_name_cell.value or ''
@@ -154,14 +155,25 @@ class InterfaceExcelReader:
             
             interface_info['interface_id'] = str(interface_id).strip()
             
-            # 3행: DB 연결 정보 읽기
+        except Exception as e:
+            print(f"Warning: 필수 정보 읽기 실패 (컬럼 {start_col}): {str(e)}")
+            return None
+        
+        # 2단계: 선택적 정보들을 개별적으로 안전하게 처리
+        # 3행: DB 연결 정보 읽기 (실패해도 계속)
+        try:
             send_db_cell = worksheet.cell(row=3, column=start_col)
             recv_db_cell = worksheet.cell(row=3, column=start_col + 1)
             
             interface_info['send']['db_info'] = self._parse_cell_dict(send_db_cell.value)
             interface_info['recv']['db_info'] = self._parse_cell_dict(recv_db_cell.value)
             
-            # 4행: 테이블 정보 읽기
+        except Exception as e:
+            print(f"Warning: DB 정보 읽기 실패 (컬럼 {start_col}): {str(e)}")
+            # DB 정보 읽기 실패해도 빈 딕셔너리로 계속 진행
+        
+        # 4행: 테이블 정보 읽기 (실패해도 계속)
+        try:
             send_table_cell = worksheet.cell(row=4, column=start_col)
             recv_table_cell = worksheet.cell(row=4, column=start_col + 1)
             
@@ -173,15 +185,21 @@ class InterfaceExcelReader:
             interface_info['recv']['owner'] = recv_table_info.get('owner')
             interface_info['recv']['table_name'] = recv_table_info.get('table_name')
             
-            # 5행부터: 컬럼 매핑 정보 읽기
+        except Exception as e:
+            print(f"Warning: 테이블 정보 읽기 실패 (컬럼 {start_col}): {str(e)}")
+            # 테이블 정보 읽기 실패해도 None으로 계속 진행
+        
+        # 5행부터: 컬럼 매핑 정보 읽기 (실패해도 계속)
+        try:
             send_columns, recv_columns = self._read_column_mappings(worksheet, start_col, 5)
             interface_info['send']['columns'] = send_columns
             interface_info['recv']['columns'] = recv_columns
             
-            return interface_info
-            
         except Exception as e:
-            raise Exception(f"인터페이스 블록 읽기 실패 (컬럼 {start_col}): {str(e)}")
+            print(f"Warning: 컬럼 매핑 읽기 실패 (컬럼 {start_col}): {str(e)}")
+            # 컬럼 매핑 읽기 실패해도 빈 리스트로 계속 진행
+        
+        return interface_info
     
     def _parse_cell_dict(self, cell_value: Any) -> Dict[str, Any]:
         """
