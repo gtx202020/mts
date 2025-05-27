@@ -8,6 +8,7 @@
 주요 클래스:
 - InterfaceExcelReader: 엑셀 파일에서 인터페이스 정보 추출
 - BWProcessFileParser: BW .process 파일에서 INSERT 쿼리 추출
+- ProcessFileMapper: 일련번호와 string_replacer용 엑셀을 매핑하는 클래스
 
 주요 함수:
 - parse_bw_receive_file: BW 수신파일 파싱을 위한 편의 함수
@@ -20,6 +21,7 @@ import xml.etree.ElementTree as ET
 from typing import Dict, List, Optional, Any
 import openpyxl
 from openpyxl.worksheet.worksheet import Worksheet
+import pandas as pd
 
 
 class InterfaceExcelReader:
@@ -35,11 +37,21 @@ class InterfaceExcelReader:
     - 5행부터: 컬럼 매핑 정보
     """
     
-    def __init__(self):
-        """InterfaceExcelReader 초기화"""
+    def __init__(self, replacer_excel_path: str = None):
+        """
+        InterfaceExcelReader 클래스 초기화
+        
+        Args:
+            replacer_excel_path (str, optional): string_replacer용 엑셀 파일 경로
+        """
         self.processed_count = 0
         self.error_count = 0
         self.last_error_messages = []
+        
+        # ProcessFileMapper 초기화
+        self.process_mapper = None
+        if replacer_excel_path:
+            self.process_mapper = ProcessFileMapper(replacer_excel_path)
     
     def load_interfaces(self, excel_path: str) -> List[Dict[str, Any]]:
         """
@@ -126,6 +138,12 @@ class InterfaceExcelReader:
             'interface_name': '',
             'interface_id': '',
             'serial_number': '',
+            'send_original': '',        # 송신 원본파일 경로
+            'send_copy': '',            # 송신 복사파일 경로  
+            'recv_original': '',        # 수신 원본파일 경로
+            'recv_copy': '',            # 수신 복사파일 경로
+            'send_schema': '',          # 송신 스키마파일
+            'recv_schema': '',          # 수신 스키마파일
             'send': {
                 'owner': None,
                 'table_name': None,
@@ -165,7 +183,7 @@ class InterfaceExcelReader:
             return None
         
         # 2단계: 선택적 정보들을 개별적으로 안전하게 처리
-        # 3행: DB 연결 정보 읽기 (실패해도 계속)
+        # DB 연결 정보 읽기 (실패해도 계속)
         try:
             send_db_cell = worksheet.cell(row=3, column=start_col)
             recv_db_cell = worksheet.cell(row=3, column=start_col + 1)
@@ -177,32 +195,48 @@ class InterfaceExcelReader:
             print(f"Warning: DB 정보 읽기 실패 (컬럼 {start_col}): {str(e)}")
             # DB 정보 읽기 실패해도 빈 딕셔너리로 계속 진행
         
-        # 4행: 테이블 정보 읽기 (실패해도 계속)
+        # 테이블 정보 읽기 (실패해도 계속)
         try:
-            send_table_cell = worksheet.cell(row=4, column=start_col)
-            recv_table_cell = worksheet.cell(row=4, column=start_col + 1)
+            # 송신 owner, table_name 읽기  
+            send_owner_cell = worksheet.cell(row=6, column=start_col)
+            if send_owner_cell.value:
+                interface_info['send']['owner'] = str(send_owner_cell.value).strip()
             
-            send_table_info = self._parse_cell_dict(send_table_cell.value)
-            recv_table_info = self._parse_cell_dict(recv_table_cell.value)
+            send_table_cell = worksheet.cell(row=7, column=start_col)
+            if send_table_cell.value:
+                interface_info['send']['table_name'] = str(send_table_cell.value).strip()
             
-            interface_info['send']['owner'] = send_table_info.get('owner')
-            interface_info['send']['table_name'] = send_table_info.get('table_name')
-            interface_info['recv']['owner'] = recv_table_info.get('owner')
-            interface_info['recv']['table_name'] = recv_table_info.get('table_name')
+            # 수신 owner, table_name 읽기
+            recv_owner_cell = worksheet.cell(row=6, column=start_col + 1)
+            if recv_owner_cell.value:
+                interface_info['recv']['owner'] = str(recv_owner_cell.value).strip()
+            
+            recv_table_cell = worksheet.cell(row=7, column=start_col + 1)
+            if recv_table_cell.value:
+                interface_info['recv']['table_name'] = str(recv_table_cell.value).strip()
             
         except Exception as e:
             print(f"Warning: 테이블 정보 읽기 실패 (컬럼 {start_col}): {str(e)}")
-            # 테이블 정보 읽기 실패해도 None으로 계속 진행
         
-        # 5행부터: 컬럼 매핑 정보 읽기 (실패해도 계속)
+        # 컬럼 매핑 정보 읽기 (실패해도 계속)
         try:
-            send_columns, recv_columns = self._read_column_mappings(worksheet, start_col, 5)
+            send_columns, recv_columns = self._read_column_mappings(worksheet, start_col, 8)
             interface_info['send']['columns'] = send_columns
             interface_info['recv']['columns'] = recv_columns
             
         except Exception as e:
             print(f"Warning: 컬럼 매핑 읽기 실패 (컬럼 {start_col}): {str(e)}")
             # 컬럼 매핑 읽기 실패해도 빈 리스트로 계속 진행
+        
+        # 3단계: ProcessFileMapper로 .process 파일 정보 추가
+        if self.process_mapper and interface_info['serial_number']:
+            try:
+                process_files = self.process_mapper.get_process_files_by_serial(interface_info['serial_number'])
+                if process_files:
+                    interface_info.update(process_files)
+                    print(f"Info: 일련번호 {interface_info['serial_number']}의 process 파일 정보 추가됨")
+            except Exception as e:
+                print(f"Warning: Process 파일 정보 가져오기 실패: {str(e)}")
         
         return interface_info
     
@@ -576,6 +610,87 @@ class BWProcessFileParser:
         return self.last_error_messages.copy()
 
 
+class ProcessFileMapper:
+    """
+    test_iflist.py의 일련번호와 string_replacer용 엑셀을 매핑하는 클래스
+    """
+    
+    def __init__(self, replacer_excel_path: str):
+        """ProcessFileMapper 초기화
+        
+        Args:
+            replacer_excel_path (str): string_replacer.py에서 사용하는 엑셀 파일 경로
+        """
+        self.replacer_excel_path = replacer_excel_path
+        self.df = None
+        if os.path.exists(replacer_excel_path):
+            try:
+                self.df = pd.read_excel(replacer_excel_path, engine='openpyxl')
+            except Exception as e:
+                print(f"Warning: ProcessFileMapper - 엑셀 파일 로드 실패: {str(e)}")
+    
+    def get_process_files_by_serial(self, serial_number: str) -> Dict[str, str]:
+        """
+        일련번호(serial_number)로 .process 파일 경로들을 가져옴
+        
+        Args:
+            serial_number (str): 인터페이스 일련번호
+            
+        Returns:
+            Dict[str, str]: 프로세스 파일 정보
+            {
+                'send_original': '송신 원본파일 경로',
+                'send_copy': '송신 복사파일 경로', 
+                'recv_original': '수신 원본파일 경로',
+                'recv_copy': '수신 복사파일 경로',
+                'send_schema': '송신 스키마파일',
+                'recv_schema': '수신 스키마파일'
+            }
+        """
+        if self.df is None or not serial_number:
+            return {}
+        
+        try:
+            # N번째 행 = serial_number 매핑 (1-based to 0-based)
+            row_index = int(serial_number) - 1
+            
+            if row_index * 2 + 1 >= len(self.df):
+                return {}
+            
+            normal_row = self.df.iloc[row_index * 2]     # 기본행
+            match_row = self.df.iloc[row_index * 2 + 1]  # 매칭행
+            
+            result = {}
+            
+            # 송신 파일 생성 여부 확인
+            if (pd.notna(normal_row.get('송신파일생성여부')) and 
+                float(normal_row['송신파일생성여부']) == 1.0):
+                result['send_original'] = str(match_row.get('송신파일경로', ''))
+                result['send_copy'] = str(normal_row.get('송신파일경로', ''))
+            
+            # 수신 파일 생성 여부 확인  
+            if (pd.notna(normal_row.get('수신파일생성여부')) and 
+                float(normal_row['수신파일생성여부']) == 1.0):
+                result['recv_original'] = str(match_row.get('수신파일경로', ''))
+                result['recv_copy'] = str(normal_row.get('수신파일경로', ''))
+            
+            # 송신 스키마 파일 생성 여부 확인
+            if (pd.notna(normal_row.get('송신스키마파일생성여부')) and 
+                float(normal_row['송신스키마파일생성여부']) == 1.0):
+                result['send_schema'] = str(normal_row.get('송신스키마파일명', ''))
+            
+            # 수신 스키마 파일 생성 여부 확인
+            if (pd.notna(normal_row.get('수신스키마파일생성여부')) and 
+                float(normal_row['수신스키마파일생성여부']) == 1.0):
+                result['recv_schema'] = str(normal_row.get('수신스키마파일명', ''))
+            
+            return result
+            
+        except Exception as e:
+            print(f"Warning: ProcessFileMapper - 일련번호 {serial_number} 처리 실패: {str(e)}")
+            return {}
+
+
 def parse_bw_receive_file(process_file_path: str) -> List[str]:
     """
     BW의 수신파일(.process)을 파싱하여 INSERT 쿼리를 추출하는 함수
@@ -599,7 +714,9 @@ if __name__ == "__main__":
     # 테스트용 샘플 코드
     def test_interface_reader():
         """InterfaceExcelReader 테스트 함수"""
-        reader = InterfaceExcelReader()
+        # replacer_excel_path는 string_replacer.py에서 사용하는 엑셀 파일 경로
+        replacer_excel_path = "replacer_input.xlsx"  # 실제 환경에 맞게 수정 필요
+        reader = InterfaceExcelReader(replacer_excel_path)
         
         # 테스트할 엑셀 파일 경로 (실제 환경에 맞게 수정 필요)
         test_excel_path = "input.xlsx"
@@ -639,10 +756,17 @@ if __name__ == "__main__":
                 first_interface = interfaces[0]
                 print(f"인터페이스명: {first_interface['interface_name']}")
                 print(f"인터페이스ID: {first_interface['interface_id']}")
+                print(f"일련번호: {first_interface['serial_number']}")
                 print(f"송신 테이블: {first_interface['send']['table_name']}")
                 print(f"수신 테이블: {first_interface['recv']['table_name']}")
                 print(f"송신 컬럼 수: {len(first_interface['send']['columns'])}")
                 print(f"수신 컬럼 수: {len(first_interface['recv']['columns'])}")
+                print(f"송신 원본파일: {first_interface.get('send_original', 'N/A')}")
+                print(f"송신 복사파일: {first_interface.get('send_copy', 'N/A')}")
+                print(f"수신 원본파일: {first_interface.get('recv_original', 'N/A')}")
+                print(f"수신 복사파일: {first_interface.get('recv_copy', 'N/A')}")
+                print(f"송신 스키마파일: {first_interface.get('send_schema', 'N/A')}")
+                print(f"수신 스키마파일: {first_interface.get('recv_schema', 'N/A')}")
             
             print("\n=== 테스트 완료 ===")
             
