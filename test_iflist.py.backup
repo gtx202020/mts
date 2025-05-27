@@ -125,7 +125,6 @@ class InterfaceExcelReader:
         interface_info = {
             'interface_name': '',
             'interface_id': '',
-            'serial_number': '',
             'send': {
                 'owner': None,
                 'table_name': None,
@@ -145,10 +144,6 @@ class InterfaceExcelReader:
             # 1행: 인터페이스명 읽기
             interface_name_cell = worksheet.cell(row=1, column=start_col)
             interface_info['interface_name'] = interface_name_cell.value or ''
-            
-            # 1행: 일련번호 읽기 (인터페이스명 오른쪽으로 두 칸)
-            serial_number_cell = worksheet.cell(row=1, column=start_col + 2)
-            interface_info['serial_number'] = serial_number_cell.value or ''
             
             # 2행: 인터페이스ID 읽기 (필수값)
             interface_id_cell = worksheet.cell(row=2, column=start_col)
