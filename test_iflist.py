@@ -2469,6 +2469,41 @@ class BWProcessFileParser:
         
         return result
 
+    def _is_function_pattern(self, pattern: str) -> bool:
+        """
+        VALUES 패턴이 SQL 함수인지 감지
+        
+        Args:
+            pattern (str): VALUES 패턴 문자열
+            
+        Returns:
+            bool: 함수 패턴이면 True
+        """
+        pattern = pattern.strip().upper()
+        
+        # 일반적인 SQL 함수들 확인
+        sql_functions = [
+            'TO_DATE(', 'TO_CHAR(', 'TO_NUMBER(',
+            'TRIM(', 'LTRIM(', 'RTRIM(',
+            'UPPER(', 'LOWER(', 'INITCAP(',
+            'SUBSTR(', 'SUBSTRING(',
+            'NVL(', 'NVL2(', 'COALESCE(',
+            'DECODE(', 'CASE ',
+            'LENGTH(', 'INSTR(',
+            'REPLACE(', 'TRANSLATE(',
+            'SYSDATE', 'SYSTIMESTAMP'
+        ]
+        
+        for func in sql_functions:
+            if pattern.startswith(func) or func.strip() in pattern:
+                return True
+        
+        # 괄호로 시작하고 끝나는 일반적인 함수 패턴
+        if '(' in pattern and pattern.count('(') > 0:
+            return True
+        
+        return False
+
 
 class ProcessFileMapper:
     """
