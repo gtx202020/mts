@@ -1061,8 +1061,32 @@ class BWProcessFileParser:
                 # VALUES 패턴 분석
                 value_pattern = value_patterns[i] if i < len(value_patterns) else '?'
                 
-                # XML에서 실제 매핑된 송신 컬럼 찾기
-                send_col = xml_column_mappings.get(recv_col, f"unknown_{recv_col}")
+                # 송신 컬럼 결정 로직
+                send_col = None
+                
+                # 1) 먼저 VALUES 패턴이 리터럴 값인지 확인
+                if value_pattern.startswith("'") and value_pattern.endswith("'"):
+                    # 리터럴 값인 경우: 'N' -> N
+                    literal_value = value_pattern[1:-1]  # 따옴표 제거
+                    send_col = f"'{literal_value}'"
+                    print(f"  리터럴 값 발견: {recv_col} <- {send_col}")
+                
+                # 2) 리터럴이 아니면 XML 매핑에서 찾기
+                else:
+                    send_col = xml_column_mappings.get(recv_col)
+                    if send_col:
+                        print(f"  XML 매핑 사용: {recv_col} <- {send_col}")
+                    else:
+                        # 3) XML 매핑도 없고 리터럴도 아니면 패턴 분석
+                        if value_pattern != '?':
+                            # 함수나 다른 패턴이 있는 경우
+                            send_col = f"pattern_{value_pattern}"
+                            print(f"  패턴 매핑: {recv_col} <- {send_col} (패턴: {value_pattern})")
+                        else:
+                            # 완전히 알 수 없는 경우
+                            send_col = f"unknown_{recv_col}"
+                            print(f"  알 수 없는 매핑: {recv_col} <- {send_col}")
+                
                 send_columns.append(send_col)
                 
                 # 값 타입 결정
@@ -1099,14 +1123,33 @@ class BWProcessFileParser:
         """
         value_pattern = value_pattern.strip()
         
-        if value_pattern == '?':
-            return 'direct'
-        elif value_pattern.startswith("'") and value_pattern.endswith("'"):
+        # 1) 리터럴 값 확인 (가장 우선)
+        if value_pattern.startswith("'") and value_pattern.endswith("'"):
             return 'literal'
-        elif 'TRIM(' in value_pattern.upper() or 'UPPER(' in value_pattern.upper() or 'LOWER(' in value_pattern.upper():
+        
+        # 2) 직접 매핑 확인
+        elif value_pattern == '?':
+            return 'direct'
+        
+        # 3) 함수 적용 확인
+        elif ('TRIM(' in value_pattern.upper() or 
+              'UPPER(' in value_pattern.upper() or 
+              'LOWER(' in value_pattern.upper() or
+              'SUBSTR(' in value_pattern.upper() or
+              'NVL(' in value_pattern.upper() or
+              'TO_DATE(' in value_pattern.upper() or
+              'TO_CHAR(' in value_pattern.upper()):
             return 'function'
+        
+        # 4) 조건부 확인 (send_col에서 판별)
         elif 'conditional' in send_col:
             return 'conditional'
+        
+        # 5) 패턴 매핑 확인
+        elif send_col.startswith('pattern_'):
+            return 'function'
+        
+        # 6) 알 수 없는 경우
         else:
             return 'unknown'
 
