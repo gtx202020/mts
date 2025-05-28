@@ -43,15 +43,25 @@ class InterfaceExcelReader:
         
         Args:
             replacer_excel_path (str, optional): string_replacer용 엑셀 파일 경로
+                                               None이면 기본값으로 'iflist03a_reordered_v8.3.xlsx' 사용
         """
         self.processed_count = 0
         self.error_count = 0
         self.last_error_messages = []
         
-        # ProcessFileMapper 초기화
+        # ProcessFileMapper 초기화 - 하드코딩된 기본 파일 경로 사용
+        if replacer_excel_path is None:
+            replacer_excel_path = "iflist03a_reordered_v8.3.xlsx"  # 기본 파일 경로
+        
         self.process_mapper = None
-        if replacer_excel_path:
-            self.process_mapper = ProcessFileMapper(replacer_excel_path)
+        if os.path.exists(replacer_excel_path):
+            try:
+                self.process_mapper = ProcessFileMapper(replacer_excel_path)
+                print(f"Info: ProcessFileMapper 초기화 완료 - 파일: {replacer_excel_path}")
+            except Exception as e:
+                print(f"Warning: ProcessFileMapper 초기화 실패: {str(e)}")
+        else:
+            print(f"Warning: ProcessFileMapper용 파일이 존재하지 않음: {replacer_excel_path}")
     
     def load_interfaces(self, excel_path: str) -> List[Dict[str, Any]]:
         """
@@ -241,7 +251,7 @@ class InterfaceExcelReader:
         
         # 컬럼 매핑 정보 읽기 (실패해도 계속)
         try:
-            send_columns, recv_columns = self._read_column_mappings(worksheet, start_col, 8)
+            send_columns, recv_columns = self._read_column_mappings(worksheet, start_col, 5)
             interface_info['send']['columns'] = send_columns
             interface_info['recv']['columns'] = recv_columns
             
@@ -250,14 +260,32 @@ class InterfaceExcelReader:
             # 컬럼 매핑 읽기 실패해도 빈 리스트로 계속 진행
         
         # 3단계: ProcessFileMapper로 .process 파일 정보 추가
+        print(f"\n=== ProcessFileMapper 처리 시작 ===")
+        print(f"process_mapper 상태: {self.process_mapper is not None}")
+        print(f"일련번호: '{interface_info['serial_number']}'")
+        print(f"일련번호 존재 여부: {bool(interface_info['serial_number'])}")
+        
         if self.process_mapper and interface_info['serial_number']:
             try:
+                print(f"ProcessFileMapper에서 일련번호 {interface_info['serial_number']} 검색 중...")
                 process_files = self.process_mapper.get_process_files_by_serial(interface_info['serial_number'])
+                print(f"검색 결과: {process_files}")
+                
                 if process_files:
                     interface_info.update(process_files)
                     print(f"Info: 일련번호 {interface_info['serial_number']}의 process 파일 정보 추가됨")
+                    print(f"추가된 정보: {process_files}")
+                else:
+                    print(f"Info: 일련번호 {interface_info['serial_number']}에 해당하는 process 파일 정보 없음")
+                    
             except Exception as e:
                 print(f"Warning: Process 파일 정보 가져오기 실패: {str(e)}")
+        elif not self.process_mapper:
+            print("Warning: ProcessFileMapper가 초기화되지 않음")
+        elif not interface_info['serial_number']:
+            print("Warning: 일련번호가 없어서 ProcessFileMapper 처리 건너뜀")
+        
+        print(f"=== ProcessFileMapper 처리 완료 ===\n")
         
         return interface_info
     
@@ -668,43 +696,65 @@ class ProcessFileMapper:
                 'recv_schema': '수신 스키마파일'
             }
         """
+        print(f"ProcessFileMapper.get_process_files_by_serial 호출됨")
+        print(f"입력 일련번호: '{serial_number}'")
+        print(f"DataFrame 상태: {self.df is not None}")
+        
         if self.df is None or not serial_number:
+            print(f"조기 반환: DataFrame={self.df is not None}, serial_number='{serial_number}'")
             return {}
         
         try:
             # N번째 행 = serial_number 매핑 (1-based to 0-based)
             row_index = int(serial_number) - 1
+            print(f"계산된 row_index: {row_index}")
+            print(f"DataFrame 크기: {len(self.df)}")
             
             if row_index * 2 + 1 >= len(self.df):
+                print(f"행 인덱스 초과: {row_index * 2 + 1} >= {len(self.df)}")
                 return {}
             
             normal_row = self.df.iloc[row_index * 2]     # 기본행
             match_row = self.df.iloc[row_index * 2 + 1]  # 매칭행
             
+            print(f"기본행 인덱스: {row_index * 2}")
+            print(f"매칭행 인덱스: {row_index * 2 + 1}")
+            print(f"기본행 데이터: {normal_row.to_dict()}")
+            print(f"매칭행 데이터: {match_row.to_dict()}")
+            
             result = {}
             
             # 송신 파일 생성 여부 확인
-            if (pd.notna(normal_row.get('송신파일생성여부')) and 
-                float(normal_row['송신파일생성여부']) == 1.0):
+            send_create_flag = normal_row.get('송신파일생성여부')
+            print(f"송신파일생성여부: {send_create_flag} (타입: {type(send_create_flag)})")
+            if (pd.notna(send_create_flag) and float(send_create_flag) == 1.0):
                 result['send_original'] = str(match_row.get('송신파일경로', ''))
                 result['send_copy'] = str(normal_row.get('송신파일경로', ''))
+                print(f"송신 파일 정보 추가됨")
             
             # 수신 파일 생성 여부 확인  
-            if (pd.notna(normal_row.get('수신파일생성여부')) and 
-                float(normal_row['수신파일생성여부']) == 1.0):
+            recv_create_flag = normal_row.get('수신파일생성여부')
+            print(f"수신파일생성여부: {recv_create_flag} (타입: {type(recv_create_flag)})")
+            if (pd.notna(recv_create_flag) and float(recv_create_flag) == 1.0):
                 result['recv_original'] = str(match_row.get('수신파일경로', ''))
                 result['recv_copy'] = str(normal_row.get('수신파일경로', ''))
+                print(f"수신 파일 정보 추가됨")
             
             # 송신 스키마 파일 생성 여부 확인
-            if (pd.notna(normal_row.get('송신스키마파일생성여부')) and 
-                float(normal_row['송신스키마파일생성여부']) == 1.0):
+            send_schema_flag = normal_row.get('송신스키마파일생성여부')
+            print(f"송신스키마파일생성여부: {send_schema_flag} (타입: {type(send_schema_flag)})")
+            if (pd.notna(send_schema_flag) and float(send_schema_flag) == 1.0):
                 result['send_schema'] = str(normal_row.get('송신스키마파일명', ''))
+                print(f"송신 스키마 파일 정보 추가됨")
             
             # 수신 스키마 파일 생성 여부 확인
-            if (pd.notna(normal_row.get('수신스키마파일생성여부')) and 
-                float(normal_row['수신스키마파일생성여부']) == 1.0):
+            recv_schema_flag = normal_row.get('수신스키마파일생성여부')
+            print(f"수신스키마파일생성여부: {recv_schema_flag} (타입: {type(recv_schema_flag)})")
+            if (pd.notna(recv_schema_flag) and float(recv_schema_flag) == 1.0):
                 result['recv_schema'] = str(normal_row.get('수신스키마파일명', ''))
+                print(f"수신 스키마 파일 정보 추가됨")
             
+            print(f"최종 결과: {result}")
             return result
             
         except Exception as e:
@@ -735,16 +785,17 @@ if __name__ == "__main__":
     # 테스트용 샘플 코드
     def test_interface_reader():
         """InterfaceExcelReader 테스트 함수"""
-        # replacer_excel_path는 string_replacer.py에서 사용하는 엑셀 파일 경로
-        replacer_excel_path = "replacer_input.xlsx"  # 실제 환경에 맞게 수정 필요
-        reader = InterfaceExcelReader(replacer_excel_path)
+        # ProcessFileMapper용 엑셀 파일 경로 (None이면 기본값 사용)
+        # replacer_excel_path = None  # 기본값 'iflist03a_reordered_v8.3.xlsx' 사용
+        reader = InterfaceExcelReader()  # 기본값으로 'iflist03a_reordered_v8.3.xlsx' 사용
         
-        # 테스트할 엑셀 파일 경로 (실제 환경에 맞게 수정 필요)
-        test_excel_path = "input.xlsx"
+        # 테스트할 인터페이스 엑셀 파일 경로
+        test_excel_path = "iflist_in.xlsx"  # 인터페이스 정보가 담긴 파일
         
         try:
             print("=== 인터페이스 엑셀 리더 테스트 시작 ===")
-            print(f"파일 경로: {test_excel_path}")
+            print(f"인터페이스 정보 파일: {test_excel_path}")
+            print(f"ProcessFileMapper 파일: iflist03a_reordered_v8.3.xlsx")
             
             # 파일 존재 여부 확인
             if not os.path.exists(test_excel_path):
@@ -804,17 +855,25 @@ if __name__ == "__main__":
         print("\n=== 사용법 예시 ===")
         print("""
 # 1. InterfaceExcelReader 인스턴스 생성
+# 기본값으로 'iflist03a_reordered_v8.3.xlsx' 파일을 ProcessFileMapper로 사용
 reader = InterfaceExcelReader()
 
-# 2. 엑셀 파일에서 인터페이스 정보 로드
-interfaces = reader.load_interfaces('your_excel_file.xlsx')
+# 또는 특정 ProcessFileMapper 파일 지정
+# reader = InterfaceExcelReader('custom_replacer_file.xlsx')
+
+# 2. 인터페이스 정보 엑셀 파일에서 정보 로드
+# 'iflist_in.xlsx'는 인터페이스 정보가 담긴 파일
+interfaces = reader.load_interfaces('iflist_in.xlsx')
 
 # 3. 결과 활용
 for interface in interfaces:
     print(f"인터페이스: {interface['interface_name']}")
     print(f"ID: {interface['interface_id']}")
+    print(f"일련번호: {interface['serial_number']}")
     print(f"송신 테이블: {interface['send']['table_name']}")
     print(f"수신 테이블: {interface['recv']['table_name']}")
+    print(f"송신 원본파일: {interface.get('send_original', 'N/A')}")
+    print(f"수신 복사파일: {interface.get('recv_copy', 'N/A')}")
 
 # 4. 처리 통계 확인
 stats = reader.get_statistics()
@@ -830,6 +889,10 @@ bw_parser = BWProcessFileParser()
 queries = bw_parser.parse_bw_process_file('your_bw_file.process')
 bw_stats = bw_parser.get_statistics()
 print(f"BW 파싱 통계: {bw_stats}")
+
+# 파일 구조:
+# - iflist_in.xlsx: 인터페이스 정보 엑셀 (B열부터 3컬럼 단위)
+# - iflist03a_reordered_v8.3.xlsx: ProcessFileMapper용 파일 (원본파일, 복사파일 정보)
         """)
     
     # BW Process 파일 파싱 테스트 함수 추가
