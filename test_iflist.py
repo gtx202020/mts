@@ -343,9 +343,9 @@ class InterfaceExcelReader:
             if not send_value and not recv_value:
                 break
             
-            # 값이 있으면 문자열로 변환하여 추가
-            send_columns.append(str(send_value) if send_value else '')
-            recv_columns.append(str(recv_value) if recv_value else '')
+            # 값이 있으면 문자열로 변환하고 앞뒤 공백 제거하여 추가
+            send_columns.append(str(send_value).strip() if send_value else '')
+            recv_columns.append(str(recv_value).strip() if recv_value else '')
             
             current_row += 1
         
@@ -489,8 +489,8 @@ class InterfaceExcelReader:
             print(f"테이블: {table_info.get('table_name', 'Unknown')}")
             
             # 대소문자 구분 없이 비교를 위한 매핑 생성
-            excel_lower = [col.lower() for col in excel_send_columns if col and col.strip()]
-            process_lower = [col.lower() for col in process_send_columns if col and col.strip()]
+            excel_lower = [col.strip().lower() for col in excel_send_columns if col and col.strip()]
+            process_lower = [col.strip().lower() for col in process_send_columns if col and col.strip()]
             
             # 매칭 찾기
             matches = []
@@ -502,27 +502,27 @@ class InterfaceExcelReader:
                 if not excel_col or not excel_col.strip():  # 빈 컬럼 제외
                     continue
                     
-                excel_col_lower = excel_col.lower()
+                excel_col_lower = excel_col.strip().lower()
                 if excel_col_lower in process_lower:
                     # 매칭된 인덱스 찾기
                     process_idx = process_lower.index(excel_col_lower)
                     process_col = process_send_columns[process_idx]
                     
                     match_info = {
-                        'excel_column': excel_col,
+                        'excel_column': excel_col.strip(),
                         'process_column': process_col,
                         'match_type': 'direct'
                     }
                     matches.append(match_info)
                 else:
-                    excel_only.append(excel_col)
+                    excel_only.append(excel_col.strip())
             
             # Process SELECT에만 있는 컬럼 찾기
             for process_col in process_send_columns:
                 if not process_col or not process_col.strip():  # 빈 컬럼 제외
                     continue
                     
-                process_col_lower = process_col.lower()
+                process_col_lower = process_col.strip().lower()
                 if process_col_lower not in excel_lower:
                     process_only.append(process_col)
             
@@ -772,8 +772,8 @@ class InterfaceExcelReader:
             process_compare_columns = recv_columns
             
             # 대소문자 구분 없이 비교를 위한 매핑 생성
-            excel_lower = [col.lower() for col in excel_columns if col and col.strip()]
-            process_lower = [col.lower() for col in process_compare_columns if col and col.strip()]
+            excel_lower = [col.strip().lower() for col in excel_columns if col and col.strip()]
+            process_lower = [col.strip().lower() for col in process_compare_columns if col and col.strip()]
             
             # 매칭 찾기
             matches = []
@@ -785,7 +785,7 @@ class InterfaceExcelReader:
                 if not excel_col or not excel_col.strip():  # 빈 컬럼 제외
                     continue
                     
-                excel_col_lower = excel_col.lower()
+                excel_col_lower = excel_col.strip().lower()
                 if excel_col_lower in process_lower:
                     # 매칭된 인덱스 찾기
                     process_idx = process_lower.index(excel_col_lower)
@@ -794,12 +794,12 @@ class InterfaceExcelReader:
                     # 상세 매핑 정보 찾기
                     detailed_info = None
                     for mapping in detailed_mappings:
-                        if mapping['recv'].lower() == excel_col_lower:
+                        if mapping['recv'].strip().lower() == excel_col_lower:
                             detailed_info = mapping
                             break
                     
                     match_info = {
-                        'excel_column': excel_col,
+                        'excel_column': excel_col.strip(),
                         'process_column': process_col,
                         'value_type': detailed_info['value_type'] if detailed_info else 'unknown',
                         'value_pattern': detailed_info.get('value_pattern', '') if detailed_info else ''
@@ -810,14 +810,14 @@ class InterfaceExcelReader:
                     
                     matches.append(match_info)
                 else:
-                    excel_only.append(excel_col)
+                    excel_only.append(excel_col.strip())
             
             # Process 수신에만 있는 컬럼 찾기
             for process_col in process_compare_columns:
                 if not process_col or not process_col.strip():  # 빈 컬럼 제외
                     continue
                     
-                process_col_lower = process_col.lower()
+                process_col_lower = process_col.strip().lower()
                 if process_col_lower not in excel_lower:
                     process_only.append(process_col)
             
@@ -1177,8 +1177,8 @@ class InterfaceExcelReader:
             print(f"{column_type} ({len(process_send_columns)}개): {process_send_columns}")
             
             # 대소문자 구분 없이 비교를 위한 매핑 생성
-            schema_lower = [col.lower() for col in schema_columns if col and col.strip()]
-            process_lower = [col.lower() for col in process_send_columns if col and col.strip()]
+            schema_lower = [col.strip().lower() for col in schema_columns if col and col.strip()]
+            process_lower = [col.strip().lower() for col in process_send_columns if col and col.strip()]
             
             # 매칭 찾기
             matches = []
@@ -1190,27 +1190,27 @@ class InterfaceExcelReader:
                 if not schema_col or not schema_col.strip():
                     continue
                     
-                schema_col_lower = schema_col.lower()
+                schema_col_lower = schema_col.strip().lower()
                 if schema_col_lower in process_lower:
                     # 매칭된 인덱스 찾기
                     process_idx = process_lower.index(schema_col_lower)
                     process_col = process_send_columns[process_idx]
                     
                     match_info = {
-                        'schema_column': schema_col,
+                        'schema_column': schema_col.strip(),
                         'process_column': process_col,
                         'match_type': 'direct'
                     }
                     matches.append(match_info)
                 else:
-                    schema_only.append(schema_col)
+                    schema_only.append(schema_col.strip())
             
             # Process 송신 컬럼에만 있는 컬럼 찾기
             for process_col in process_send_columns:
                 if not process_col or not process_col.strip():
                     continue
                     
-                process_col_lower = process_col.lower()
+                process_col_lower = process_col.strip().lower()
                 if process_col_lower not in schema_lower:
                     process_only.append(process_col)
             
