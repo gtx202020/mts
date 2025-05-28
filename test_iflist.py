@@ -22,6 +22,7 @@ from typing import Dict, List, Optional, Any
 import openpyxl
 from openpyxl.worksheet.worksheet import Worksheet
 import pandas as pd
+import datetime
 
 
 class InterfaceExcelReader:
@@ -98,6 +99,33 @@ class InterfaceExcelReader:
             if worksheet is None:
                 raise ValueError("활성 워크시트를 찾을 수 없습니다")
             
+            # B열부터 시작하여 3컬럼 단위로 처리 (전체 인터페이스 처리)
+            current_col = 2  # B열 = 2
+            
+            while current_col <= worksheet.max_column:
+                try:
+                    # 인터페이스 블록 읽기
+                    interface_data = self._read_interface_block(worksheet, current_col)
+                    
+                    if interface_data is None:
+                        # 빈 인터페이스 발견시 종료
+                        break
+                    
+                    interfaces.append(interface_data)
+                    self.processed_count += 1
+                    print(f"인터페이스 {self.processed_count} 처리 완료: {interface_data.get('interface_name', 'Unknown')}")
+                    
+                except Exception as e:
+                    self.error_count += 1
+                    error_msg = f"컬럼 {current_col}에서 오류 발생: {str(e)}"
+                    self.last_error_messages.append(error_msg)
+                    print(f"Warning: {error_msg}")
+                
+                # 다음 인터페이스 블록으로 이동 (3컬럼씩)
+                current_col += 3
+            
+            # 디버깅용 코드는 주석 처리
+            """
             # [디버깅용] 첫 번째 인터페이스 블록만 처리 (B열부터 시작)
             current_col = 2  # B열 = 2
             
@@ -119,32 +147,6 @@ class InterfaceExcelReader:
                 error_msg = f"첫 번째 인터페이스 블록(컬럼 {current_col})에서 오류 발생: {str(e)}"
                 self.last_error_messages.append(error_msg)
                 print(f"Warning: {error_msg}")
-            
-            # 원래 루프 코드는 주석 처리 (디버깅 후 복원용)
-            """
-            # B열부터 시작하여 3컬럼 단위로 처리
-            current_col = 2  # B열 = 2
-            
-            while current_col <= worksheet.max_column:
-                try:
-                    # 인터페이스 블록 읽기
-                    interface_data = self._read_interface_block(worksheet, current_col)
-                    
-                    if interface_data is None:
-                        # 빈 인터페이스 발견시 종료
-                        break
-                    
-                    interfaces.append(interface_data)
-                    self.processed_count += 1
-                    
-                except Exception as e:
-                    self.error_count += 1
-                    error_msg = f"컬럼 {current_col}에서 오류 발생: {str(e)}"
-                    self.last_error_messages.append(error_msg)
-                    print(f"Warning: {error_msg}")
-                
-                # 다음 인터페이스 블록으로 이동 (3컬럼씩)
-                current_col += 3
             """
                 
         except Exception as e:
@@ -839,6 +841,145 @@ class InterfaceExcelReader:
             traceback.print_exc()
         
         return result
+
+    def export_all_interfaces_to_log(self, interfaces: List[Dict[str, Any]], log_file_path: str = "test_iflist.log") -> None:
+        """
+        모든 인터페이스 정보를 로그 파일로 출력
+        
+        Args:
+            interfaces (List[Dict[str, Any]]): 인터페이스 정보 리스트
+            log_file_path (str): 로그 파일 경로 (기본값: "test_iflist.log")
+        """
+        try:
+            with open(log_file_path, 'w', encoding='utf-8') as log_file:
+                # 로그 헤더 작성
+                current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                log_file.write(f"=== 인터페이스 정보 분석 결과 로그 ===\n")
+                log_file.write(f"생성일시: {current_time}\n")
+                log_file.write(f"총 인터페이스 수: {len(interfaces)}개\n")
+                log_file.write("=" * 80 + "\n\n")
+                
+                # 각 인터페이스별로 상세 정보 출력
+                for idx, interface in enumerate(interfaces, 1):
+                    log_file.write(f"[{idx:03d}] =========================== 인터페이스 정보 ===========================\n")
+                    log_file.write(f"인터페이스명: {interface['interface_name']}\n")
+                    log_file.write(f"인터페이스ID: {interface['interface_id']}\n")
+                    log_file.write(f"일련번호: {interface['serial_number']}\n")
+                    log_file.write(f"송신 테이블: {interface['send']['table_name']}\n")
+                    log_file.write(f"수신 테이블: {interface['recv']['table_name']}\n")
+                    log_file.write(f"송신 컬럼 수: {len(interface['send']['columns'])}\n")
+                    log_file.write(f"수신 컬럼 수: {len(interface['recv']['columns'])}\n")
+                    log_file.write(f"송신 원본파일: {interface.get('send_original', 'N/A')}\n")
+                    log_file.write(f"송신 복사파일: {interface.get('send_copy', 'N/A')}\n")
+                    log_file.write(f"수신 원본파일: {interface.get('recv_original', 'N/A')}\n")
+                    log_file.write(f"수신 복사파일: {interface.get('recv_copy', 'N/A')}\n")
+                    log_file.write(f"송신 스키마파일: {interface.get('send_schema', 'N/A')}\n")
+                    log_file.write(f"수신 스키마파일: {interface.get('recv_schema', 'N/A')}\n")
+                    
+                    # 송신 컬럼 상세 정보
+                    log_file.write(f"\n--- 송신 컬럼 목록 ({len(interface['send']['columns'])}개) ---\n")
+                    for i, col in enumerate(interface['send']['columns'], 1):
+                        log_file.write(f"  {i:2d}. {col}\n")
+                    
+                    # 수신 컬럼 상세 정보
+                    log_file.write(f"\n--- 수신 컬럼 목록 ({len(interface['recv']['columns'])}개) ---\n")
+                    for i, col in enumerate(interface['recv']['columns'], 1):
+                        log_file.write(f"  {i:2d}. {col}\n")
+                    
+                    # 컬럼 매핑 비교 수행
+                    log_file.write(f"\n--- 컬럼 매핑 비교 결과 ---\n")
+                    try:
+                        comparison_result = self.compare_column_mappings(interface)
+                        
+                        # 송신 비교 결과
+                        send_comp = comparison_result['send_comparison']
+                        log_file.write(f"📤 송신 파일 비교: {interface.get('send_copy', 'N/A')}\n")
+                        if send_comp.get('file_exists'):
+                            log_file.write(f"   매칭률: {send_comp['match_percentage']:.1f}% ({send_comp['match_count']}/{send_comp['total_excel']})\n")
+                            log_file.write(f"   테이블: {send_comp.get('table_info', {}).get('table_name', 'Unknown')}\n")
+                            log_file.write(f"   WHERE: {send_comp.get('table_info', {}).get('where_condition', 'None')}\n")
+                            
+                            if send_comp['matches']:
+                                log_file.write(f"   ✅ 매칭된 컬럼 ({len(send_comp['matches'])}개):\n")
+                                for match in send_comp['matches']:
+                                    log_file.write(f"      - {match['excel_column']} = {match['process_column']}\n")
+                            
+                            if send_comp['excel_only']:
+                                log_file.write(f"   ❌ 엑셀에만 있는 컬럼 ({len(send_comp['excel_only'])}개):\n")
+                                for col in send_comp['excel_only']:
+                                    log_file.write(f"      - {col}\n")
+                            
+                            if send_comp['process_only']:
+                                log_file.write(f"   ⚠️ Process SELECT에만 있는 컬럼 ({len(send_comp['process_only'])}개):\n")
+                                for col in send_comp['process_only']:
+                                    log_file.write(f"      - {col}\n")
+                        else:
+                            log_file.write(f"   오류: {send_comp.get('error', '파일 없음')}\n")
+                        
+                        # 수신 비교 결과
+                        recv_comp = comparison_result['recv_comparison']
+                        log_file.write(f"\n📥 수신 파일 비교: {interface.get('recv_copy', 'N/A')}\n")
+                        if recv_comp.get('file_exists'):
+                            log_file.write(f"   매칭률: {recv_comp['match_percentage']:.1f}% ({recv_comp['match_count']}/{recv_comp['total_excel']})\n")
+                            
+                            if recv_comp['matches']:
+                                log_file.write(f"   ✅ 매칭된 컬럼 ({len(recv_comp['matches'])}개):\n")
+                                for match in recv_comp['matches']:
+                                    extra_info = ""
+                                    if 'mapped_send_column' in match:
+                                        extra_info = f" -> 송신: {match['mapped_send_column']}"
+                                    log_file.write(f"      - {match['excel_column']} = {match['process_column']} ({match['value_type']}){extra_info}\n")
+                            
+                            if recv_comp['excel_only']:
+                                log_file.write(f"   ❌ 엑셀에만 있는 컬럼 ({len(recv_comp['excel_only'])}개):\n")
+                                for col in recv_comp['excel_only']:
+                                    log_file.write(f"      - {col}\n")
+                            
+                            if recv_comp['process_only']:
+                                log_file.write(f"   ⚠️ Process 수신에만 있는 컬럼 ({len(recv_comp['process_only'])}개):\n")
+                                for col in recv_comp['process_only']:
+                                    log_file.write(f"      - {col}\n")
+                        else:
+                            log_file.write(f"   오류: {recv_comp.get('error', '파일 없음')}\n")
+                        
+                        # 송신-수신 연결 비교 결과
+                        conn_comp = comparison_result['send_recv_comparison']
+                        log_file.write(f"\n🔗 송신-수신 연결 비교\n")
+                        if conn_comp.get('both_files_exist'):
+                            log_file.write(f"   연결률: {conn_comp['match_percentage']:.1f}% ({conn_comp['match_count']}/{conn_comp['total_send']})\n")
+                            
+                            if conn_comp['matches']:
+                                log_file.write(f"   ✅ 연결된 컬럼 ({len(conn_comp['matches'])}개):\n")
+                                for match in conn_comp['matches']:
+                                    log_file.write(f"      - {match['send_column']} -> {match['recv_mapped_column']}\n")
+                            
+                            if conn_comp['send_only']:
+                                log_file.write(f"   ❌ 송신에만 있는 컬럼 ({len(conn_comp['send_only'])}개):\n")
+                                for col in conn_comp['send_only']:
+                                    log_file.write(f"      - {col}\n")
+                            
+                            if conn_comp['recv_only']:
+                                log_file.write(f"   ⚠️ 수신에만 매핑된 컬럼 ({len(conn_comp['recv_only'])}개):\n")
+                                for col in conn_comp['recv_only']:
+                                    log_file.write(f"      - {col}\n")
+                        else:
+                            log_file.write(f"   오류: {conn_comp.get('error', '파일 없음')}\n")
+                    
+                    except Exception as e:
+                        log_file.write(f"   컬럼 매핑 비교 중 오류: {str(e)}\n")
+                    
+                    log_file.write("\n" + "=" * 80 + "\n\n")
+                
+                # 로그 푸터 작성
+                log_file.write(f"=== 로그 작성 완료 ({current_time}) ===\n")
+                
+            print(f"✅ 전체 인터페이스 정보가 '{log_file_path}' 파일로 출력되었습니다.")
+            print(f"   총 {len(interfaces)}개 인터페이스 처리 완료")
+            
+        except Exception as e:
+            print(f"❌ 로그 파일 작성 중 오류 발생: {str(e)}")
+            import traceback
+            traceback.print_exc()
 
 
 class BWProcessFileParser:
@@ -1831,6 +1972,10 @@ if __name__ == "__main__":
                     
                 except Exception as e:
                     print(f"컬럼 매핑 비교 중 오류: {str(e)}")
+            
+            # 전체 인터페이스 정보를 로그 파일로 출력
+            print(f"\n=== 전체 인터페이스 정보 로그 출력 ===")
+            reader.export_all_interfaces_to_log(interfaces)
             
             print("\n=== 테스트 완료 ===")
         
