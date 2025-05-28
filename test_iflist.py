@@ -1332,10 +1332,12 @@ class InterfaceExcelReader:
                     worksheet.cell(row=row_idx, column=8, value=f"{send_match_rate:.1f}%")
                     worksheet.cell(row=row_idx, column=9, value=send_summary)
                     
-                    # 매칭률이 100%가 아니면 주황색으로 표시
                     if send_match_rate < 100:
                         worksheet.cell(row=row_idx, column=8).fill = PatternFill(start_color="FFA500", end_color="FFA500", fill_type="solid")
                         worksheet.cell(row=row_idx, column=9).fill = PatternFill(start_color="FFA500", end_color="FFA500", fill_type="solid")
+                    elif send_summary == "비교 미수행":
+                        worksheet.cell(row=row_idx, column=8).fill = PatternFill(start_color="D3D3D3", end_color="D3D3D3", fill_type="solid")
+                        worksheet.cell(row=row_idx, column=9).fill = PatternFill(start_color="D3D3D3", end_color="D3D3D3", fill_type="solid")
                     
                     # 2. 수신 비교 결과
                     recv_comp = comparison_result.get('recv_comparison', {})
@@ -1348,6 +1350,9 @@ class InterfaceExcelReader:
                     if recv_match_rate < 100:
                         worksheet.cell(row=row_idx, column=10).fill = PatternFill(start_color="FFA500", end_color="FFA500", fill_type="solid")
                         worksheet.cell(row=row_idx, column=11).fill = PatternFill(start_color="FFA500", end_color="FFA500", fill_type="solid")
+                    elif recv_summary == "비교 미수행":
+                        worksheet.cell(row=row_idx, column=10).fill = PatternFill(start_color="D3D3D3", end_color="D3D3D3", fill_type="solid")
+                        worksheet.cell(row=row_idx, column=11).fill = PatternFill(start_color="D3D3D3", end_color="D3D3D3", fill_type="solid")
                     
                     # 3. 연결 비교 결과
                     conn_comp = comparison_result.get('send_recv_comparison', {})
@@ -1360,6 +1365,9 @@ class InterfaceExcelReader:
                     if conn_match_rate < 100:
                         worksheet.cell(row=row_idx, column=12).fill = PatternFill(start_color="FFA500", end_color="FFA500", fill_type="solid")
                         worksheet.cell(row=row_idx, column=13).fill = PatternFill(start_color="FFA500", end_color="FFA500", fill_type="solid")
+                    elif conn_summary == "비교 미수행":
+                        worksheet.cell(row=row_idx, column=12).fill = PatternFill(start_color="D3D3D3", end_color="D3D3D3", fill_type="solid")
+                        worksheet.cell(row=row_idx, column=13).fill = PatternFill(start_color="D3D3D3", end_color="D3D3D3", fill_type="solid")
                     
                     # 4. 송신 스키마 비교 결과
                     send_schema_comp = schema_comparison.get('send_schema_comparison', {})
@@ -1372,6 +1380,9 @@ class InterfaceExcelReader:
                     if send_schema_match_rate < 100:
                         worksheet.cell(row=row_idx, column=14).fill = PatternFill(start_color="FFA500", end_color="FFA500", fill_type="solid")
                         worksheet.cell(row=row_idx, column=15).fill = PatternFill(start_color="FFA500", end_color="FFA500", fill_type="solid")
+                    elif send_schema_summary == "비교 미수행":
+                        worksheet.cell(row=row_idx, column=14).fill = PatternFill(start_color="D3D3D3", end_color="D3D3D3", fill_type="solid")
+                        worksheet.cell(row=row_idx, column=15).fill = PatternFill(start_color="D3D3D3", end_color="D3D3D3", fill_type="solid")
                     
                     # 5. 수신 스키마 비교 결과
                     recv_schema_comp = schema_comparison.get('recv_schema_comparison', {})
@@ -1384,6 +1395,9 @@ class InterfaceExcelReader:
                     if recv_schema_match_rate < 100:
                         worksheet.cell(row=row_idx, column=16).fill = PatternFill(start_color="FFA500", end_color="FFA500", fill_type="solid")
                         worksheet.cell(row=row_idx, column=17).fill = PatternFill(start_color="FFA500", end_color="FFA500", fill_type="solid")
+                    elif recv_schema_summary == "비교 미수행":
+                        worksheet.cell(row=row_idx, column=16).fill = PatternFill(start_color="D3D3D3", end_color="D3D3D3", fill_type="solid")
+                        worksheet.cell(row=row_idx, column=17).fill = PatternFill(start_color="D3D3D3", end_color="D3D3D3", fill_type="solid")
                 
                 except Exception as e:
                     print(f"Warning: 인터페이스 {interface_name} 비교 중 오류: {str(e)}")
@@ -1393,7 +1407,7 @@ class InterfaceExcelReader:
                             worksheet.cell(row=row_idx, column=col, value="오류")
                         else:  # 요약 컬럼
                             worksheet.cell(row=row_idx, column=col, value=f"처리 중 오류: {str(e)}")
-                        worksheet.cell(row=row_idx, column=col).fill = PatternFill(start_color="FFA500", end_color="FFA500", fill_type="solid")
+                        worksheet.cell(row=row_idx, column=col).fill = PatternFill(start_color="D3D3D3", end_color="D3D3D3", fill_type="solid")
             
             # 컬럼 너비 자동 조절
             for column in worksheet.columns:
