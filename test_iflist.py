@@ -1033,7 +1033,16 @@ class ProcessFileMapper:
             print(f"송신파일생성여부: {send_create_flag} (타입: {type(send_create_flag)})")
             if (pd.notna(send_create_flag) and float(send_create_flag) == 1.0):
                 result['send_original'] = str(match_row.get('송신파일경로', ''))
-                result['send_copy'] = str(normal_row.get('송신파일경로', ''))
+                send_copy_path = str(normal_row.get('송신파일경로', ''))
+                
+                # ===== 테스트용 임시 경로 변환 로직 (향후 주석 처리) =====
+                # 'C:\BwProject\' -> 'C:\tBwProject\'로 변경
+                if send_copy_path.startswith('C:\\BwProject\\'):
+                    send_copy_path = send_copy_path.replace('C:\\BwProject\\', 'C:\\tBwProject\\', 1)
+                    print(f"테스트용 송신 경로 변환: {normal_row.get('송신파일경로', '')} -> {send_copy_path}")
+                # ===========================================================
+                
+                result['send_copy'] = send_copy_path
                 print(f"송신 파일 정보 추가됨")
             
             # 수신 파일 생성 여부 확인  
@@ -1041,7 +1050,16 @@ class ProcessFileMapper:
             print(f"수신파일생성여부: {recv_create_flag} (타입: {type(recv_create_flag)})")
             if (pd.notna(recv_create_flag) and float(recv_create_flag) == 1.0):
                 result['recv_original'] = str(match_row.get('수신파일경로', ''))
-                result['recv_copy'] = str(normal_row.get('수신파일경로', ''))
+                recv_copy_path = str(normal_row.get('수신파일경로', ''))
+                
+                # ===== 테스트용 임시 경로 변환 로직 (향후 주석 처리) =====
+                # 'C:\BwProject\' -> 'C:\tBwProject\'로 변경
+                if recv_copy_path.startswith('C:\\BwProject\\'):
+                    recv_copy_path = recv_copy_path.replace('C:\\BwProject\\', 'C:\\tBwProject\\', 1)
+                    print(f"테스트용 수신 경로 변환: {normal_row.get('수신파일경로', '')} -> {recv_copy_path}")
+                # ===========================================================
+                
+                result['recv_copy'] = recv_copy_path
                 print(f"수신 파일 정보 추가됨")
             
             # 송신 스키마 파일 생성 여부 확인
