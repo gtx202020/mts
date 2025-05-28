@@ -381,21 +381,23 @@ class InterfaceExcelReader:
         Returns:
             Dict[str, Any]: 비교 결과
             {
-                'send_comparison': {...},  # 송신 비교 결과
-                'recv_comparison': {...}   # 수신 비교 결과
+                'send_comparison': {...},   # 송신 비교 결과 (엑셀 송신 vs .process SELECT)
+                'recv_comparison': {...},   # 수신 비교 결과 (엑셀 수신 vs .process INSERT)
+                'send_recv_comparison': {...}  # 송신과 수신 간 연결 비교
             }
         """
         print(f"\n=== 컬럼 매핑 비교 시작: {interface_data.get('interface_name', 'Unknown')} ===")
         
         comparison_result = {
             'send_comparison': {},
-            'recv_comparison': {}
+            'recv_comparison': {},
+            'send_recv_comparison': {}
         }
         
-        # 송신 파일 비교
+        # 송신 파일 비교 (엑셀 송신 컬럼 vs .process SELECT 컬럼)
         if interface_data.get('send_copy'):
             print(f"\n--- 송신 파일 비교: {interface_data['send_copy']} ---")
-            send_comparison = self._compare_single_mapping(
+            send_comparison = self._compare_send_mapping(
                 interface_data['send']['columns'],
                 interface_data['send_copy'],
                 '송신'
@@ -404,7 +406,7 @@ class InterfaceExcelReader:
         else:
             print("\n--- 송신 파일 경로 없음 ---")
         
-        # 수신 파일 비교
+        # 수신 파일 비교 (엑셀 수신 컬럼 vs .process INSERT 컬럼)
         if interface_data.get('recv_copy'):
             print(f"\n--- 수신 파일 비교: {interface_data['recv_copy']} ---")
             recv_comparison = self._compare_single_mapping(
@@ -416,31 +418,41 @@ class InterfaceExcelReader:
         else:
             print("\n--- 수신 파일 경로 없음 ---")
         
+        # 송신-수신 연결 비교 (송신 .process의 SELECT 컬럼과 수신 .process의 매핑된 송신 컬럼)
+        if interface_data.get('send_copy') and interface_data.get('recv_copy'):
+            print(f"\n--- 송신-수신 연결 비교 ---")
+            send_recv_comparison = self._compare_send_recv_connection(
+                interface_data['send_copy'],
+                interface_data['recv_copy']
+            )
+            comparison_result['send_recv_comparison'] = send_recv_comparison
+        else:
+            print("\n--- 송신-수신 연결 비교 건너뜀 (파일 경로 없음) ---")
+        
         print(f"\n=== 컬럼 매핑 비교 완료 ===")
         return comparison_result
     
-    def _compare_single_mapping(self, excel_columns: List[str], process_file_path: str, direction: str) -> Dict[str, Any]:
+    def _compare_send_mapping(self, excel_send_columns: List[str], send_process_file_path: str, direction: str) -> Dict[str, Any]:
         """
-        단일 방향(송신/수신)의 컬럼 매핑 비교
+        송신 컬럼 매핑 비교 (엑셀 송신 컬럼 vs .process SELECT 컬럼)
         
         Args:
-            excel_columns (List[str]): 엑셀에서 읽은 컬럼 리스트
-            process_file_path (str): .process 파일 경로
-            direction (str): 방향 ('송신' 또는 '수신')
+            excel_send_columns (List[str]): 엑셀에서 읽은 송신 컬럼 리스트
+            send_process_file_path (str): 송신 .process 파일 경로
+            direction (str): 방향 ('송신')
             
         Returns:
-            Dict[str, Any]: 비교 결과
+            Dict[str, Any]: 송신 비교 결과
         """
         result = {
-            'excel_columns': excel_columns,
-            'process_recv_columns': [],
-            'process_send_columns': [],
-            'detailed_mappings': [],
+            'excel_columns': excel_send_columns,
+            'process_select_columns': [],
+            'table_info': {},
             'matches': [],
             'excel_only': [],
             'process_only': [],
             'match_count': 0,
-            'total_excel': len(excel_columns),
+            'total_excel': len(excel_send_columns),
             'total_process': 0,
             'match_percentage': 0.0,
             'file_exists': False,
@@ -449,54 +461,44 @@ class InterfaceExcelReader:
         
         try:
             # 파일 존재 여부 확인
-            if not os.path.exists(process_file_path):
-                result['error'] = f".process 파일 없음: {process_file_path}"
+            if not os.path.exists(send_process_file_path):
+                result['error'] = f"송신 .process 파일 없음: {send_process_file_path}"
                 print(f"Warning: {result['error']}")
                 return result
             
             result['file_exists'] = True
             
-            # BWProcessFileParser로 컬럼 매핑 추출
+            # BWProcessFileParser로 송신 컬럼 추출
             bw_parser = BWProcessFileParser()
-            column_mappings = bw_parser.extract_column_mappings(process_file_path)
+            send_column_mappings = bw_parser.extract_send_column_mappings(send_process_file_path)
             
-            recv_columns = column_mappings.get('recv_columns', [])
-            send_columns = column_mappings.get('send_columns', [])
-            detailed_mappings = column_mappings.get('column_mappings', [])
+            process_send_columns = send_column_mappings.get('send_columns', [])
+            table_info = {
+                'table_name': send_column_mappings.get('table_name', ''),
+                'where_condition': send_column_mappings.get('where_condition', ''),
+                'order_by': send_column_mappings.get('order_by', '')
+            }
             
-            result['process_recv_columns'] = recv_columns
-            result['process_send_columns'] = send_columns
-            result['detailed_mappings'] = detailed_mappings
-            result['total_process'] = len(recv_columns)
+            result['process_select_columns'] = process_send_columns
+            result['table_info'] = table_info
+            result['total_process'] = len(process_send_columns)
             
             print(f"\n=== {direction} 컬럼 비교 상세 ===")
-            print(f"엑셀 컬럼 ({len(excel_columns)}개): {excel_columns}")
-            print(f"Process 수신 컬럼 ({len(recv_columns)}개): {recv_columns}")
-            print(f"Process 송신 컬럼 ({len(send_columns)}개): {send_columns}")
-            
-            # 비교 로직: 방향에 따라 다른 컬럼과 비교
-            if direction == '송신':
-                # 송신의 경우: 엑셀 송신 컬럼 vs Process 송신 컬럼
-                process_compare_columns = send_columns
-                compare_type = "송신 컬럼"
-            else:
-                # 수신의 경우: 엑셀 수신 컬럼 vs Process 수신 컬럼  
-                process_compare_columns = recv_columns
-                compare_type = "수신 컬럼"
-            
-            print(f"비교 대상: 엑셀 {direction} 컬럼 vs Process {compare_type}")
+            print(f"엑셀 송신 컬럼 ({len(excel_send_columns)}개): {excel_send_columns}")
+            print(f"Process SELECT 컬럼 ({len(process_send_columns)}개): {process_send_columns}")
+            print(f"테이블: {table_info.get('table_name', 'Unknown')}")
             
             # 대소문자 구분 없이 비교를 위한 매핑 생성
-            excel_lower = [col.lower() for col in excel_columns if col and col.strip()]
-            process_lower = [col.lower() for col in process_compare_columns if col and col.strip()]
+            excel_lower = [col.lower() for col in excel_send_columns if col and col.strip()]
+            process_lower = [col.lower() for col in process_send_columns if col and col.strip()]
             
             # 매칭 찾기
             matches = []
             excel_only = []
             process_only = []
             
-            # 엑셀 컬럼 기준으로 매칭 찾기
-            for excel_col in excel_columns:
+            # 엑셀 송신 컬럼 기준으로 매칭 찾기
+            for excel_col in excel_send_columns:
                 if not excel_col or not excel_col.strip():  # 빈 컬럼 제외
                     continue
                     
@@ -504,41 +506,19 @@ class InterfaceExcelReader:
                 if excel_col_lower in process_lower:
                     # 매칭된 인덱스 찾기
                     process_idx = process_lower.index(excel_col_lower)
-                    process_col = process_compare_columns[process_idx]
-                    
-                    # 상세 매핑 정보 찾기
-                    detailed_info = None
-                    if direction == '수신':
-                        # 수신의 경우 recv 컬럼으로 찾기
-                        for mapping in detailed_mappings:
-                            if mapping['recv'].lower() == excel_col_lower:
-                                detailed_info = mapping
-                                break
-                    else:
-                        # 송신의 경우 send 컬럼으로 찾기
-                        for mapping in detailed_mappings:
-                            if mapping['send'].lower() == excel_col_lower:
-                                detailed_info = mapping
-                                break
+                    process_col = process_send_columns[process_idx]
                     
                     match_info = {
                         'excel_column': excel_col,
                         'process_column': process_col,
-                        'value_type': detailed_info['value_type'] if detailed_info else 'unknown',
-                        'value_pattern': detailed_info.get('value_pattern', '') if detailed_info else ''
+                        'match_type': 'direct'
                     }
-                    
-                    if direction == '수신' and detailed_info:
-                        match_info['mapped_send_column'] = detailed_info['send']
-                    elif direction == '송신' and detailed_info:
-                        match_info['mapped_recv_column'] = detailed_info['recv']
-                    
                     matches.append(match_info)
                 else:
                     excel_only.append(excel_col)
             
-            # Process에만 있는 컬럼 찾기
-            for process_col in process_compare_columns:
+            # Process SELECT에만 있는 컬럼 찾기
+            for process_col in process_send_columns:
                 if not process_col or not process_col.strip():  # 빈 컬럼 제외
                     continue
                     
@@ -559,25 +539,157 @@ class InterfaceExcelReader:
             print(f"\n🔍 {direction} 매칭 결과:")
             print(f"✅ 매칭됨 ({len(matches)}개):")
             for match in matches:
-                extra_info = ""
-                if 'mapped_send_column' in match:
-                    extra_info = f" -> 송신: {match['mapped_send_column']}"
-                elif 'mapped_recv_column' in match:
-                    extra_info = f" -> 수신: {match['mapped_recv_column']}"
-                print(f"  - {match['excel_column']} = {match['process_column']} ({match['value_type']}){extra_info}")
+                print(f"  - {match['excel_column']} = {match['process_column']}")
             
             print(f"\n❌ 엑셀에만 있음 ({len(excel_only)}개):")
             for col in excel_only:
                 print(f"  - {col}")
             
-            print(f"\n⚠️ Process에만 있음 ({len(process_only)}개):")
+            print(f"\n⚠️ Process SELECT에만 있음 ({len(process_only)}개):")
             for col in process_only:
                 print(f"  - {col}")
             
             print(f"\n📊 매칭률: {result['match_percentage']:.1f}% ({result['match_count']}/{result['total_excel']})")
             
         except Exception as e:
-            result['error'] = f"비교 중 오류: {str(e)}"
+            result['error'] = f"송신 비교 중 오류: {str(e)}"
+            print(f"Error: {result['error']}")
+            import traceback
+            traceback.print_exc()
+        
+        return result
+    
+    def _compare_send_recv_connection(self, send_process_file_path: str, recv_process_file_path: str) -> Dict[str, Any]:
+        """
+        송신과 수신 .process 파일 간의 컬럼 연결 비교
+        송신 .process의 SELECT 컬럼과 수신 .process의 매핑된 송신 컬럼이 일치하는지 확인
+        
+        Args:
+            send_process_file_path (str): 송신 .process 파일 경로
+            recv_process_file_path (str): 수신 .process 파일 경로
+            
+        Returns:
+            Dict[str, Any]: 송신-수신 연결 비교 결과
+        """
+        result = {
+            'send_select_columns': [],
+            'recv_mapped_send_columns': [],
+            'matches': [],
+            'send_only': [],
+            'recv_only': [],
+            'match_count': 0,
+            'total_send': 0,
+            'total_recv': 0,
+            'match_percentage': 0.0,
+            'both_files_exist': False,
+            'error': None
+        }
+        
+        try:
+            # 파일 존재 여부 확인
+            if not os.path.exists(send_process_file_path) or not os.path.exists(recv_process_file_path):
+                result['error'] = f"파일 없음 - 송신: {os.path.exists(send_process_file_path)}, 수신: {os.path.exists(recv_process_file_path)}"
+                print(f"Warning: {result['error']}")
+                return result
+            
+            result['both_files_exist'] = True
+            
+            # BWProcessFileParser로 양쪽 파일에서 컬럼 정보 추출
+            bw_parser = BWProcessFileParser()
+            
+            # 송신 파일에서 SELECT 컬럼 추출
+            send_column_mappings = bw_parser.extract_send_column_mappings(send_process_file_path)
+            send_select_columns = send_column_mappings.get('send_columns', [])
+            
+            # 수신 파일에서 INSERT 매핑 정보 추출
+            recv_column_mappings = bw_parser.extract_column_mappings(recv_process_file_path)
+            recv_detailed_mappings = recv_column_mappings.get('column_mappings', [])
+            
+            # 수신 파일에서 매핑된 송신 컬럼들만 추출
+            recv_mapped_send_columns = []
+            for mapping in recv_detailed_mappings:
+                send_col = mapping.get('send', '')
+                # 실제 송신 컬럼인지 확인 (literal, pattern 등 제외)
+                if (send_col and not send_col.startswith("'") and 
+                    not send_col.startswith('pattern_') and 
+                    not send_col.startswith('conditional_') and
+                    not send_col.startswith('unknown_')):
+                    recv_mapped_send_columns.append(send_col)
+            
+            result['send_select_columns'] = send_select_columns
+            result['recv_mapped_send_columns'] = recv_mapped_send_columns
+            result['total_send'] = len(send_select_columns)
+            result['total_recv'] = len(recv_mapped_send_columns)
+            
+            print(f"\n=== 송신-수신 연결 비교 상세 ===")
+            print(f"송신 SELECT 컬럼 ({len(send_select_columns)}개): {send_select_columns}")
+            print(f"수신에서 매핑된 송신 컬럼 ({len(recv_mapped_send_columns)}개): {recv_mapped_send_columns}")
+            
+            # 대소문자 구분 없이 비교
+            send_lower = [col.lower() for col in send_select_columns if col and col.strip()]
+            recv_lower = [col.lower() for col in recv_mapped_send_columns if col and col.strip()]
+            
+            # 매칭 찾기
+            matches = []
+            send_only = []
+            recv_only = []
+            
+            # 송신 SELECT 컬럼 기준으로 매칭 찾기
+            for send_col in send_select_columns:
+                if not send_col or not send_col.strip():
+                    continue
+                    
+                send_col_lower = send_col.lower()
+                if send_col_lower in recv_lower:
+                    # 매칭된 인덱스 찾기
+                    recv_idx = recv_lower.index(send_col_lower)
+                    recv_col = recv_mapped_send_columns[recv_idx]
+                    
+                    match_info = {
+                        'send_column': send_col,
+                        'recv_mapped_column': recv_col,
+                        'match_type': 'connected'
+                    }
+                    matches.append(match_info)
+                else:
+                    send_only.append(send_col)
+            
+            # 수신에만 매핑된 송신 컬럼 찾기
+            for recv_col in recv_mapped_send_columns:
+                if not recv_col or not recv_col.strip():
+                    continue
+                    
+                recv_col_lower = recv_col.lower()
+                if recv_col_lower not in send_lower:
+                    recv_only.append(recv_col)
+            
+            result['matches'] = matches
+            result['send_only'] = send_only
+            result['recv_only'] = recv_only
+            result['match_count'] = len(matches)
+            
+            # 매칭 비율 계산 (송신 기준)
+            if result['total_send'] > 0:
+                result['match_percentage'] = (result['match_count'] / result['total_send']) * 100
+            
+            # 결과 출력
+            print(f"\n🔗 송신-수신 연결 결과:")
+            print(f"✅ 연결됨 ({len(matches)}개):")
+            for match in matches:
+                print(f"  - {match['send_column']} -> {match['recv_mapped_column']}")
+            
+            print(f"\n❌ 송신에만 있음 ({len(send_only)}개):")
+            for col in send_only:
+                print(f"  - {col}")
+            
+            print(f"\n⚠️ 수신에만 매핑됨 ({len(recv_only)}개):")
+            for col in recv_only:
+                print(f"  - {col}")
+            
+            print(f"\n📊 연결률: {result['match_percentage']:.1f}% ({result['match_count']}/{result['total_send']})")
+            
+        except Exception as e:
+            result['error'] = f"송신-수신 연결 비교 중 오류: {str(e)}"
             print(f"Error: {result['error']}")
             import traceback
             traceback.print_exc()
@@ -1153,6 +1265,192 @@ class BWProcessFileParser:
         else:
             return 'unknown'
 
+    def extract_send_column_mappings(self, process_file_path: str) -> Dict[str, List[str]]:
+        """
+        송신 BW .process 파일에서 SELECT 쿼리의 컬럼 정보를 추출
+        
+        Args:
+            process_file_path (str): .process 파일의 경로
+            
+        Returns:
+            Dict[str, List[str]]: {
+                'send_columns': ['SEND_COL1', 'SEND_COL2', ...],  # SELECT 쿼리의 송신 컬럼들
+                'table_name': 'AAA_MGR.TABLE_XXX',               # 테이블명
+                'where_condition': "TRANSFER_FLAG='P'",          # WHERE 조건
+                'order_by': 'SEND_COL1'                         # ORDER BY 절
+            }
+            
+        Raises:
+            FileNotFoundError: 파일이 존재하지 않는 경우
+            ValueError: 파일 형식이 올바르지 않은 경우
+        """
+        # 파일 존재 여부 확인
+        if not os.path.exists(process_file_path):
+            raise FileNotFoundError(f"BW process 파일을 찾을 수 없습니다: {process_file_path}")
+        
+        column_mappings = {
+            'send_columns': [],
+            'table_name': '',
+            'where_condition': '',
+            'order_by': ''
+        }
+        
+        try:
+            # XML 파일 파싱
+            tree = ET.parse(process_file_path)
+            root = tree.getroot()
+            
+            print(f"\n=== 송신 BW Process 파일 컬럼 추출 시작: {process_file_path} ===")
+            
+            # SelectP 액티비티 찾기
+            activities = root.findall('.//pd:activity', self.ns)
+            
+            for activity in activities:
+                try:
+                    activity_name = activity.get('name', 'Unknown')
+                    
+                    # 'SelectP' 액티비티인지 확인
+                    if 'SelectP' not in activity_name and 'selectp' not in activity_name.lower():
+                        continue
+                    
+                    print(f"\nSelectP 액티비티 발견: {activity_name}")
+                    
+                    # config/statement 추출
+                    statement = activity.find('.//config/statement')
+                    if statement is not None and statement.text:
+                        query = statement.text.strip()
+                        print(f"\n발견된 SELECT 쿼리:\n{query}")
+                        
+                        # SELECT 쿼리인 경우만 처리
+                        if query.lower().startswith('select'):
+                            # SELECT 쿼리에서 컬럼과 테이블 정보 추출
+                            send_columns, table_info = self._parse_select_query(query)
+                            
+                            if send_columns:
+                                column_mappings['send_columns'] = send_columns
+                                column_mappings.update(table_info)
+                                
+                                print(f"\n✅ 추출된 송신 컬럼 ({len(send_columns)}개):")
+                                for i, col in enumerate(send_columns, 1):
+                                    print(f"  {i}. {col}")
+                                print(f"테이블: {table_info.get('table_name', 'Unknown')}")
+                                print(f"WHERE: {table_info.get('where_condition', 'None')}")
+                                print(f"ORDER BY: {table_info.get('order_by', 'None')}")
+                                break  # 첫 번째 SelectP 액티비티만 처리
+                        
+                except Exception as e:
+                    print(f"Warning: 액티비티 '{activity.get('name', 'Unknown')}' 처리 중 오류: {str(e)}")
+            
+            print(f"\n=== 송신 컬럼 추출 완료 ===")
+            
+        except ET.ParseError as e:
+            raise ValueError(f"XML 파싱 오류: {str(e)}")
+        except Exception as e:
+            raise ValueError(f"BW process 파일 처리 중 오류 발생: {str(e)}")
+        
+        return column_mappings
+    
+    def _parse_select_query(self, query: str) -> tuple[List[str], Dict[str, str]]:
+        """
+        SELECT 쿼리를 파싱하여 컬럼명과 테이블 정보를 추출
+        
+        Args:
+            query (str): SELECT SQL 쿼리
+            
+        Returns:
+            tuple[List[str], Dict[str, str]]: (컬럼 리스트, 테이블 정보 딕셔너리)
+        """
+        send_columns = []
+        table_info = {
+            'table_name': '',
+            'where_condition': '',
+            'order_by': ''
+        }
+        
+        try:
+            print(f"\n=== SELECT 쿼리 파싱 시작 ===")
+            
+            # Oracle 힌트 제거
+            cleaned_query = self._remove_oracle_hints(query)
+            print(f"힌트 제거된 쿼리:\n{cleaned_query}")
+            
+            # 1단계: SELECT 컬럼 부분 추출
+            # SELECT ... FROM 사이의 컬럼들 추출
+            select_pattern = r'SELECT\s+(.*?)\s+FROM'
+            select_match = re.search(select_pattern, cleaned_query, re.IGNORECASE | re.DOTALL)
+            
+            if select_match:
+                columns_part = select_match.group(1).strip()
+                print(f"컬럼 부분: {columns_part}")
+                
+                # 컬럼명 분리 (콤마로 구분, 공백 제거)
+                column_lines = [col.strip() for col in columns_part.split(',')]
+                for col_line in column_lines:
+                    # 각 라인에서 실제 컬럼명 추출 (AS 별칭 등 제거)
+                    col_name = self._extract_column_name(col_line)
+                    if col_name:
+                        send_columns.append(col_name)
+                        print(f"  추출된 컬럼: {col_name}")
+            
+            # 2단계: FROM 절에서 테이블명 추출
+            from_pattern = r'FROM\s+([\w.]+)'
+            from_match = re.search(from_pattern, cleaned_query, re.IGNORECASE)
+            if from_match:
+                table_info['table_name'] = from_match.group(1).strip()
+                print(f"테이블명: {table_info['table_name']}")
+            
+            # 3단계: WHERE 절 추출
+            where_pattern = r'WHERE\s+(.*?)(?:\s+ORDER\s+BY|$)'
+            where_match = re.search(where_pattern, cleaned_query, re.IGNORECASE | re.DOTALL)
+            if where_match:
+                table_info['where_condition'] = where_match.group(1).strip()
+                print(f"WHERE 조건: {table_info['where_condition']}")
+            
+            # 4단계: ORDER BY 절 추출
+            order_pattern = r'ORDER\s+BY\s+(.*?)$'
+            order_match = re.search(order_pattern, cleaned_query, re.IGNORECASE | re.DOTALL)
+            if order_match:
+                table_info['order_by'] = order_match.group(1).strip()
+                print(f"ORDER BY: {table_info['order_by']}")
+            
+            print(f"\n=== SELECT 쿼리 파싱 완료 ===")
+            
+        except Exception as e:
+            print(f"Warning: SELECT 쿼리 파싱 중 오류: {str(e)}")
+            import traceback
+            traceback.print_exc()
+        
+        return send_columns, table_info
+    
+    def _extract_column_name(self, column_expression: str) -> str:
+        """
+        컬럼 표현식에서 실제 컬럼명을 추출
+        
+        Args:
+            column_expression (str): 컬럼 표현식 (예: "SEND_COL1", "UPPER(SEND_COL2) AS COL2")
+            
+        Returns:
+            str: 추출된 컬럼명
+        """
+        # AS 별칭이 있는 경우 제거
+        if ' AS ' in column_expression.upper():
+            column_expression = column_expression.split(' AS ')[0].strip()
+        elif ' ' in column_expression and not any(func in column_expression.upper() for func in ['(', ')', 'CASE', 'WHEN']):
+            # 간단한 별칭 (AS 없이 공백으로 구분)
+            parts = column_expression.split()
+            if len(parts) >= 2:
+                column_expression = parts[0].strip()
+        
+        # 함수가 적용된 경우 (예: UPPER(SEND_COL1))
+        func_pattern = r'[A-Z_]+\s*\(\s*([\w.]+)\s*\)'
+        func_match = re.search(func_pattern, column_expression, re.IGNORECASE)
+        if func_match:
+            return func_match.group(1).strip()
+        
+        # 일반적인 컬럼명 (스키마.테이블.컬럼 또는 테이블.컬럼 또는 컬럼)
+        parts = column_expression.strip().split('.')
+        return parts[-1].strip()  # 마지막 부분이 실제 컬럼명
+
 
 class ProcessFileMapper:
     """
@@ -1468,9 +1766,43 @@ print(f"상세 매핑: {column_mappings['column_mappings']}")
 for mapping in column_mappings['column_mappings']:
     print(f"  {mapping['recv']} <- {mapping['send']} ({mapping['value_type']})")
         
+# 9. 송신 .process 파일에서 SELECT 컬럼 추출 (새로운 기능!)
+# 송신 .process 파일에서 SelectP 액티비티의 SELECT 쿼리 컬럼들을 추출
+send_column_mappings = bw_parser.extract_send_column_mappings('path/to/send.process')
+print(f"송신 SELECT 컬럼: {send_column_mappings['send_columns']}")
+print(f"테이블명: {send_column_mappings['table_name']}")
+print(f"WHERE 조건: {send_column_mappings['where_condition']}")
+print(f"ORDER BY: {send_column_mappings['order_by']}")
+
+# 10. 개선된 컬럼 매핑 비교 (3단계 비교!)
+# - 송신: 엑셀 송신 컬럼 vs .process SELECT 컬럼
+# - 수신: 엑셀 수신 컬럼 vs .process INSERT 컬럼  
+# - 연결: 송신 SELECT 컬럼 vs 수신 INSERT에서 매핑된 송신 컬럼
+for interface in interfaces:
+    comparison_result = reader.compare_column_mappings(interface)
+    
+    # 송신 비교 결과 (새로 추가!)
+    send_comp = comparison_result['send_comparison']
+    if send_comp.get('file_exists'):
+        print(f"송신 매칭률: {send_comp['match_percentage']:.1f}%")
+        print(f"송신 테이블: {send_comp.get('table_info', {}).get('table_name', 'Unknown')}")
+    
+    # 수신 비교 결과 (기존)
+    recv_comp = comparison_result['recv_comparison']
+    if recv_comp.get('file_exists'):
+        print(f"수신 매칭률: {recv_comp['match_percentage']:.1f}%")
+    
+    # 송신-수신 연결 비교 결과 (새로 추가!)
+    conn_comp = comparison_result['send_recv_comparison']
+    if conn_comp.get('both_files_exist'):
+        print(f"송신-수신 연결률: {conn_comp['match_percentage']:.1f}%")
+        print(f"연결된 컬럼: {len(conn_comp['matches'])}개")
+        
 # 파일 구조:
 # - iflist_in.xlsx: 인터페이스 정보 엑셀 (B열부터 3컬럼 단위)
 # - iflist03a_reordered_v8.3.xlsx: ProcessFileMapper용 파일 (원본파일, 복사파일 정보)
+# - 송신 .process: SelectP 액티비티에 SELECT 쿼리 포함
+# - 수신 .process: InsertAll 액티비티에 INSERT 쿼리 및 컬럼 매핑 포함
         """)
     
     # BW Process 파일 파싱 테스트 함수 추가
