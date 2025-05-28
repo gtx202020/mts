@@ -964,6 +964,60 @@ class InterfaceExcelReader:
                                     log_file.write(f"      - {col}\n")
                         else:
                             log_file.write(f"   오류: {conn_comp.get('error', '파일 없음')}\n")
+                        
+                        # 스키마 비교 결과 추가
+                        log_file.write(f"\n--- 스키마 파일 비교 결과 ---\n")
+                        try:
+                            schema_comparison_result = self.compare_schema_mappings(interface)
+                            
+                            # 송신 스키마 비교 결과
+                            send_schema_comp = schema_comparison_result['send_schema_comparison']
+                            log_file.write(f"📋 송신 스키마 비교: {interface.get('send_schema', 'N/A')}\n")
+                            if send_schema_comp.get('file_exists'):
+                                log_file.write(f"   매칭률: {send_schema_comp['match_percentage']:.1f}% ({send_schema_comp['match_count']}/{send_schema_comp['total_process']})\n")
+                                
+                                if send_schema_comp['matches']:
+                                    log_file.write(f"   ✅ 매칭된 컬럼 ({len(send_schema_comp['matches'])}개):\n")
+                                    for match in send_schema_comp['matches']:
+                                        log_file.write(f"      - {match['schema_column']} = {match['process_column']}\n")
+                                
+                                if send_schema_comp['schema_only']:
+                                    log_file.write(f"   ❌ 송신 스키마에만 있는 컬럼 ({len(send_schema_comp['schema_only'])}개):\n")
+                                    for col in send_schema_comp['schema_only']:
+                                        log_file.write(f"      - {col}\n")
+                                
+                                if send_schema_comp['process_only']:
+                                    log_file.write(f"   ⚠️ Process 송신에만 있는 컬럼 ({len(send_schema_comp['process_only'])}개):\n")
+                                    for col in send_schema_comp['process_only']:
+                                        log_file.write(f"      - {col}\n")
+                            else:
+                                log_file.write(f"   오류: {send_schema_comp.get('error', '파일 없음')}\n")
+                            
+                            # 수신 스키마 비교 결과
+                            recv_schema_comp = schema_comparison_result['recv_schema_comparison']
+                            log_file.write(f"\n📋 수신 스키마 비교: {interface.get('recv_schema', 'N/A')}\n")
+                            if recv_schema_comp.get('file_exists'):
+                                log_file.write(f"   매칭률: {recv_schema_comp['match_percentage']:.1f}% ({recv_schema_comp['match_count']}/{recv_schema_comp['total_process']})\n")
+                                
+                                if recv_schema_comp['matches']:
+                                    log_file.write(f"   ✅ 매칭된 컬럼 ({len(recv_schema_comp['matches'])}개):\n")
+                                    for match in recv_schema_comp['matches']:
+                                        log_file.write(f"      - {match['schema_column']} = {match['process_column']}\n")
+                                
+                                if recv_schema_comp['schema_only']:
+                                    log_file.write(f"   ❌ 수신 스키마에만 있는 컬럼 ({len(recv_schema_comp['schema_only'])}개):\n")
+                                    for col in recv_schema_comp['schema_only']:
+                                        log_file.write(f"      - {col}\n")
+                                
+                                if recv_schema_comp['process_only']:
+                                    log_file.write(f"   ⚠️ Process 송신에만 있는 컬럼 ({len(recv_schema_comp['process_only'])}개):\n")
+                                    for col in recv_schema_comp['process_only']:
+                                        log_file.write(f"      - {col}\n")
+                            else:
+                                log_file.write(f"   오류: {recv_schema_comp.get('error', '파일 없음')}\n")
+                        
+                        except Exception as e:
+                            log_file.write(f"   스키마 비교 중 오류: {str(e)}\n")
                     
                     except Exception as e:
                         log_file.write(f"   컬럼 매핑 비교 중 오류: {str(e)}\n")
@@ -980,6 +1034,200 @@ class InterfaceExcelReader:
             print(f"❌ 로그 파일 작성 중 오류 발생: {str(e)}")
             import traceback
             traceback.print_exc()
+
+    def compare_schema_mappings(self, interface_data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        스키마 파일의 컬럼과 .process 파일에서 추출한 송신 컬럼을 비교
+        
+        Args:
+            interface_data (Dict[str, Any]): 인터페이스 정보 딕셔너리
+            
+        Returns:
+            Dict[str, Any]: 스키마 비교 결과
+            {
+                'send_schema_comparison': {...},  # 송신 스키마 vs 수신 process의 송신 컬럼
+                'recv_schema_comparison': {...}   # 수신 스키마 vs 수신 process의 송신 컬럼
+            }
+        """
+        print(f"\n=== 스키마 매핑 비교 시작: {interface_data.get('interface_name', 'Unknown')} ===")
+        
+        comparison_result = {
+            'send_schema_comparison': {},
+            'recv_schema_comparison': {}
+        }
+        
+        # BWProcessFileParser 인스턴스 생성
+        bw_parser = BWProcessFileParser()
+        
+        # 수신 .process 파일에서 송신 컬럼 정보 추출 (비교 기준)
+        recv_process_send_columns = []
+        if interface_data.get('recv_copy'):
+            try:
+                print(f"\n--- 수신 .process에서 송신 컬럼 정보 추출 ---")
+                column_mappings = bw_parser.extract_column_mappings(interface_data['recv_copy'])
+                detailed_mappings = column_mappings.get('column_mappings', [])
+                
+                for mapping in detailed_mappings:
+                    send_col = mapping.get('send', '')
+                    # 실제 송신 컬럼인지 확인 (literal, pattern 등 제외)
+                    if (send_col and not send_col.startswith("'") and 
+                        not send_col.startswith('pattern_') and 
+                        not send_col.startswith('conditional_') and
+                        not send_col.startswith('unknown_')):
+                        if send_col not in recv_process_send_columns:
+                            recv_process_send_columns.append(send_col)
+                
+                print(f"수신 .process에서 추출한 송신 컬럼 ({len(recv_process_send_columns)}개): {recv_process_send_columns}")
+                
+            except Exception as e:
+                print(f"Warning: 수신 .process에서 송신 컬럼 추출 실패: {str(e)}")
+        
+        # 송신 스키마 파일 비교
+        if interface_data.get('send_schema'):
+            print(f"\n--- 송신 스키마 파일 비교: {interface_data['send_schema']} ---")
+            send_schema_comparison = self._compare_schema_with_columns(
+                interface_data['send_schema'],
+                recv_process_send_columns,
+                '송신 스키마',
+                '수신 process의 송신 컬럼'
+            )
+            comparison_result['send_schema_comparison'] = send_schema_comparison
+        else:
+            print("\n--- 송신 스키마 파일 경로 없음 ---")
+        
+        # 수신 스키마 파일 비교
+        if interface_data.get('recv_schema'):
+            print(f"\n--- 수신 스키마 파일 비교: {interface_data['recv_schema']} ---")
+            recv_schema_comparison = self._compare_schema_with_columns(
+                interface_data['recv_schema'],
+                recv_process_send_columns,
+                '수신 스키마',
+                '수신 process의 송신 컬럼'
+            )
+            comparison_result['recv_schema_comparison'] = recv_schema_comparison
+        else:
+            print("\n--- 수신 스키마 파일 경로 없음 ---")
+        
+        print(f"\n=== 스키마 매핑 비교 완료 ===")
+        return comparison_result
+    
+    def _compare_schema_with_columns(self, schema_file_path: str, process_send_columns: List[str], 
+                                   schema_type: str, column_type: str) -> Dict[str, Any]:
+        """
+        스키마 파일과 송신 컬럼들을 비교
+        
+        Args:
+            schema_file_path (str): 스키마 파일 경로
+            process_send_columns (List[str]): 비교할 송신 컬럼 리스트
+            schema_type (str): 스키마 타입 ('송신 스키마' 또는 '수신 스키마')
+            column_type (str): 컬럼 타입 설명
+            
+        Returns:
+            Dict[str, Any]: 스키마 비교 결과
+        """
+        result = {
+            'schema_columns': [],
+            'process_send_columns': process_send_columns,
+            'matches': [],
+            'schema_only': [],
+            'process_only': [],
+            'match_count': 0,
+            'total_schema': 0,
+            'total_process': len(process_send_columns),
+            'match_percentage': 0.0,
+            'file_exists': False,
+            'error': None
+        }
+        
+        try:
+            # BWProcessFileParser로 스키마 컬럼 추출
+            bw_parser = BWProcessFileParser()
+            schema_result = bw_parser.extract_schema_columns(schema_file_path)
+            
+            if schema_result.get('error'):
+                result['error'] = schema_result['error']
+                print(f"Warning: {result['error']}")
+                return result
+            
+            result['file_exists'] = schema_result.get('file_exists', False)
+            schema_columns = schema_result.get('schema_columns', [])
+            result['schema_columns'] = schema_columns
+            result['total_schema'] = len(schema_columns)
+            
+            print(f"\n=== {schema_type} vs {column_type} 비교 상세 ===")
+            print(f"{schema_type} 컬럼 ({len(schema_columns)}개): {schema_columns}")
+            print(f"{column_type} ({len(process_send_columns)}개): {process_send_columns}")
+            
+            # 대소문자 구분 없이 비교를 위한 매핑 생성
+            schema_lower = [col.lower() for col in schema_columns if col and col.strip()]
+            process_lower = [col.lower() for col in process_send_columns if col and col.strip()]
+            
+            # 매칭 찾기
+            matches = []
+            schema_only = []
+            process_only = []
+            
+            # 스키마 컬럼 기준으로 매칭 찾기
+            for schema_col in schema_columns:
+                if not schema_col or not schema_col.strip():
+                    continue
+                    
+                schema_col_lower = schema_col.lower()
+                if schema_col_lower in process_lower:
+                    # 매칭된 인덱스 찾기
+                    process_idx = process_lower.index(schema_col_lower)
+                    process_col = process_send_columns[process_idx]
+                    
+                    match_info = {
+                        'schema_column': schema_col,
+                        'process_column': process_col,
+                        'match_type': 'direct'
+                    }
+                    matches.append(match_info)
+                else:
+                    schema_only.append(schema_col)
+            
+            # Process 송신 컬럼에만 있는 컬럼 찾기
+            for process_col in process_send_columns:
+                if not process_col or not process_col.strip():
+                    continue
+                    
+                process_col_lower = process_col.lower()
+                if process_col_lower not in schema_lower:
+                    process_only.append(process_col)
+            
+            result['matches'] = matches
+            result['schema_only'] = schema_only
+            result['process_only'] = process_only
+            result['match_count'] = len(matches)
+            
+            # 매칭 비율 계산 (process 컬럼 기준)
+            if result['total_process'] > 0:
+                result['match_percentage'] = (result['match_count'] / result['total_process']) * 100
+            
+            # 결과 출력
+            print(f"\n🔍 {schema_type} 매칭 결과:")
+            print(f"✅ 매칭됨 ({len(matches)}개):")
+            for match in matches:
+                print(f"  - {match['schema_column']} = {match['process_column']}")
+            
+            print(f"\n❌ {schema_type}에만 있음 ({len(schema_only)}개):")
+            for col in schema_only:
+                print(f"  - {col}")
+            
+            print(f"\n⚠️ {column_type}에만 있음 ({len(process_only)}개):")
+            for col in process_only:
+                print(f"  - {col}")
+            
+            print(f"\n📊 매칭률: {result['match_percentage']:.1f}% ({result['match_count']}/{result['total_process']})")
+            
+        except Exception as e:
+            result['error'] = f"{schema_type} 비교 중 오류: {str(e)}"
+            print(f"Error: {result['error']}")
+            import traceback
+            traceback.print_exc()
+        
+        return result
 
 
 class BWProcessFileParser:
@@ -1829,6 +2077,121 @@ class BWProcessFileParser:
         
         return columns
 
+    def extract_schema_columns(self, schema_file_path: str) -> Dict[str, List[str]]:
+        """
+        XSD 스키마 파일에서 컬럼 정보를 추출
+        
+        Args:
+            schema_file_path (str): .xsd 스키마 파일의 경로
+            
+        Returns:
+            Dict[str, List[str]]: {
+                'schema_columns': ['SEND_COL1', 'SEND_COL2', ...],  # xs:element의 name 속성들
+                'file_exists': True/False,
+                'error': None 또는 오류 메시지
+            }
+            
+        Raises:
+            FileNotFoundError: 파일이 존재하지 않는 경우
+            ValueError: 파일 형식이 올바르지 않은 경우
+        """
+        result = {
+            'schema_columns': [],
+            'file_exists': False,
+            'error': None
+        }
+        
+        # 파일 존재 여부 확인
+        if not schema_file_path or not schema_file_path.strip():
+            result['error'] = "스키마 파일 경로가 비어있음"
+            return result
+            
+        if not os.path.exists(schema_file_path):
+            result['error'] = f"스키마 파일 없음: {schema_file_path}"
+            print(f"Warning: {result['error']}")
+            return result
+        
+        result['file_exists'] = True
+        
+        try:
+            print(f"\n=== 스키마 파일 컬럼 추출 시작: {schema_file_path} ===")
+            
+            # XML 파일 파싱
+            tree = ET.parse(schema_file_path)
+            root = tree.getroot()
+            
+            # XML 네임스페이스 처리
+            namespaces = {}
+            # 기본 XML 스키마 네임스페이스
+            namespaces['xs'] = 'http://www.w3.org/2001/XMLSchema'
+            
+            # 루트에서 네임스페이스 정보 추출
+            for prefix, uri in root.nsmap.items() if hasattr(root, 'nsmap') else {}:
+                if prefix:
+                    namespaces[prefix] = uri
+                else:
+                    # 기본 네임스페이스
+                    namespaces['default'] = uri
+            
+            print(f"네임스페이스: {namespaces}")
+            
+            # xs:sequence 하위의 xs:element 찾기
+            schema_columns = []
+            
+            # 다양한 패턴으로 xs:element 검색
+            element_patterns = [
+                './/xs:element[@name]',  # xs: 접두사 사용
+                './/element[@name]',    # 접두사 없음
+                './/*[local-name()="element"][@name]'  # local-name 사용
+            ]
+            
+            for pattern in element_patterns:
+                try:
+                    elements = root.findall(pattern, namespaces)
+                    if elements:
+                        print(f"패턴 '{pattern}'로 {len(elements)}개 요소 발견")
+                        for element in elements:
+                            name_attr = element.get('name')
+                            if name_attr and name_attr.strip():
+                                column_name = name_attr.strip()
+                                if column_name not in schema_columns:
+                                    schema_columns.append(column_name)
+                                    print(f"  스키마 컬럼: {column_name}")
+                        break  # 첫 번째로 성공한 패턴 사용
+                except Exception as e:
+                    print(f"패턴 '{pattern}' 검색 실패: {str(e)}")
+                    continue
+            
+            # 네임스페이스 없이도 시도
+            if not schema_columns:
+                print("네임스페이스 검색 실패, 직접 검색 시도")
+                for element in root.iter():
+                    tag_name = element.tag.split('}')[-1] if '}' in element.tag else element.tag
+                    if tag_name == 'element' and element.get('name'):
+                        name_attr = element.get('name')
+                        if name_attr and name_attr.strip():
+                            column_name = name_attr.strip()
+                            if column_name not in schema_columns:
+                                schema_columns.append(column_name)
+                                print(f"  스키마 컬럼 (직접검색): {column_name}")
+            
+            result['schema_columns'] = schema_columns
+            
+            print(f"\n✅ 스키마 파일에서 {len(schema_columns)}개 컬럼 추출 완료")
+            print(f"추출된 컬럼: {schema_columns}")
+            print(f"=== 스키마 컬럼 추출 완료 ===")
+            
+        except ET.ParseError as e:
+            result['error'] = f"XML 파싱 오류: {str(e)}"
+            print(f"Error: {result['error']}")
+        except Exception as e:
+            result['error'] = f"스키마 파일 처리 중 오류 발생: {str(e)}"
+            print(f"Error: {result['error']}")
+            import traceback
+            traceback.print_exc()
+        
+        return result
+
 
 class ProcessFileMapper:
     """
@@ -2185,6 +2548,38 @@ for interface in interfaces:
 # - iflist03a_reordered_v8.3.xlsx: ProcessFileMapper용 파일 (원본파일, 복사파일 정보)
 # - 송신 .process: SelectP 액티비티에 SELECT 쿼리 포함
 # - 수신 .process: InsertAll 액티비티에 INSERT 쿼리 및 컬럼 매핑 포함
+
+# 11. 스키마 파일과 .process 파일 비교 (새로운 기능!)
+# XSD 스키마 파일의 xs:element name 속성과 수신 .process의 송신 컬럼을 비교
+for interface in interfaces:
+    schema_comparison_result = reader.compare_schema_mappings(interface)
+    
+    # 송신 스키마 비교 결과
+    send_schema_comp = schema_comparison_result['send_schema_comparison']
+    if send_schema_comp.get('file_exists'):
+        print(f"송신 스키마 매칭률: {send_schema_comp['match_percentage']:.1f}%")
+        print(f"스키마 컬럼 수: {send_schema_comp['total_schema']}개")
+    
+    # 수신 스키마 비교 결과
+    recv_schema_comp = schema_comparison_result['recv_schema_comparison']
+    if recv_schema_comp.get('file_exists'):
+        print(f"수신 스키마 매칭률: {recv_schema_comp['match_percentage']:.1f}%")
+
+# 12. 스키마 파일에서 직접 컬럼 추출 (새로운 기능!)
+# XSD 스키마 파일에서 xs:element의 name 속성들을 추출
+bw_parser = BWProcessFileParser()
+schema_result = bw_parser.extract_schema_columns('path/to/schema.xsd')
+if schema_result.get('file_exists'):
+    print(f"스키마 컬럼: {schema_result['schema_columns']}")
+else:
+    print(f"스키마 파일 오류: {schema_result.get('error', '알 수 없음')}")
+
+# 파일 구조:
+# - iflist_in.xlsx: 인터페이스 정보 엑셀 (B열부터 3컬럼 단위)
+# - iflist03a_reordered_v8.3.xlsx: ProcessFileMapper용 파일 (원본파일, 복사파일 정보)
+# - 송신 .process: SelectP 액티비티에 SELECT 쿼리 포함
+# - 수신 .process: InsertAll 액티비티에 INSERT 쿼리 및 컬럼 매핑 포함
+# - 송신/수신 .xsd: XML 스키마 파일 (xs:element name 속성에 컬럼명 포함)
         """)
     
     # BW Process 파일 파싱 테스트 함수 추가
