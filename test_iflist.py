@@ -1902,11 +1902,23 @@ class BWProcessFileParser:
             
             # 수신 컬럼명 분리 (공백 제거)
             column_names = [col.strip() for col in columns_part.split(',')]
-            # VALUES 부분 분리 (?, TRIM(?), 'N' 등)
-            value_patterns = [val.strip() for val in values_part.split(',')]
+            # VALUES 부분을 괄호를 고려하여 분리 (함수 처리)
+            value_patterns_raw = self._smart_column_split(values_part)
+            
+            # 함수 패턴을 '?'로 단순화
+            value_patterns = []
+            for pattern in value_patterns_raw:
+                pattern = pattern.strip()
+                # 함수 패턴 감지 (TO_DATE, TRIM, NVL 등)
+                if self._is_function_pattern(pattern):
+                    value_patterns.append('?')  # 함수는 모두 '?'로 단순화
+                    print(f"함수 패턴 감지하여 '?'로 변환: {pattern} -> ?")
+                else:
+                    value_patterns.append(pattern)
             
             print(f"수신 컬럼들: {column_names}")
-            print(f"VALUES 패턴들: {value_patterns}")
+            print(f"VALUES 패턴들 (원본): {value_patterns_raw}")
+            print(f"VALUES 패턴들 (처리후): {value_patterns}")
             
             # 2단계: XML에서 실제 매핑 정보 추출
             # <pd:inputBindings> -> <jdbcUpdateActivityInput> -> <xsl:for-each> -> <Record>
