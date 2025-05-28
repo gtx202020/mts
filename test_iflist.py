@@ -1256,6 +1256,231 @@ class InterfaceExcelReader:
         
         return result
 
+    def export_summary_to_excel(self, interfaces: List[Dict[str, Any]], excel_file_path: str = "test_iflist_result.xlsx") -> None:
+        """
+        모든 인터페이스의 비교 결과 요약을 엑셀 파일로 출력
+        
+        Args:
+            interfaces (List[Dict[str, Any]]): 인터페이스 정보 리스트
+            excel_file_path (str): 출력할 엑셀 파일 경로 (기본값: "test_iflist_result.xlsx")
+        """
+        try:
+            import openpyxl
+            from openpyxl.styles import PatternFill, Font, Alignment
+            
+            # 새 워크북 생성
+            workbook = openpyxl.Workbook()
+            worksheet = workbook.active
+            worksheet.title = "인터페이스 비교 결과"
+            
+            # 헤더 정의
+            headers = [
+                "일련번호", "인터페이스명", "인터페이스ID", "송신DB", "수신DB", 
+                "송신테이블", "수신테이블",
+                "송신비교_매칭률", "송신비교_결과요약",
+                "수신비교_매칭률", "수신비교_결과요약", 
+                "연결비교_매칭률", "연결비교_결과요약",
+                "송신스키마_매칭률", "송신스키마_결과요약",
+                "수신스키마_매칭률", "수신스키마_결과요약"
+            ]
+            
+            # 헤더 작성
+            for col_idx, header in enumerate(headers, 1):
+                cell = worksheet.cell(row=1, column=col_idx, value=header)
+                cell.font = Font(bold=True)
+                cell.fill = PatternFill(start_color="E6F3FF", end_color="E6F3FF", fill_type="solid")  # 연한 파란색
+                cell.alignment = Alignment(horizontal="center", vertical="center")
+            
+            # 각 인터페이스별 데이터 작성
+            for row_idx, interface in enumerate(interfaces, 2):
+                print(f"엑셀 요약 생성 중: {interface.get('interface_name', 'Unknown')} ({row_idx-1}/{len(interfaces)})")
+                
+                # 기본 정보 추출
+                serial_number = interface.get('serial_number', '')
+                interface_name = interface.get('interface_name', '')
+                interface_id = interface.get('interface_id', '')
+                
+                # DB 정보 추출
+                send_db = interface.get('send', {}).get('db_info', {})
+                recv_db = interface.get('recv', {}).get('db_info', {})
+                send_db_name = f"{send_db.get('owner', '')}.{send_db.get('database', '')}" if send_db else ''
+                recv_db_name = f"{recv_db.get('owner', '')}.{recv_db.get('database', '')}" if recv_db else ''
+                
+                # 테이블 정보 추출
+                send_table = f"{interface.get('send', {}).get('owner', '')}.{interface.get('send', {}).get('table_name', '')}"
+                recv_table = f"{interface.get('recv', {}).get('owner', '')}.{interface.get('recv', {}).get('table_name', '')}"
+                
+                # 기본 정보 셀에 작성
+                worksheet.cell(row=row_idx, column=1, value=serial_number)
+                worksheet.cell(row=row_idx, column=2, value=interface_name)
+                worksheet.cell(row=row_idx, column=3, value=interface_id)
+                worksheet.cell(row=row_idx, column=4, value=send_db_name)
+                worksheet.cell(row=row_idx, column=5, value=recv_db_name)
+                worksheet.cell(row=row_idx, column=6, value=send_table)
+                worksheet.cell(row=row_idx, column=7, value=recv_table)
+                
+                # 비교 결과 수행 및 데이터 추출
+                try:
+                    comparison_result = self.compare_column_mappings(interface)
+                    schema_comparison = self.compare_schema_mappings(interface)
+                    
+                    # 1. 송신 비교 결과
+                    send_comp = comparison_result.get('send_comparison', {})
+                    send_match_rate = send_comp.get('match_percentage', 0)
+                    send_summary = self._generate_comparison_summary(send_comp, '송신')
+                    
+                    worksheet.cell(row=row_idx, column=8, value=f"{send_match_rate:.1f}%")
+                    worksheet.cell(row=row_idx, column=9, value=send_summary)
+                    
+                    # 매칭률이 100%가 아니면 주황색으로 표시
+                    if send_match_rate < 100:
+                        worksheet.cell(row=row_idx, column=8).fill = PatternFill(start_color="FFA500", end_color="FFA500", fill_type="solid")
+                        worksheet.cell(row=row_idx, column=9).fill = PatternFill(start_color="FFA500", end_color="FFA500", fill_type="solid")
+                    
+                    # 2. 수신 비교 결과
+                    recv_comp = comparison_result.get('recv_comparison', {})
+                    recv_match_rate = recv_comp.get('match_percentage', 0)
+                    recv_summary = self._generate_comparison_summary(recv_comp, '수신')
+                    
+                    worksheet.cell(row=row_idx, column=10, value=f"{recv_match_rate:.1f}%")
+                    worksheet.cell(row=row_idx, column=11, value=recv_summary)
+                    
+                    if recv_match_rate < 100:
+                        worksheet.cell(row=row_idx, column=10).fill = PatternFill(start_color="FFA500", end_color="FFA500", fill_type="solid")
+                        worksheet.cell(row=row_idx, column=11).fill = PatternFill(start_color="FFA500", end_color="FFA500", fill_type="solid")
+                    
+                    # 3. 연결 비교 결과
+                    conn_comp = comparison_result.get('send_recv_comparison', {})
+                    conn_match_rate = conn_comp.get('match_percentage', 0)
+                    conn_summary = self._generate_comparison_summary(conn_comp, '연결')
+                    
+                    worksheet.cell(row=row_idx, column=12, value=f"{conn_match_rate:.1f}%")
+                    worksheet.cell(row=row_idx, column=13, value=conn_summary)
+                    
+                    if conn_match_rate < 100:
+                        worksheet.cell(row=row_idx, column=12).fill = PatternFill(start_color="FFA500", end_color="FFA500", fill_type="solid")
+                        worksheet.cell(row=row_idx, column=13).fill = PatternFill(start_color="FFA500", end_color="FFA500", fill_type="solid")
+                    
+                    # 4. 송신 스키마 비교 결과
+                    send_schema_comp = schema_comparison.get('send_schema_comparison', {})
+                    send_schema_match_rate = send_schema_comp.get('match_percentage', 0)
+                    send_schema_summary = self._generate_comparison_summary(send_schema_comp, '송신스키마')
+                    
+                    worksheet.cell(row=row_idx, column=14, value=f"{send_schema_match_rate:.1f}%")
+                    worksheet.cell(row=row_idx, column=15, value=send_schema_summary)
+                    
+                    if send_schema_match_rate < 100:
+                        worksheet.cell(row=row_idx, column=14).fill = PatternFill(start_color="FFA500", end_color="FFA500", fill_type="solid")
+                        worksheet.cell(row=row_idx, column=15).fill = PatternFill(start_color="FFA500", end_color="FFA500", fill_type="solid")
+                    
+                    # 5. 수신 스키마 비교 결과
+                    recv_schema_comp = schema_comparison.get('recv_schema_comparison', {})
+                    recv_schema_match_rate = recv_schema_comp.get('match_percentage', 0)
+                    recv_schema_summary = self._generate_comparison_summary(recv_schema_comp, '수신스키마')
+                    
+                    worksheet.cell(row=row_idx, column=16, value=f"{recv_schema_match_rate:.1f}%")
+                    worksheet.cell(row=row_idx, column=17, value=recv_schema_summary)
+                    
+                    if recv_schema_match_rate < 100:
+                        worksheet.cell(row=row_idx, column=16).fill = PatternFill(start_color="FFA500", end_color="FFA500", fill_type="solid")
+                        worksheet.cell(row=row_idx, column=17).fill = PatternFill(start_color="FFA500", end_color="FFA500", fill_type="solid")
+                
+                except Exception as e:
+                    print(f"Warning: 인터페이스 {interface_name} 비교 중 오류: {str(e)}")
+                    # 오류 발생 시 기본값으로 채움
+                    for col in range(8, 18):
+                        if col % 2 == 0:  # 매칭률 컬럼
+                            worksheet.cell(row=row_idx, column=col, value="오류")
+                        else:  # 요약 컬럼
+                            worksheet.cell(row=row_idx, column=col, value=f"처리 중 오류: {str(e)}")
+                        worksheet.cell(row=row_idx, column=col).fill = PatternFill(start_color="FFA500", end_color="FFA500", fill_type="solid")
+            
+            # 컬럼 너비 자동 조절
+            for column in worksheet.columns:
+                max_length = 0
+                column_letter = column[0].column_letter
+                for cell in column:
+                    try:
+                        if len(str(cell.value)) > max_length:
+                            max_length = len(str(cell.value))
+                    except:
+                        pass
+                adjusted_width = min(max_length + 2, 50)  # 최대 50으로 제한
+                worksheet.column_dimensions[column_letter].width = adjusted_width
+            
+            # 모든 셀 가운데 정렬
+            for row in worksheet.iter_rows():
+                for cell in row:
+                    cell.alignment = Alignment(horizontal="center", vertical="center")
+            
+            # 파일 저장
+            workbook.save(excel_file_path)
+            workbook.close()
+            
+            print(f"✅ 인터페이스 비교 결과 요약이 '{excel_file_path}' 파일로 저장되었습니다.")
+            print(f"   총 {len(interfaces)}개 인터페이스 처리 완료")
+            
+        except ImportError:
+            print(f"❌ openpyxl 라이브러리가 필요합니다. 'pip install openpyxl'로 설치해주세요.")
+        except Exception as e:
+            print(f"❌ 엑셀 요약 파일 생성 중 오류 발생: {str(e)}")
+            import traceback
+            traceback.print_exc()
+    
+    def _generate_comparison_summary(self, comparison_result: Dict[str, Any], comparison_type: str) -> str:
+        """
+        비교 결과에서 간단한 요약 문자열 생성
+        
+        Args:
+            comparison_result (Dict[str, Any]): 비교 결과 딕셔너리
+            comparison_type (str): 비교 타입 ('송신', '수신', '연결', '송신스키마', '수신스키마')
+            
+        Returns:
+            str: 요약 문자열
+        """
+        if not comparison_result:
+            return "비교 미수행"
+        
+        # 파일 존재 여부 확인
+        file_exists_key = {
+            '송신': 'file_exists',
+            '수신': 'file_exists', 
+            '연결': 'recv_file_exists',
+            '송신스키마': 'file_exists',
+            '수신스키마': 'file_exists'
+        }.get(comparison_type, 'file_exists')
+        
+        if not comparison_result.get(file_exists_key, False):
+            error = comparison_result.get('error', '파일 없음')
+            return f"오류: {error}"
+        
+        match_count = comparison_result.get('match_count', 0)
+        
+        if comparison_type == '연결':
+            total_count = comparison_result.get('total_excel_pairs', 0)
+            not_matched = comparison_result.get('excel_only', [])
+        else:
+            if comparison_type in ['송신스키마', '수신스키마']:
+                total_count = comparison_result.get('total_process', 0)
+            else:
+                total_count = comparison_result.get('total_excel', 0)
+            
+            if comparison_type == '송신':
+                not_matched = comparison_result.get('excel_only', [])
+            elif comparison_type == '수신':
+                not_matched = comparison_result.get('excel_only', [])
+            else:  # 스키마
+                not_matched = comparison_result.get('process_only', [])
+        
+        if total_count == 0:
+            return "데이터 없음"
+        
+        if match_count == total_count:
+            return "완전일치"
+        else:
+            not_matched_count = len(not_matched) if not_matched else (total_count - match_count)
+            return f"불일치 {not_matched_count}개"
+
 
 class BWProcessFileParser:
     """
@@ -2460,6 +2685,10 @@ if __name__ == "__main__":
             print(f"\n=== 전체 인터페이스 정보 로그 출력 ===")
             reader.export_all_interfaces_to_log(interfaces)
             
+            # 비교 결과 요약을 엑셀 파일로 출력
+            print(f"\n=== 비교 결과 요약 엑셀 출력 ===")
+            reader.export_summary_to_excel(interfaces, "test_iflist_result.xlsx")
+            
             print("\n=== 테스트 완료 ===")
         
         except FileNotFoundError as e:
@@ -2495,22 +2724,31 @@ for interface in interfaces:
     print(f"송신 원본파일: {interface.get('send_original', 'N/A')}")
     print(f"수신 복사파일: {interface.get('recv_copy', 'N/A')}")
 
-# 4. 처리 통계 확인
+# 4. 전체 결과 로그 출력
+reader.export_all_interfaces_to_log(interfaces)
+
+# 5. 비교 결과 요약을 엑셀 파일로 출력 (새로운 기능!)
+reader.export_summary_to_excel(interfaces, "test_iflist_result.xlsx")
+# 출력 컬럼: 일련번호, 인터페이스명, ID, 송신DB, 수신DB, 송신테이블, 수신테이블
+# 5가지 비교결과 (송신, 수신, 연결, 송신스키마, 수신스키마) - 각각 매칭률과 결과요약
+# 매칭률 100% 미만인 셀은 주황색으로 표시
+
+# 6. 처리 통계 확인
 stats = reader.get_statistics()
 print(f"처리된 인터페이스 수: {stats['processed_count']}")
 
-# 5. BW 수신파일(.process) 파싱
+# 7. BW 수신파일(.process) 파싱
 insert_queries = parse_bw_receive_file('your_bw_file.process')
 for query in insert_queries:
     print(f"추출된 INSERT 쿼리: {query}")
 
-# 6. BWProcessFileParser 클래스 직접 사용
+# 8. BWProcessFileParser 클래스 직접 사용
 bw_parser = BWProcessFileParser()
 queries = bw_parser.parse_bw_process_file('your_bw_file.process')
 bw_stats = bw_parser.get_statistics()
 print(f"BW 파싱 통계: {bw_stats}")
 
-# 7. 컬럼 매핑 비교 (새로운 기능!)
+# 9. 컬럼 매핑 비교 (새로운 기능!)
 # 엑셀의 송신/수신 컬럼과 .process 파일의 컬럼 매핑을 비교
 for interface in interfaces:
     comparison_result = reader.compare_column_mappings(interface)
@@ -2527,7 +2765,7 @@ for interface in interfaces:
     if recv_comp.get('file_exists'):
         print(f"수신 매칭률: {recv_comp['match_percentage']:.1f}%")
 
-# 8. .process 파일에서 직접 컬럼 매핑 추출 (개선된 기능!)
+# 10. .process 파일에서 직접 컬럼 매핑 추출 (개선된 기능!)
 bw_parser = BWProcessFileParser()
 column_mappings = bw_parser.extract_column_mappings('path/to/your.process')
 print(f"수신 컬럼: {column_mappings['recv_columns']}")
@@ -2538,7 +2776,7 @@ print(f"상세 매핑: {column_mappings['column_mappings']}")
 for mapping in column_mappings['column_mappings']:
     print(f"  {mapping['recv']} <- {mapping['send']} ({mapping['value_type']})")
         
-# 9. 송신 .process 파일에서 SELECT 컬럼 추출 (새로운 기능!)
+# 11. 송신 .process 파일에서 SELECT 컬럼 추출 (새로운 기능!)
 # 송신 .process 파일에서 SelectP 액티비티의 SELECT 쿼리 컬럼들을 추출
 send_column_mappings = bw_parser.extract_send_column_mappings('path/to/send.process')
 print(f"송신 SELECT 컬럼: {send_column_mappings['send_columns']}")
@@ -2546,7 +2784,7 @@ print(f"테이블명: {send_column_mappings['table_name']}")
 print(f"WHERE 조건: {send_column_mappings['where_condition']}")
 print(f"ORDER BY: {send_column_mappings['order_by']}")
 
-# 10. 개선된 컬럼 매핑 비교 (3단계 비교!)
+# 12. 개선된 컬럼 매핑 비교 (3단계 비교!)
 # - 송신: 엑셀 송신 컬럼 vs .process SELECT 컬럼
 # - 수신: 엑셀 수신 컬럼 vs .process INSERT 컬럼  
 # - 연결: 엑셀 송신-수신 매핑 쌍 vs .process 송신-수신 매핑 쌍
@@ -2578,7 +2816,7 @@ for interface in interfaces:
 # - 송신 .process: SelectP 액티비티에 SELECT 쿼리 포함
 # - 수신 .process: InsertAll 액티비티에 INSERT 쿼리 및 컬럼 매핑 포함
 
-# 11. 스키마 파일과 .process 파일 비교 (새로운 기능!)
+# 13. 스키마 파일과 .process 파일 비교 (새로운 기능!)
 # XSD 스키마 파일의 xs:element name 속성과 수신 .process의 송신 컬럼을 비교
 for interface in interfaces:
     schema_comparison_result = reader.compare_schema_mappings(interface)
@@ -2594,7 +2832,7 @@ for interface in interfaces:
     if recv_schema_comp.get('file_exists'):
         print(f"수신 스키마 매칭률: {recv_schema_comp['match_percentage']:.1f}%")
 
-# 12. 스키마 파일에서 직접 컬럼 추출 (새로운 기능!)
+# 14. 스키마 파일에서 직접 컬럼 추출 (새로운 기능!)
 # XSD 스키마 파일에서 xs:element의 name 속성들을 추출
 bw_parser = BWProcessFileParser()
 schema_result = bw_parser.extract_schema_columns('path/to/schema.xsd')
