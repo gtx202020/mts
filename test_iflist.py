@@ -1066,14 +1066,32 @@ class ProcessFileMapper:
             send_schema_flag = normal_row.get('송신스키마파일생성여부')
             print(f"송신스키마파일생성여부: {send_schema_flag} (타입: {type(send_schema_flag)})")
             if (pd.notna(send_schema_flag) and float(send_schema_flag) == 1.0):
-                result['send_schema'] = str(normal_row.get('송신스키마파일명', ''))
+                send_schema_path = str(normal_row.get('송신스키마파일명', ''))
+                
+                # ===== 테스트용 임시 경로 변환 로직 (향후 주석 처리) =====
+                # 'C:\BwProject\' -> 'C:\tBwProject\'로 변경
+                if send_schema_path.startswith('C:\\BwProject\\'):
+                    send_schema_path = send_schema_path.replace('C:\\BwProject\\', 'C:\\tBwProject\\', 1)
+                    print(f"테스트용 송신 스키마 경로 변환: {normal_row.get('송신스키마파일명', '')} -> {send_schema_path}")
+                # ===========================================================
+                
+                result['send_schema'] = send_schema_path
                 print(f"송신 스키마 파일 정보 추가됨")
             
             # 수신 스키마 파일 생성 여부 확인
             recv_schema_flag = normal_row.get('수신스키마파일생성여부')
             print(f"수신스키마파일생성여부: {recv_schema_flag} (타입: {type(recv_schema_flag)})")
             if (pd.notna(recv_schema_flag) and float(recv_schema_flag) == 1.0):
-                result['recv_schema'] = str(normal_row.get('수신스키마파일명', ''))
+                recv_schema_path = str(normal_row.get('수신스키마파일명', ''))
+                
+                # ===== 테스트용 임시 경로 변환 로직 (향후 주석 처리) =====
+                # 'C:\BwProject\' -> 'C:\tBwProject\'로 변경
+                if recv_schema_path.startswith('C:\\BwProject\\'):
+                    recv_schema_path = recv_schema_path.replace('C:\\BwProject\\', 'C:\\tBwProject\\', 1)
+                    print(f"테스트용 수신 스키마 경로 변환: {normal_row.get('수신스키마파일명', '')} -> {recv_schema_path}")
+                # ===========================================================
+                
+                result['recv_schema'] = recv_schema_path
                 print(f"수신 스키마 파일 정보 추가됨")
             
             print(f"최종 결과: {result}")
