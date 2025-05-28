@@ -1668,14 +1668,14 @@ class BWProcessFileParser:
                 columns_part = select_match.group(1).strip()
                 print(f"컬럼 부분: {columns_part}")
                 
-                # 컬럼명 분리 (콤마로 구분, 공백 제거)
-                column_lines = [col.strip() for col in columns_part.split(',')]
+                # 괄호를 고려한 정교한 컬럼명 분리
+                column_lines = self._smart_column_split(columns_part)
                 for col_line in column_lines:
                     # 각 라인에서 실제 컬럼명 추출 (AS 별칭 등 제거)
                     col_name = self._extract_column_name(col_line)
                     if col_name:
                         send_columns.append(col_name)
-                        print(f"  추출된 컬럼: {col_name}")
+                        print(f"  추출된 컬럼: {col_name} (원본: {col_line.strip()})")
             
             # 2단계: FROM 절에서 테이블명 추출
             from_pattern = r'FROM\s+([\w.]+)'
@@ -1712,29 +1712,122 @@ class BWProcessFileParser:
         컬럼 표현식에서 실제 컬럼명을 추출
         
         Args:
-            column_expression (str): 컬럼 표현식 (예: "SEND_COL1", "UPPER(SEND_COL2) AS COL2")
+            column_expression (str): 컬럼 표현식 (예: "SEND_COL1", "TO_CHAR(CREATION_DATE, 'YYYYMMDDHH24MISS') CREATION_DATE")
             
         Returns:
             str: 추출된 컬럼명
         """
-        # AS 별칭이 있는 경우 제거
+        column_expression = column_expression.strip()
+        
+        # 1단계: AS 키워드가 있는 경우 별칭 추출
         if ' AS ' in column_expression.upper():
-            column_expression = column_expression.split(' AS ')[0].strip()
-        elif ' ' in column_expression and not any(func in column_expression.upper() for func in ['(', ')', 'CASE', 'WHEN']):
-            # 간단한 별칭 (AS 없이 공백으로 구분)
+            alias_part = column_expression.upper().split(' AS ')
+            if len(alias_part) >= 2:
+                alias = alias_part[1].strip()
+                print(f"    AS 별칭 발견: {alias}")
+                return alias
+        
+        # 2단계: AS 없이 공백으로 구분된 별칭 확인
+        # 함수나 연산자가 포함된 경우 마지막 단어가 별칭일 가능성 높음
+        if any(char in column_expression for char in ['(', ')', '+', '-', '*', '/', '||']):
+            # 공백으로 분리하여 마지막 부분이 별칭인지 확인
             parts = column_expression.split()
             if len(parts) >= 2:
-                column_expression = parts[0].strip()
+                # 마지막 부분이 괄호나 연산자를 포함하지 않으면 별칭으로 간주
+                last_part = parts[-1].strip()
+                if not any(char in last_part for char in ['(', ')', '+', '-', '*', '/', '||', "'", '"']):
+                    print(f"    공백 별칭 발견: {last_part}")
+                    return last_part
         
-        # 함수가 적용된 경우 (예: UPPER(SEND_COL1))
-        func_pattern = r'[A-Z_]+\s*\(\s*([\w.]+)\s*\)'
-        func_match = re.search(func_pattern, column_expression, re.IGNORECASE)
-        if func_match:
-            return func_match.group(1).strip()
+        # 3단계: 단순한 함수 패턴 처리 (예: UPPER(COLUMN_NAME))
+        simple_func_pattern = r'^[A-Z_]+\s*\(\s*([\w.]+)\s*\)$'
+        simple_func_match = re.search(simple_func_pattern, column_expression, re.IGNORECASE)
+        if simple_func_match:
+            inner_column = simple_func_match.group(1).strip()
+            print(f"    단순 함수 패턴: {inner_column}")
+            return inner_column
         
-        # 일반적인 컬럼명 (스키마.테이블.컬럼 또는 테이블.컬럼 또는 컬럼)
-        parts = column_expression.strip().split('.')
-        return parts[-1].strip()  # 마지막 부분이 실제 컬럼명
+        # 4단계: 복잡한 함수 패턴에서 첫 번째 컬럼명 추출
+        # TO_CHAR(CREATION_DATE, 'FORMAT') 같은 경우 CREATION_DATE 추출
+        complex_func_pattern = r'[A-Z_]+\s*\(\s*([\w.]+)\s*,'
+        complex_func_match = re.search(complex_func_pattern, column_expression, re.IGNORECASE)
+        if complex_func_match:
+            inner_column = complex_func_match.group(1).strip()
+            print(f"    복잡 함수 첫 번째 인자: {inner_column}")
+            return inner_column
+        
+        # 5단계: 일반적인 컬럼명 (스키마.테이블.컬럼 또는 테이블.컬럼 또는 컬럼)
+        # 공백이 없고 단순한 컬럼명인 경우
+        if ' ' not in column_expression and not any(char in column_expression for char in ['(', ')', "'", '"']):
+            parts = column_expression.split('.')
+            final_column = parts[-1].strip()
+            print(f"    단순 컬럼명: {final_column}")
+            return final_column
+        
+        # 6단계: 위의 모든 패턴에 해당하지 않는 경우
+        # 첫 번째 단어를 반환 (최후의 수단)
+        first_word = column_expression.split()[0] if column_expression.split() else column_expression
+        # 괄호나 연산자 제거
+        first_word = re.sub(r'[()\'"+\-*/]', '', first_word)
+        print(f"    기본 추출: {first_word}")
+        return first_word.strip()
+    
+    def _smart_column_split(self, columns_part: str) -> List[str]:
+        """
+        괄호를 고려하여 컬럼들을 올바르게 분리
+        
+        Args:
+            columns_part (str): SELECT절의 컬럼 부분
+            
+        Returns:
+            List[str]: 올바르게 분리된 컬럼 리스트
+        """
+        columns = []
+        current_column = ""
+        paren_depth = 0
+        quote_char = None
+        
+        i = 0
+        while i < len(columns_part):
+            char = columns_part[i]
+            
+            # 따옴표 처리 (작은따옴표, 큰따옴표)
+            if char in ["'", '"'] and quote_char is None:
+                quote_char = char
+                current_column += char
+            elif char == quote_char:
+                quote_char = None
+                current_column += char
+            elif quote_char is not None:
+                # 따옴표 안에서는 모든 문자를 그대로 추가
+                current_column += char
+            elif char == '(':
+                # 괄호 깊이 증가
+                paren_depth += 1
+                current_column += char
+            elif char == ')':
+                # 괄호 깊이 감소
+                paren_depth -= 1
+                current_column += char
+            elif char == ',' and paren_depth == 0:
+                # 괄호 밖의 콤마만 구분자로 인식
+                if current_column.strip():
+                    columns.append(current_column.strip())
+                current_column = ""
+            else:
+                current_column += char
+            
+            i += 1
+        
+        # 마지막 컬럼 추가
+        if current_column.strip():
+            columns.append(current_column.strip())
+        
+        print(f"스마트 컬럼 분리 결과: {len(columns)}개")
+        for i, col in enumerate(columns, 1):
+            print(f"  {i}. {col}")
+        
+        return columns
 
 
 class ProcessFileMapper:
