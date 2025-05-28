@@ -371,6 +371,174 @@ class InterfaceExcelReader:
         """
         return self.last_error_messages.copy()
 
+    def compare_column_mappings(self, interface_data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        인터페이스 정보의 송신/수신 컬럼과 .process 파일의 컬럼 매핑을 비교
+        
+        Args:
+            interface_data (Dict[str, Any]): 인터페이스 정보 딕셔너리
+            
+        Returns:
+            Dict[str, Any]: 비교 결과
+            {
+                'send_comparison': {...},  # 송신 비교 결과
+                'recv_comparison': {...}   # 수신 비교 결과
+            }
+        """
+        print(f"\n=== 컬럼 매핑 비교 시작: {interface_data.get('interface_name', 'Unknown')} ===")
+        
+        comparison_result = {
+            'send_comparison': {},
+            'recv_comparison': {}
+        }
+        
+        # 송신 파일 비교
+        if interface_data.get('send_copy'):
+            print(f"\n--- 송신 파일 비교: {interface_data['send_copy']} ---")
+            send_comparison = self._compare_single_mapping(
+                interface_data['send']['columns'],
+                interface_data['send_copy'],
+                '송신'
+            )
+            comparison_result['send_comparison'] = send_comparison
+        else:
+            print("\n--- 송신 파일 경로 없음 ---")
+        
+        # 수신 파일 비교
+        if interface_data.get('recv_copy'):
+            print(f"\n--- 수신 파일 비교: {interface_data['recv_copy']} ---")
+            recv_comparison = self._compare_single_mapping(
+                interface_data['recv']['columns'],
+                interface_data['recv_copy'],
+                '수신'
+            )
+            comparison_result['recv_comparison'] = recv_comparison
+        else:
+            print("\n--- 수신 파일 경로 없음 ---")
+        
+        print(f"\n=== 컬럼 매핑 비교 완료 ===")
+        return comparison_result
+    
+    def _compare_single_mapping(self, excel_columns: List[str], process_file_path: str, direction: str) -> Dict[str, Any]:
+        """
+        단일 방향(송신/수신)의 컬럼 매핑 비교
+        
+        Args:
+            excel_columns (List[str]): 엑셀에서 읽은 컬럼 리스트
+            process_file_path (str): .process 파일 경로
+            direction (str): 방향 ('송신' 또는 '수신')
+            
+        Returns:
+            Dict[str, Any]: 비교 결과
+        """
+        result = {
+            'excel_columns': excel_columns,
+            'process_columns': [],
+            'process_values': [],
+            'matches': [],
+            'excel_only': [],
+            'process_only': [],
+            'match_count': 0,
+            'total_excel': len(excel_columns),
+            'total_process': 0,
+            'match_percentage': 0.0,
+            'file_exists': False,
+            'error': None
+        }
+        
+        try:
+            # 파일 존재 여부 확인
+            if not os.path.exists(process_file_path):
+                result['error'] = f".process 파일 없음: {process_file_path}"
+                print(f"Warning: {result['error']}")
+                return result
+            
+            result['file_exists'] = True
+            
+            # BWProcessFileParser로 컬럼 매핑 추출
+            bw_parser = BWProcessFileParser()
+            column_mappings = bw_parser.extract_column_mappings(process_file_path)
+            
+            process_columns = column_mappings.get('columns', [])
+            process_values = column_mappings.get('values', [])
+            
+            result['process_columns'] = process_columns
+            result['process_values'] = process_values
+            result['total_process'] = len(process_columns)
+            
+            print(f"\n{direction} 컬럼 비교:")
+            print(f"엑셀 컬럼 ({len(excel_columns)}개): {excel_columns}")
+            print(f"Process 컬럼 ({len(process_columns)}개): {process_columns}")
+            
+            # 대소문자 구분 없이 비교를 위한 매핑 생성
+            excel_lower = [col.lower() for col in excel_columns if col]
+            process_lower = [col.lower() for col in process_columns if col]
+            
+            # 매칭 찾기
+            matches = []
+            excel_only = []
+            process_only = []
+            
+            # 엑셀 컬럼 기준으로 매칭 찾기
+            for excel_col in excel_columns:
+                if not excel_col:  # 빈 컬럼 제외
+                    continue
+                    
+                excel_col_lower = excel_col.lower()
+                if excel_col_lower in process_lower:
+                    # 매칭된 인덱스 찾기
+                    process_idx = process_lower.index(excel_col_lower)
+                    process_col = process_columns[process_idx]
+                    process_val = process_values[process_idx] if process_idx < len(process_values) else ''
+                    
+                    matches.append({
+                        'excel_column': excel_col,
+                        'process_column': process_col,
+                        'process_value': process_val
+                    })
+                else:
+                    excel_only.append(excel_col)
+            
+            # Process에만 있는 컬럼 찾기
+            for process_col in process_columns:
+                if not process_col:  # 빈 컬럼 제외
+                    continue
+                    
+                process_col_lower = process_col.lower()
+                if process_col_lower not in excel_lower:
+                    process_only.append(process_col)
+            
+            result['matches'] = matches
+            result['excel_only'] = excel_only
+            result['process_only'] = process_only
+            result['match_count'] = len(matches)
+            
+            # 매칭 비율 계산
+            if result['total_excel'] > 0:
+                result['match_percentage'] = (result['match_count'] / result['total_excel']) * 100
+            
+            # 결과 출력
+            print(f"\n{direction} 매칭 결과:")
+            print(f"✅ 매칭됨 ({len(matches)}개):")
+            for match in matches:
+                print(f"  - {match['excel_column']} = {match['process_column']} -> {match['process_value']}")
+            
+            print(f"\n❌ 엑셀에만 있음 ({len(excel_only)}개):")
+            for col in excel_only:
+                print(f"  - {col}")
+            
+            print(f"\n⚠️ Process에만 있음 ({len(process_only)}개):")
+            for col in process_only:
+                print(f"  - {col}")
+            
+            print(f"\n📊 매칭률: {result['match_percentage']:.1f}% ({result['match_count']}/{result['total_excel']})")
+            
+        except Exception as e:
+            result['error'] = f"비교 중 오류: {str(e)}"
+            print(f"Error: {result['error']}")
+        
+        return result
+
 
 class BWProcessFileParser:
     """
@@ -658,6 +826,142 @@ class BWProcessFileParser:
         """
         return self.last_error_messages.copy()
 
+    def extract_column_mappings(self, process_file_path: str) -> Dict[str, List[str]]:
+        """
+        BW .process 파일에서 컬럼 매핑 정보를 추출
+        
+        Args:
+            process_file_path (str): .process 파일의 경로
+            
+        Returns:
+            Dict[str, List[str]]: {
+                'columns': ['컬럼1', '컬럼2', ...],  # INSERT 쿼리의 컬럼들
+                'values': ['값1', '값2', ...]        # 매핑된 값들 (파라미터명)
+            }
+            
+        Raises:
+            FileNotFoundError: 파일이 존재하지 않는 경우
+            ValueError: 파일 형식이 올바르지 않은 경우
+        """
+        # 파일 존재 여부 확인
+        if not os.path.exists(process_file_path):
+            raise FileNotFoundError(f"BW process 파일을 찾을 수 없습니다: {process_file_path}")
+        
+        column_mappings = {
+            'columns': [],
+            'values': []
+        }
+        
+        try:
+            # XML 파일 파싱
+            tree = ET.parse(process_file_path)
+            root = tree.getroot()
+            
+            print(f"\n=== BW Process 파일 컬럼 매핑 추출 시작: {process_file_path} ===")
+            
+            # JDBC 액티비티 찾기
+            activities = root.findall('.//pd:activity', self.ns)
+            
+            for activity in activities:
+                try:
+                    # JDBC 액티비티 타입 확인
+                    activity_type = activity.find('./pd:type', self.ns)
+                    if activity_type is None or 'jdbc' not in activity_type.text.lower():
+                        continue
+                    
+                    activity_name = activity.get('name', 'Unknown')
+                    print(f"\nJDBC 액티비티 발견: {activity_name}")
+                    
+                    # statement 추출
+                    statement = activity.find('.//config/statement')
+                    if statement is not None and statement.text:
+                        query = statement.text.strip()
+                        print(f"\n발견된 쿼리:\n{query}")
+                        
+                        # INSERT 쿼리인 경우만 처리
+                        if query.lower().startswith('insert'):
+                            # 컬럼과 값 매핑 추출
+                            columns, values = self._extract_column_value_mapping(activity, query)
+                            
+                            if columns and values:
+                                column_mappings['columns'] = columns
+                                column_mappings['values'] = values
+                                print(f"\n추출된 컬럼 매핑:")
+                                for i, (col, val) in enumerate(zip(columns, values)):
+                                    print(f"  {i+1}. {col} -> {val}")
+                                break  # 첫 번째 INSERT 쿼리만 처리
+                        
+                except Exception as e:
+                    print(f"Warning: 액티비티 '{activity.get('name', 'Unknown')}' 처리 중 오류: {str(e)}")
+            
+            print(f"\n=== 컬럼 매핑 추출 완료 ===")
+            
+        except ET.ParseError as e:
+            raise ValueError(f"XML 파싱 오류: {str(e)}")
+        except Exception as e:
+            raise ValueError(f"BW process 파일 처리 중 오류 발생: {str(e)}")
+        
+        return column_mappings
+    
+    def _extract_column_value_mapping(self, activity, query: str) -> tuple[List[str], List[str]]:
+        """
+        INSERT 쿼리와 액티비티에서 컬럼과 값의 매핑을 추출
+        
+        Args:
+            activity: JDBC 액티비티 XML 요소
+            query (str): INSERT SQL 쿼리
+            
+        Returns:
+            tuple[List[str], List[str]]: (컬럼 리스트, 값 리스트)
+        """
+        columns = []
+        values = []
+        
+        try:
+            # 1단계: INSERT 쿼리에서 컬럼명 추출
+            # INSERT INTO table_name (col1, col2, ...) VALUES (?, ?, ...)
+            insert_pattern = r'INSERT\s+INTO\s+\w+\s*\(\s*([^)]+)\s*\)\s*VALUES\s*\(\s*([^)]+)\s*\)'
+            match = re.search(insert_pattern, query, re.IGNORECASE | re.DOTALL)
+            
+            if not match:
+                print("Warning: INSERT 쿼리 패턴을 찾을 수 없습니다")
+                return columns, values
+            
+            columns_part = match.group(1).strip()
+            values_part = match.group(2).strip()
+            
+            # 컬럼명 분리
+            column_names = [col.strip() for col in columns_part.split(',')]
+            
+            # 2단계: 파라미터 이름들 추출
+            param_names = self._get_parameter_names(activity)
+            
+            # 3단계: Record 매핑에서 실제 값들 추출
+            mappings = self._get_record_mappings(activity, param_names)
+            
+            # 4단계: 컬럼과 값 매핑
+            for i, col_name in enumerate(column_names):
+                columns.append(col_name)
+                
+                # 파라미터 인덱스에 맞는 실제 값 찾기
+                if i < len(param_names):
+                    param_name = param_names[i]
+                    actual_value = mappings.get(param_name, param_name)
+                    values.append(actual_value)
+                else:
+                    values.append(f"unknown_{i}")
+            
+            print(f"\n컬럼-값 매핑 상세:")
+            print(f"추출된 컬럼: {columns}")
+            print(f"매핑된 값: {values}")
+            print(f"파라미터 이름: {param_names}")
+            print(f"Record 매핑: {mappings}")
+            
+        except Exception as e:
+            print(f"Warning: 컬럼-값 매핑 추출 중 오류: {str(e)}")
+        
+        return columns, values
+
 
 class ProcessFileMapper:
     """
@@ -839,9 +1143,28 @@ if __name__ == "__main__":
                 print(f"수신 복사파일: {first_interface.get('recv_copy', 'N/A')}")
                 print(f"송신 스키마파일: {first_interface.get('send_schema', 'N/A')}")
                 print(f"수신 스키마파일: {first_interface.get('recv_schema', 'N/A')}")
+                
+                # 컬럼 매핑 비교 수행
+                print(f"\n=== 컬럼 매핑 비교 수행 ===")
+                try:
+                    comparison_result = reader.compare_column_mappings(first_interface)
+                    
+                    # 비교 결과 요약 출력
+                    send_comp = comparison_result['send_comparison']
+                    if send_comp.get('file_exists'):
+                        print(f"송신 매칭률: {send_comp['match_percentage']:.1f}%")
+                        print(f"매칭된 컬럼: {send_comp['matches']}")
+                        print(f"엑셀에만 있는 컬럼: {send_comp['excel_only']}")
+                    
+                    recv_comp = comparison_result['recv_comparison']
+                    if recv_comp.get('file_exists'):
+                        print(f"수신 매칭률: {recv_comp['match_percentage']:.1f}%")
+                    
+                except Exception as e:
+                    print(f"컬럼 매핑 비교 중 오류: {str(e)}")
             
             print("\n=== 테스트 완료 ===")
-            
+        
         except FileNotFoundError as e:
             print(f"파일 오류: {e}")
         except ValueError as e:
@@ -890,6 +1213,29 @@ queries = bw_parser.parse_bw_process_file('your_bw_file.process')
 bw_stats = bw_parser.get_statistics()
 print(f"BW 파싱 통계: {bw_stats}")
 
+# 7. 컬럼 매핑 비교 (새로운 기능!)
+# 엑셀의 송신/수신 컬럼과 .process 파일의 컬럼 매핑을 비교
+for interface in interfaces:
+    comparison_result = reader.compare_column_mappings(interface)
+    
+    # 송신 비교 결과
+    send_comp = comparison_result['send_comparison']
+    if send_comp.get('file_exists'):
+        print(f"송신 매칭률: {send_comp['match_percentage']:.1f}%")
+        print(f"매칭된 컬럼: {send_comp['matches']}")
+        print(f"엑셀에만 있는 컬럼: {send_comp['excel_only']}")
+    
+    # 수신 비교 결과
+    recv_comp = comparison_result['recv_comparison']
+    if recv_comp.get('file_exists'):
+        print(f"수신 매칭률: {recv_comp['match_percentage']:.1f}%")
+
+# 8. .process 파일에서 직접 컬럼 매핑 추출
+bw_parser = BWProcessFileParser()
+column_mappings = bw_parser.extract_column_mappings('path/to/your.process')
+print(f"추출된 컬럼: {column_mappings['columns']}")
+print(f"매핑된 값: {column_mappings['values']}")
+        
 # 파일 구조:
 # - iflist_in.xlsx: 인터페이스 정보 엑셀 (B열부터 3컬럼 단위)
 # - iflist03a_reordered_v8.3.xlsx: ProcessFileMapper용 파일 (원본파일, 복사파일 정보)
