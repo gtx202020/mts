@@ -222,23 +222,19 @@ class InterfaceExcelReader:
         
         # 테이블 정보 읽기 (실패해도 계속)
         try:
-            # 송신 owner, table_name 읽기  
-            send_owner_cell = worksheet.cell(row=6, column=start_col)
-            if send_owner_cell.value:
-                interface_info['send']['owner'] = str(send_owner_cell.value).strip()
+            # 송신 테이블 정보 읽기 (row=4, column=start_col)
+            send_table_cell = worksheet.cell(row=4, column=start_col)
+            send_table_dict = self._parse_cell_dict(send_table_cell.value)
+            if send_table_dict:
+                interface_info['send']['owner'] = send_table_dict.get('owner')
+                interface_info['send']['table_name'] = send_table_dict.get('table_name')
             
-            send_table_cell = worksheet.cell(row=7, column=start_col)
-            if send_table_cell.value:
-                interface_info['send']['table_name'] = str(send_table_cell.value).strip()
-            
-            # 수신 owner, table_name 읽기
-            recv_owner_cell = worksheet.cell(row=6, column=start_col + 1)
-            if recv_owner_cell.value:
-                interface_info['recv']['owner'] = str(recv_owner_cell.value).strip()
-            
-            recv_table_cell = worksheet.cell(row=7, column=start_col + 1)
-            if recv_table_cell.value:
-                interface_info['recv']['table_name'] = str(recv_table_cell.value).strip()
+            # 수신 테이블 정보 읽기 (row=4, column=start_col+1)
+            recv_table_cell = worksheet.cell(row=4, column=start_col + 1)
+            recv_table_dict = self._parse_cell_dict(recv_table_cell.value)
+            if recv_table_dict:
+                interface_info['recv']['owner'] = recv_table_dict.get('owner')
+                interface_info['recv']['table_name'] = recv_table_dict.get('table_name')
             
         except Exception as e:
             print(f"Warning: 테이블 정보 읽기 실패 (컬럼 {start_col}): {str(e)}")
