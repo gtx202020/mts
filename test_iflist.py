@@ -88,6 +88,30 @@ class InterfaceExcelReader:
             if worksheet is None:
                 raise ValueError("활성 워크시트를 찾을 수 없습니다")
             
+            # [디버깅용] 첫 번째 인터페이스 블록만 처리 (B열부터 시작)
+            current_col = 2  # B열 = 2
+            
+            try:
+                print(f"=== 디버깅 모드: 첫 번째 인터페이스만 처리 (컬럼 {current_col}) ===")
+                
+                # 첫 번째 인터페이스 블록 읽기
+                interface_data = self._read_interface_block(worksheet, current_col)
+                
+                if interface_data is not None:
+                    interfaces.append(interface_data)
+                    self.processed_count += 1
+                    print(f"첫 번째 인터페이스 처리 완료: {interface_data.get('interface_name', 'Unknown')}")
+                else:
+                    print("첫 번째 인터페이스 블록이 비어있습니다.")
+                
+            except Exception as e:
+                self.error_count += 1
+                error_msg = f"첫 번째 인터페이스 블록(컬럼 {current_col})에서 오류 발생: {str(e)}"
+                self.last_error_messages.append(error_msg)
+                print(f"Warning: {error_msg}")
+            
+            # 원래 루프 코드는 주석 처리 (디버깅 후 복원용)
+            """
             # B열부터 시작하여 3컬럼 단위로 처리
             current_col = 2  # B열 = 2
             
@@ -111,6 +135,7 @@ class InterfaceExcelReader:
                 
                 # 다음 인터페이스 블록으로 이동 (3컬럼씩)
                 current_col += 3
+            """
                 
         except Exception as e:
             raise ValueError(f"엑셀 파일 처리 중 오류 발생: {str(e)}")
