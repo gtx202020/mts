@@ -695,6 +695,150 @@ class InterfaceExcelReader:
             traceback.print_exc()
         
         return result
+    
+    def _compare_single_mapping(self, excel_columns: List[str], process_file_path: str, direction: str) -> Dict[str, Any]:
+        """
+        수신 컬럼 매핑 비교 (엑셀 수신 컬럼 vs .process INSERT 컬럼)
+        
+        Args:
+            excel_columns (List[str]): 엑셀에서 읽은 수신 컬럼 리스트
+            process_file_path (str): 수신 .process 파일 경로
+            direction (str): 방향 ('수신')
+            
+        Returns:
+            Dict[str, Any]: 수신 비교 결과
+        """
+        result = {
+            'excel_columns': excel_columns,
+            'process_recv_columns': [],
+            'process_send_columns': [],
+            'detailed_mappings': [],
+            'matches': [],
+            'excel_only': [],
+            'process_only': [],
+            'match_count': 0,
+            'total_excel': len(excel_columns),
+            'total_process': 0,
+            'match_percentage': 0.0,
+            'file_exists': False,
+            'error': None
+        }
+        
+        try:
+            # 파일 존재 여부 확인
+            if not os.path.exists(process_file_path):
+                result['error'] = f"수신 .process 파일 없음: {process_file_path}"
+                print(f"Warning: {result['error']}")
+                return result
+            
+            result['file_exists'] = True
+            
+            # BWProcessFileParser로 컬럼 매핑 추출
+            bw_parser = BWProcessFileParser()
+            column_mappings = bw_parser.extract_column_mappings(process_file_path)
+            
+            recv_columns = column_mappings.get('recv_columns', [])
+            send_columns = column_mappings.get('send_columns', [])
+            detailed_mappings = column_mappings.get('column_mappings', [])
+            
+            result['process_recv_columns'] = recv_columns
+            result['process_send_columns'] = send_columns
+            result['detailed_mappings'] = detailed_mappings
+            result['total_process'] = len(recv_columns)
+            
+            print(f"\n=== {direction} 컬럼 비교 상세 ===")
+            print(f"엑셀 수신 컬럼 ({len(excel_columns)}개): {excel_columns}")
+            print(f"Process 수신 컬럼 ({len(recv_columns)}개): {recv_columns}")
+            print(f"Process 송신 컬럼 ({len(send_columns)}개): {send_columns}")
+            
+            # 수신 비교: 엑셀 수신 컬럼 vs Process 수신 컬럼
+            process_compare_columns = recv_columns
+            
+            # 대소문자 구분 없이 비교를 위한 매핑 생성
+            excel_lower = [col.lower() for col in excel_columns if col and col.strip()]
+            process_lower = [col.lower() for col in process_compare_columns if col and col.strip()]
+            
+            # 매칭 찾기
+            matches = []
+            excel_only = []
+            process_only = []
+            
+            # 엑셀 수신 컬럼 기준으로 매칭 찾기
+            for excel_col in excel_columns:
+                if not excel_col or not excel_col.strip():  # 빈 컬럼 제외
+                    continue
+                    
+                excel_col_lower = excel_col.lower()
+                if excel_col_lower in process_lower:
+                    # 매칭된 인덱스 찾기
+                    process_idx = process_lower.index(excel_col_lower)
+                    process_col = process_compare_columns[process_idx]
+                    
+                    # 상세 매핑 정보 찾기
+                    detailed_info = None
+                    for mapping in detailed_mappings:
+                        if mapping['recv'].lower() == excel_col_lower:
+                            detailed_info = mapping
+                            break
+                    
+                    match_info = {
+                        'excel_column': excel_col,
+                        'process_column': process_col,
+                        'value_type': detailed_info['value_type'] if detailed_info else 'unknown',
+                        'value_pattern': detailed_info.get('value_pattern', '') if detailed_info else ''
+                    }
+                    
+                    if detailed_info:
+                        match_info['mapped_send_column'] = detailed_info['send']
+                    
+                    matches.append(match_info)
+                else:
+                    excel_only.append(excel_col)
+            
+            # Process 수신에만 있는 컬럼 찾기
+            for process_col in process_compare_columns:
+                if not process_col or not process_col.strip():  # 빈 컬럼 제외
+                    continue
+                    
+                process_col_lower = process_col.lower()
+                if process_col_lower not in excel_lower:
+                    process_only.append(process_col)
+            
+            result['matches'] = matches
+            result['excel_only'] = excel_only
+            result['process_only'] = process_only
+            result['match_count'] = len(matches)
+            
+            # 매칭 비율 계산
+            if result['total_excel'] > 0:
+                result['match_percentage'] = (result['match_count'] / result['total_excel']) * 100
+            
+            # 결과 출력
+            print(f"\n🔍 {direction} 매칭 결과:")
+            print(f"✅ 매칭됨 ({len(matches)}개):")
+            for match in matches:
+                extra_info = ""
+                if 'mapped_send_column' in match:
+                    extra_info = f" -> 송신: {match['mapped_send_column']}"
+                print(f"  - {match['excel_column']} = {match['process_column']} ({match['value_type']}){extra_info}")
+            
+            print(f"\n❌ 엑셀에만 있음 ({len(excel_only)}개):")
+            for col in excel_only:
+                print(f"  - {col}")
+            
+            print(f"\n⚠️ Process 수신에만 있음 ({len(process_only)}개):")
+            for col in process_only:
+                print(f"  - {col}")
+            
+            print(f"\n📊 매칭률: {result['match_percentage']:.1f}% ({result['match_count']}/{result['total_excel']})")
+            
+        except Exception as e:
+            result['error'] = f"수신 비교 중 오류: {str(e)}"
+            print(f"Error: {result['error']}")
+            import traceback
+            traceback.print_exc()
+        
+        return result
 
 
 class BWProcessFileParser:
