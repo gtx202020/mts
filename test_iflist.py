@@ -420,93 +420,14 @@ class InterfaceExcelReader:
         else:
             print("\n--- 수신 파일 경로 없음 ---")
         
-        # 송신-수신 연결 비교 (송신 .process의 SELECT 컬럼과 수신 .process의 매핑된 송신 컬럼)
-        if interface_data.get('send_copy') and interface_data.get('recv_copy'):
-            print(f"\n--- 송신-수신 연결 비교 ---")
-            send_recv_comparison = self._compare_send_recv_connection(
-                interface_data['send_copy'],
-                interface_data['recv_copy']
-            )
-            
-            # 엑셀 데이터를 활용하여 송신-수신 쌍 비교 완성
-            if send_recv_comparison.get('recv_file_exists'):
-                # 1단계: 엑셀에서 송신-수신 매핑 쌍 생성 (순서대로 매핑)
-                excel_send_columns = interface_data['send']['columns']
-                excel_recv_columns = interface_data['recv']['columns']
-                
-                excel_send_recv_pairs = []
-                min_length = min(len(excel_send_columns), len(excel_recv_columns))
-                
-                for i in range(min_length):
-                    send_col = excel_send_columns[i] if excel_send_columns[i] else ''
-                    recv_col = excel_recv_columns[i] if excel_recv_columns[i] else ''
-                    
-                    if send_col.strip() and recv_col.strip():
-                        # 대소문자 무시하고 공백 제거한 쌍 생성
-                        pair = (send_col.lower().strip(), recv_col.lower().strip())
-                        excel_send_recv_pairs.append(pair)
-                
-                send_recv_comparison['excel_send_recv_pairs'] = excel_send_recv_pairs
-                send_recv_comparison['total_excel_pairs'] = len(excel_send_recv_pairs)
-                
-                print(f"엑셀 송신-수신 매핑 쌍 ({len(excel_send_recv_pairs)}개):")
-                for i, (send, recv) in enumerate(excel_send_recv_pairs, 1):
-                    print(f"  {i}. ({send}, {recv})")
-                
-                # 2단계: 매칭 비교 수행
-                process_pairs = send_recv_comparison.get('process_send_recv_pairs', [])
-                matches = []
-                excel_only = []
-                process_only = []
-                
-                # 엑셀 쌍이 process 쌍에 포함되는지 확인
-                for excel_pair in excel_send_recv_pairs:
-                    if excel_pair in process_pairs:
-                        matches.append({
-                            'excel_pair': excel_pair,
-                            'process_pair': excel_pair,
-                            'match_type': 'exact'
-                        })
-                    else:
-                        excel_only.append(excel_pair)
-                
-                # process에만 있는 쌍 찾기
-                for process_pair in process_pairs:
-                    if process_pair not in excel_send_recv_pairs:
-                        process_only.append(process_pair)
-                
-                # 결과 업데이트
-                send_recv_comparison['matches'] = matches
-                send_recv_comparison['excel_only'] = excel_only
-                send_recv_comparison['process_only'] = process_only
-                send_recv_comparison['match_count'] = len(matches)
-                
-                # 매칭률 계산 (엑셀 기준)
-                if send_recv_comparison['total_excel_pairs'] > 0:
-                    send_recv_comparison['match_percentage'] = (
-                        send_recv_comparison['match_count'] / send_recv_comparison['total_excel_pairs']
-                    ) * 100
-                
-                # 결과 출력
-                print(f"\n🔗 송신-수신 매핑 쌍 비교 결과:")
-                print(f"✅ 매칭됨 ({len(matches)}개):")
-                for match in matches:
-                    pair = match['excel_pair']
-                    print(f"  - ({pair[0]}, {pair[1]})")
-                
-                print(f"\n❌ 엑셀에만 있음 ({len(excel_only)}개):")
-                for pair in excel_only:
-                    print(f"  - ({pair[0]}, {pair[1]})")
-                
-                print(f"\n⚠️ Process에만 있음 ({len(process_only)}개):")
-                for pair in process_only:
-                    print(f"  - ({pair[0]}, {pair[1]})")
-                
-                print(f"\n📊 매핑 쌍 매칭률: {send_recv_comparison['match_percentage']:.1f}% ({send_recv_comparison['match_count']}/{send_recv_comparison['total_excel_pairs']})")
-            
-            comparison_result['send_recv_comparison'] = send_recv_comparison
-        else:
-            print("\n--- 송신-수신 연결 비교 건너뜀 (파일 경로 없음) ---")
+        # 송신-수신 연결 비교 (엑셀 송신-수신 매핑 쌍 vs .process 송신-수신 매핑 쌍)
+        print(f"\n--- 송신-수신 연결 비교 ---")
+        send_recv_comparison = self._compare_send_recv_connection(
+            interface_data['send']['columns'],
+            interface_data['recv']['columns'],
+            interface_data.get('recv_copy', '')
+        )
+        comparison_result['send_recv_comparison'] = send_recv_comparison
         
         print(f"\n=== 컬럼 매핑 비교 완료 ===")
         return comparison_result
@@ -638,13 +559,14 @@ class InterfaceExcelReader:
         
         return result
     
-    def _compare_send_recv_connection(self, send_process_file_path: str, recv_process_file_path: str) -> Dict[str, Any]:
+    def _compare_send_recv_connection(self, excel_send_columns: List[str], excel_recv_columns: List[str], recv_process_file_path: str) -> Dict[str, Any]:
         """
         엑셀에서 추출한 송신-수신 매핑 쌍과 수신 .process 파일의 송신-수신 매핑 쌍 비교
         엑셀의 순서대로 매핑된 송신-수신 쌍이 process에서 추출한 매핑 쌍에 포함되는지 확인
         
         Args:
-            send_process_file_path (str): 송신 .process 파일 경로 (현재는 사용하지 않음)
+            excel_send_columns (List[str]): 엑셀 송신 컬럼 리스트
+            excel_recv_columns (List[str]): 엑셀 수신 컬럼 리스트
             recv_process_file_path (str): 수신 .process 파일 경로
             
         Returns:
@@ -665,54 +587,123 @@ class InterfaceExcelReader:
         }
         
         try:
-            # 수신 파일 존재 여부 확인
-            if not os.path.exists(recv_process_file_path):
-                result['error'] = f"수신 .process 파일 없음: {recv_process_file_path}"
-                print(f"Warning: {result['error']}")
-                return result
+            print(f"\n=== 송신-수신 연결 비교 (엑셀 vs Process 매핑 쌍) ===")
             
-            result['recv_file_exists'] = True
+            # 1단계: 엑셀에서 송신-수신 매핑 쌍 생성 (순서대로 매핑)
+            excel_send_recv_pairs = []
+            min_length = min(len(excel_send_columns), len(excel_recv_columns))
             
-            # 1단계: 엑셀에서 송신-수신 매핑 쌍 생성
-            # self는 InterfaceExcelReader 인스턴스이므로 현재 처리 중인 인터페이스 정보에 접근 필요
-            # 이 메서드는 compare_column_mappings에서 호출되므로 interface_data를 별도로 전달받아야 함
-            # 우선 현재 구조를 유지하면서 수정
-            
-            print(f"\n=== 송신-수신 연결 비교 상세 (엑셀 vs Process 매핑 쌍) ===")
-            
-            # BWProcessFileParser로 수신 파일에서 송신-수신 매핑 정보 추출
-            bw_parser = BWProcessFileParser()
-            recv_column_mappings = bw_parser.extract_column_mappings(recv_process_file_path)
-            recv_detailed_mappings = recv_column_mappings.get('column_mappings', [])
-            
-            # 2단계: Process에서 송신-수신 매핑 쌍 생성
-            process_send_recv_pairs = []
-            for mapping in recv_detailed_mappings:
-                send_col = mapping.get('send', '')
-                recv_col = mapping.get('recv', '')
+            for i in range(min_length):
+                send_col = excel_send_columns[i] if excel_send_columns[i] else ''
+                recv_col = excel_recv_columns[i] if excel_recv_columns[i] else ''
                 
-                # 실제 송신 컬럼인지 확인 (literal, pattern 등 제외)
-                if (send_col and recv_col and 
-                    not send_col.startswith("'") and 
-                    not send_col.startswith('pattern_') and 
-                    not send_col.startswith('conditional_') and
-                    not send_col.startswith('unknown_')):
-                    
+                if send_col.strip() and recv_col.strip():
                     # 대소문자 무시하고 공백 제거한 쌍 생성
                     pair = (send_col.lower().strip(), recv_col.lower().strip())
-                    if pair not in process_send_recv_pairs:
-                        process_send_recv_pairs.append(pair)
+                    excel_send_recv_pairs.append(pair)
             
-            result['process_send_recv_pairs'] = process_send_recv_pairs
-            result['total_process_pairs'] = len(process_send_recv_pairs)
+            result['excel_send_recv_pairs'] = excel_send_recv_pairs
+            result['total_excel_pairs'] = len(excel_send_recv_pairs)
             
-            print(f"Process 송신-수신 매핑 쌍 ({len(process_send_recv_pairs)}개):")
-            for i, (send, recv) in enumerate(process_send_recv_pairs, 1):
+            print(f"엑셀 송신-수신 매핑 쌍 ({len(excel_send_recv_pairs)}개):")
+            for i, (send, recv) in enumerate(excel_send_recv_pairs, 1):
                 print(f"  {i}. ({send}, {recv})")
             
-            # 주의: 이 메서드에서는 엑셀 데이터에 직접 접근할 수 없으므로
-            # 빈 결과로 반환하고, 호출하는 곳에서 엑셀 데이터를 함께 처리하도록 함
-            print(f"\n⚠️ 엑셀 데이터는 호출하는 메서드에서 별도로 처리됩니다.")
+            # 2단계: 수신 파일이 있는 경우에만 Process 매핑 쌍 추출
+            if recv_process_file_path and os.path.exists(recv_process_file_path):
+                result['recv_file_exists'] = True
+                
+                # BWProcessFileParser로 수신 파일에서 송신-수신 매핑 정보 추출
+                bw_parser = BWProcessFileParser()
+                recv_column_mappings = bw_parser.extract_column_mappings(recv_process_file_path)
+                recv_detailed_mappings = recv_column_mappings.get('column_mappings', [])
+                
+                # Process에서 송신-수신 매핑 쌍 생성
+                process_send_recv_pairs = []
+                for mapping in recv_detailed_mappings:
+                    send_col = mapping.get('send', '')
+                    recv_col = mapping.get('recv', '')
+                    
+                    # 실제 송신 컬럼인지 확인 (literal, pattern 등 제외)
+                    if (send_col and recv_col and 
+                        not send_col.startswith("'") and 
+                        not send_col.startswith('pattern_') and 
+                        not send_col.startswith('conditional_') and
+                        not send_col.startswith('unknown_')):
+                        
+                        # 대소문자 무시하고 공백 제거한 쌍 생성
+                        pair = (send_col.lower().strip(), recv_col.lower().strip())
+                        if pair not in process_send_recv_pairs:
+                            process_send_recv_pairs.append(pair)
+                
+                result['process_send_recv_pairs'] = process_send_recv_pairs
+                result['total_process_pairs'] = len(process_send_recv_pairs)
+                
+                print(f"Process 송신-수신 매핑 쌍 ({len(process_send_recv_pairs)}개):")
+                for i, (send, recv) in enumerate(process_send_recv_pairs, 1):
+                    print(f"  {i}. ({send}, {recv})")
+                
+                # 3단계: 매칭 비교 수행
+                matches = []
+                excel_only = []
+                process_only = []
+                
+                # 엑셀 쌍이 process 쌍에 포함되는지 확인
+                for excel_pair in excel_send_recv_pairs:
+                    if excel_pair in process_send_recv_pairs:
+                        matches.append({
+                            'excel_pair': excel_pair,
+                            'process_pair': excel_pair,
+                            'match_type': 'exact'
+                        })
+                    else:
+                        excel_only.append(excel_pair)
+                
+                # process에만 있는 쌍 찾기
+                for process_pair in process_send_recv_pairs:
+                    if process_pair not in excel_send_recv_pairs:
+                        process_only.append(process_pair)
+                
+                # 결과 업데이트
+                result['matches'] = matches
+                result['excel_only'] = excel_only
+                result['process_only'] = process_only
+                result['match_count'] = len(matches)
+                
+                # 매칭률 계산 (엑셀 기준)
+                if result['total_excel_pairs'] > 0:
+                    result['match_percentage'] = (
+                        result['match_count'] / result['total_excel_pairs']
+                    ) * 100
+                
+                # 결과 출력
+                print(f"\n🔗 송신-수신 매핑 쌍 비교 결과:")
+                print(f"✅ 매칭됨 ({len(matches)}개):")
+                for match in matches:
+                    pair = match['excel_pair']
+                    print(f"  - ({pair[0]}, {pair[1]})")
+                
+                print(f"\n❌ 엑셀에만 있음 ({len(excel_only)}개):")
+                for pair in excel_only:
+                    print(f"  - ({pair[0]}, {pair[1]})")
+                
+                print(f"\n⚠️ Process에만 있음 ({len(process_only)}개):")
+                for pair in process_only:
+                    print(f"  - ({pair[0]}, {pair[1]})")
+                
+                print(f"\n📊 매핑 쌍 매칭률: {result['match_percentage']:.1f}% ({result['match_count']}/{result['total_excel_pairs']})")
+            
+            else:
+                # 수신 파일이 없어도 엑셀 쌍은 표시
+                print(f"\n⚠️ 수신 .process 파일이 없어서 Process 매핑 쌍 추출 불가")
+                print(f"수신 파일: {recv_process_file_path}")
+                
+                # 엑셀 쌍만 있는 상태로 결과 설정
+                result['excel_only'] = excel_send_recv_pairs
+                
+                if result['total_excel_pairs'] > 0:
+                    result['match_percentage'] = 0.0  # Process 정보가 없으므로 0%
+                    print(f"\n📊 매핑 쌍 매칭률: 0.0% (수신 파일 없음)")
             
         except Exception as e:
             result['error'] = f"송신-수신 연결 비교 중 오류: {str(e)}"
@@ -1455,11 +1446,28 @@ class InterfaceExcelReader:
         if not comparison_result:
             return "비교 미수행"
         
-        # 파일 존재 여부 확인
+        # 연결 비교는 특별 처리 (엑셀 데이터가 있으면 비교 가능)
+        if comparison_type == '연결':
+            total_excel_pairs = comparison_result.get('total_excel_pairs', 0)
+            if total_excel_pairs == 0:
+                return "데이터 없음"
+            
+            match_count = comparison_result.get('match_count', 0)
+            recv_file_exists = comparison_result.get('recv_file_exists', False)
+            
+            if not recv_file_exists:
+                return f"수신파일 없음 (엑셀 쌍 {total_excel_pairs}개)"
+            
+            if match_count == total_excel_pairs:
+                return "완전일치"
+            else:
+                not_matched_count = total_excel_pairs - match_count
+                return f"불일치 {not_matched_count}개"
+        
+        # 다른 비교 타입들의 파일 존재 여부 확인
         file_exists_key = {
             '송신': 'file_exists',
-            '수신': 'file_exists', 
-            '연결': 'recv_file_exists',
+            '수신': 'file_exists',
             '송신스키마': 'file_exists',
             '수신스키마': 'file_exists'
         }.get(comparison_type, 'file_exists')
@@ -1470,21 +1478,12 @@ class InterfaceExcelReader:
         
         match_count = comparison_result.get('match_count', 0)
         
-        if comparison_type == '연결':
-            total_count = comparison_result.get('total_excel_pairs', 0)
-            not_matched = comparison_result.get('excel_only', [])
+        if comparison_type in ['송신스키마', '수신스키마']:
+            total_count = comparison_result.get('total_process', 0)
+            not_matched = comparison_result.get('process_only', [])
         else:
-            if comparison_type in ['송신스키마', '수신스키마']:
-                total_count = comparison_result.get('total_process', 0)
-            else:
-                total_count = comparison_result.get('total_excel', 0)
-            
-            if comparison_type == '송신':
-                not_matched = comparison_result.get('excel_only', [])
-            elif comparison_type == '수신':
-                not_matched = comparison_result.get('excel_only', [])
-            else:  # 스키마
-                not_matched = comparison_result.get('process_only', [])
+            total_count = comparison_result.get('total_excel', 0)
+            not_matched = comparison_result.get('excel_only', [])
         
         if total_count == 0:
             return "데이터 없음"
