@@ -684,12 +684,22 @@ def apply_schema_replacements(file_path, replacements):
         debug_print(f"치환 작업 중 예외 발생: {str(e)}")
         return False
 
+def check_file_locks(file_path):
+    """파일이 다른 프로세스에 의해 잠겨있는지 확인합니다."""
+    try:
+        # 파일을 독점 모드로 열어서 잠금 상태 확인
+        with open(file_path, 'r+b'):
+            return False  # 파일이 잠겨있지 않음
+    except (IOError, OSError):
+        return True  # 파일이 잠겨있음 또는 접근 불가
+
 def generate_delete_batch(data, batch_path):
     """생성된 파일들을 삭제하는 배치 파일을 생성합니다."""
     with open(batch_path, 'w', encoding='utf-8') as f:
         f.write('@echo off\n')
-        f.write('chcp 949\n')  # 코드 페이지를 한글이 지원되는 949로 설정
+        f.write('chcp 65001 > nul\n')  # UTF-8 코드 페이지로 설정
         f.write('cls\n')  # 화면 지우기
+        f.write('setlocal EnableDelayedExpansion\n\n')  # 지연 환경 변수 확장 활성화
         
         # 삭제 대상 파일 목록을 주석으로 먼저 작성
         f.write('rem ===================================================================\n')
@@ -698,6 +708,7 @@ def generate_delete_batch(data, batch_path):
         
         # 삭제 대상 파일을 저장할 리스트
         delete_files = []
+        locked_files = []
         
         # 각 행 처리하여 삭제 대상 파일 수집
         for row_key, row_data in data.items():
@@ -713,35 +724,88 @@ def generate_delete_batch(data, batch_path):
                     if copy_file and os.path.exists(copy_file):
                         delete_files.append((file_type, copy_file))
                         f.write(f'rem [{file_type}] {copy_file}\n')
+                        
+                        # 파일 잠금 상태 확인
+                        if check_file_locks(copy_file):
+                            locked_files.append((file_type, copy_file))
+                            f.write(f'rem     ^^ 경고: 이 파일은 다른 프로세스가 사용 중입니다\n')
         
         f.write(f'rem 총 삭제 대상 파일 수: {len(delete_files)}개\n')
+        if locked_files:
+            f.write(f'rem 잠긴 파일 수: {len(locked_files)}개 (삭제 시 주의 필요)\n')
         f.write('rem ===================================================================\n\n')
         
         # 실제 삭제 명령어 작성
         f.write('echo 파일 삭제를 시작합니다...\n')
         f.write(f'echo 총 {len(delete_files)}개의 파일을 삭제합니다.\n')
+        if locked_files:
+            f.write(f'echo 경고: {len(locked_files)}개의 파일이 다른 프로세스에 의해 사용 중입니다.\n')
+            f.write('echo       Everything, 안티바이러스, 텍스트 에디터 등을 종료한 후 실행하세요.\n')
         f.write('echo.\n\n')
+        
+        # 성공/실패 카운터 초기화
+        f.write('set success_count=0\n')
+        f.write('set fail_count=0\n\n')
         
         # 각 파일 삭제 명령어 작성
         for file_type, copy_file in delete_files:
-            f.write(f'echo {file_type} 삭제 중: {copy_file}\n')
-            f.write(f'del /f "{copy_file}"\n')
-            f.write('if errorlevel 1 (\n')
-            f.write(f'    echo 경고: {copy_file} 삭제 실패\n')
-            f.write(') else (\n')
-            f.write(f'    echo 성공: {copy_file} 삭제 완료\n')
-            f.write(')\n')
+            f.write(f'echo [{file_type}] 삭제 시도: {copy_file}\n')
+            
+            # 파일 존재 여부 확인
+            f.write(f'if exist "{copy_file}" (\n')
+            
+            # 파일 속성 제거 (읽기 전용, 숨김, 시스템 속성 제거)
+            f.write(f'    attrib -r -h -s "{copy_file}" 2>nul\n')
+            
+            # 파일이 사용 중인지 확인하고 강제 삭제 시도
+            f.write(f'    del /f /q "{copy_file}" 2>nul\n')
+            
+            # 삭제 성공 여부 확인
+            f.write(f'    if exist "{copy_file}" (\n')
+            f.write(f'        echo    [실패] 파일을 삭제할 수 없습니다. 다른 프로세스가 사용 중일 수 있습니다.\n')
+            f.write(f'        set /a fail_count+=1\n')
+            
+            # 파일이 잠겨있는 경우 추가 시도
+            f.write(f'        echo    [재시도] PowerShell로 삭제를 시도합니다...\n')
+            f.write(f'        powershell -Command "try {{ Remove-Item -Path \'{copy_file}\' -Force -ErrorAction Stop; Write-Host \'    [성공] PowerShell로 삭제 완료\' }} catch {{ Write-Host \'    [실패] PowerShell 삭제도 실패: $_\' }}"\n')
+            
+            f.write(f'    ) else (\n')
+            f.write(f'        echo    [성공] 파일 삭제 완료\n')
+            f.write(f'        set /a success_count+=1\n')
+            f.write(f'    )\n')
+            f.write(f') else (\n')
+            f.write(f'    echo    [정보] 파일이 이미 존재하지 않습니다.\n')
+            f.write(f'    set /a success_count+=1\n')
+            f.write(f')\n')
             f.write('echo.\n')
         
         if not delete_files:
             f.write('echo 삭제할 파일이 없습니다.\n')
         else:
-            f.write('\necho 모든 파일 삭제가 완료되었습니다.\n')
+            # 결과 요약 출력
+            f.write('\necho ===================================================================\n')
+            f.write('echo 작업 완료 요약:\n')
+            f.write('echo    성공: !success_count!개\n')
+            f.write('echo    실패: !fail_count!개\n')
+            f.write('echo ===================================================================\n')
+            
+            # Windows 탐색기 새로고침을 위한 명령
+            f.write('\necho.\n')
+            f.write('echo Windows 탐색기를 새로고침합니다...\n')
+            f.write('powershell -Command "$shell = New-Object -ComObject Shell.Application; $shell.Windows() | ForEach-Object { $_.Refresh() }"\n')
+            
+            # Everything 캐시 지우기 제안
+            f.write('\necho.\n')
+            f.write('echo 참고: Everything 검색 도구를 사용 중이라면 F5를 눌러 인덱스를 새로고침하세요.\n')
         
+        f.write('\necho.\n')
         f.write('pause\n')
     
     print(f"\n삭제 배치 파일이 생성되었습니다: {batch_path}")
     print(f"삭제 대상 파일 수: {len(delete_files)}개")
+    if locked_files:
+        print(f"경고: {len(locked_files)}개의 파일이 다른 프로세스에 의해 사용 중입니다.")
+        print("     Everything, 안티바이러스 소프트웨어, 텍스트 에디터 등을 종료 후 배치 파일을 실행하세요.")
 
 def execute_replacements(yaml_path, log_path, summary_path):
     """YAML에 정의된 복사 및 치환 작업을 실행하고 로그를 생성합니다."""

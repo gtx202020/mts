@@ -1,0 +1,1020 @@
+row_1:
+  recv_file:
+    복사파일: /home/lzcorp/process/bw/Application/PKG_LZ_RECV/TASK_LZ_01/Process/EMS_LY_LZ_GRP_001_EVT_0001_RCV.process
+    원본파일: /home/lzcorp/process/bw/Application/PKG_LZ_RECV/TASK_LZ_01/Process/EMS_LY_LZ_GRP_002_EVT_0002_RCV.process
+    치환목록:
+    - 교체:
+        값: LYMES_MGR
+      설명: LHMES_MGR → LYMES_MGR 치환
+      조건:
+        파일타입: recv_file
+      찾기:
+        정규식: LHMES_MGR
+    - 교체:
+        값: LZMES_MGR
+      설명: VOMES_MGR → LZMES_MGR 치환
+      조건:
+        파일타입: recv_file
+      찾기:
+        정규식: VOMES_MGR
+    - 교체:
+        값: LY
+      설명: LH → LY 치환
+      조건:
+        파일타입: recv_file
+      찾기:
+        정규식: LH
+    - 교체:
+        값: LZ
+      설명: VO → LZ 치환
+      조건:
+        파일타입: recv_file
+      찾기:
+        정규식: VO
+    - 교체:
+        값: '1'
+      설명: 'Group ID 치환: 2 → 1'
+      조건:
+        파일타입: recv_file
+      찾기:
+        정규식: '2'
+    - 교체:
+        값: EVT_0001
+      설명: 'Event_ID 치환: EVT_0002 → EVT_0001'
+      조건:
+        파일타입: recv_file
+      찾기:
+        정규식: EVT_0002
+  recv_schema:
+    복사파일: /home/lzcorp/process/bw/Application/PKG_LZ_RECV/TASK_LZ_01/SharedResources/TB_LZ_DEST_1.xsd
+    원본파일: /home/lzcorp/process/bw/Application/PKG_LZ_RECV/TASK_LZ_01/SharedResources/TB_LZ_DEST_2.xsd
+    치환목록:
+    - 교체:
+        값: LYMES_MGR
+      설명: LHMES_MGR → LYMES_MGR 치환
+      조건:
+        파일타입: recv_schema
+      찾기:
+        정규식: LHMES_MGR
+    - 교체:
+        값: LZMES_MGR
+      설명: VOMES_MGR → LZMES_MGR 치환
+      조건:
+        파일타입: recv_schema
+      찾기:
+        정규식: VOMES_MGR
+    - 교체:
+        값: LY
+      설명: LH → LY 치환
+      조건:
+        파일타입: recv_schema
+      찾기:
+        정규식: LH
+    - 교체:
+        값: LZ
+      설명: VO → LZ 치환
+      조건:
+        파일타입: recv_schema
+      찾기:
+        정규식: VO
+    - 교체:
+        값: '1'
+      설명: 'Group ID 치환: 2 → 1'
+      조건:
+        파일타입: recv_schema
+      찾기:
+        정규식: '2'
+    - 교체:
+        값: EVT_0001
+      설명: 'Event_ID 치환: EVT_0002 → EVT_0001'
+      조건:
+        파일타입: recv_schema
+      찾기:
+        정규식: EVT_0002
+  send_file:
+    복사파일: /home/lycorp/process/bw/Application/PKG_LY_SEND/TASK_LY_01/Process/EMS_LY_LZ_GRP_001_EVT_0001_SND.process
+    원본파일: /home/lycorp/process/bw/Application/PKG_LY_SEND/TASK_LY_01/Process/EMS_LY_LZ_GRP_002_EVT_0002_SND.process
+    치환목록:
+    - 교체:
+        값: LYMES_MGR
+      설명: LHMES_MGR → LYMES_MGR 치환
+      조건:
+        파일타입: send_file
+      찾기:
+        정규식: LHMES_MGR
+    - 교체:
+        값: LZMES_MGR
+      설명: VOMES_MGR → LZMES_MGR 치환
+      조건:
+        파일타입: send_file
+      찾기:
+        정규식: VOMES_MGR
+    - 교체:
+        값: LY
+      설명: LH → LY 치환
+      조건:
+        파일타입: send_file
+      찾기:
+        정규식: LH
+    - 교체:
+        값: LZ
+      설명: VO → LZ 치환
+      조건:
+        파일타입: send_file
+      찾기:
+        정규식: VO
+    - 교체:
+        값: '1'
+      설명: 'Group ID 치환: 2 → 1'
+      조건:
+        파일타입: send_file
+      찾기:
+        정규식: '2'
+    - 교체:
+        값: EVT_0001
+      설명: 'Event_ID 치환: EVT_0002 → EVT_0001'
+      조건:
+        파일타입: send_file
+      찾기:
+        정규식: EVT_0002
+  send_schema:
+    복사파일: /home/lycorp/process/bw/Application/PKG_LY_SEND/TASK_LY_01/SharedResources/LYDB_LYSCHEMA_TB_LY_SOURCE_1.xsd
+    원본파일: /home/lycorp/process/bw/Application/PKG_LY_SEND/TASK_LY_01/SharedResources/LYDB_LYSCHEMA_TB_LY_SOURCE_2.xsd
+    치환목록:
+    - 교체:
+        값: LYMES_MGR
+      설명: LHMES_MGR → LYMES_MGR 치환
+      조건:
+        파일타입: send_schema
+      찾기:
+        정규식: LHMES_MGR
+    - 교체:
+        값: LZMES_MGR
+      설명: VOMES_MGR → LZMES_MGR 치환
+      조건:
+        파일타입: send_schema
+      찾기:
+        정규식: VOMES_MGR
+    - 교체:
+        값: LY
+      설명: LH → LY 치환
+      조건:
+        파일타입: send_schema
+      찾기:
+        정규식: LH
+    - 교체:
+        값: LZ
+      설명: VO → LZ 치환
+      조건:
+        파일타입: send_schema
+      찾기:
+        정규식: VO
+    - 교체:
+        값: '1'
+      설명: 'Group ID 치환: 2 → 1'
+      조건:
+        파일타입: send_schema
+      찾기:
+        정규식: '2'
+    - 교체:
+        값: EVT_0001
+      설명: 'Event_ID 치환: EVT_0002 → EVT_0001'
+      조건:
+        파일타입: send_schema
+      찾기:
+        정규식: EVT_0002
+row_2:
+  recv_file:
+    복사파일: /home/lzcorp/process/bw/Application/PKG_LZ_RECV/TASK_LZ_01/Process/EMS_LY_LZ_GRP_003_EVT_0003_RCV.process
+    원본파일: /home/lycorp/process/bw/Application/PKG_LY_RECV/TASK_LY_01/Process/EMS_LZ_LY_GRP_004_EVT_0004_RCV.process
+    치환목록:
+    - 교체:
+        값: LYMES_MGR
+      설명: LHMES_MGR → LYMES_MGR 치환
+      조건:
+        파일타입: recv_file
+      찾기:
+        정규식: LHMES_MGR
+    - 교체:
+        값: LZMES_MGR
+      설명: VOMES_MGR → LZMES_MGR 치환
+      조건:
+        파일타입: recv_file
+      찾기:
+        정규식: VOMES_MGR
+    - 교체:
+        값: LY
+      설명: LH → LY 치환
+      조건:
+        파일타입: recv_file
+      찾기:
+        정규식: LH
+    - 교체:
+        값: LZ
+      설명: VO → LZ 치환
+      조건:
+        파일타입: recv_file
+      찾기:
+        정규식: VO
+    - 교체:
+        값: LYMES
+      설명: '송신시스템 치환: LZMES → LYMES'
+      조건:
+        파일타입: recv_file
+      찾기:
+        정규식: LZMES
+    - 교체:
+        값: LZWMS
+      설명: '수신시스템 치환: LYWMS → LZWMS'
+      조건:
+        파일타입: recv_file
+      찾기:
+        정규식: LYWMS
+    - 교체:
+        값: LYCORP
+      설명: '송신법인 치환: LZCORP → LYCORP'
+      조건:
+        파일타입: recv_file
+      찾기:
+        정규식: LZCORP
+    - 교체:
+        값: LZCORP
+      설명: '수신법인 치환: LYCORP → LZCORP'
+      조건:
+        파일타입: recv_file
+      찾기:
+        정규식: LYCORP
+    - 교체:
+        값: EMS_LY_LZ
+      설명: 'EMS명 치환: EMS_LZ_LY → EMS_LY_LZ'
+      조건:
+        파일타입: recv_file
+      찾기:
+        정규식: EMS_LZ_LY
+    - 교체:
+        값: '3'
+      설명: 'Group ID 치환: 4 → 3'
+      조건:
+        파일타입: recv_file
+      찾기:
+        정규식: '4'
+    - 교체:
+        값: EVT_0003
+      설명: 'Event_ID 치환: EVT_0004 → EVT_0003'
+      조건:
+        파일타입: recv_file
+      찾기:
+        정규식: EVT_0004
+  recv_schema:
+    복사파일: /home/lzcorp/process/bw/Application/PKG_LZ_RECV/TASK_LZ_01/SharedResources/TB_LZ_DEST_3.xsd
+    원본파일: /home/lycorp/process/bw/Application/PKG_LY_RECV/TASK_LY_01/SharedResources/TB_LY_DEST_4.xsd
+    치환목록:
+    - 교체:
+        값: LYMES_MGR
+      설명: LHMES_MGR → LYMES_MGR 치환
+      조건:
+        파일타입: recv_schema
+      찾기:
+        정규식: LHMES_MGR
+    - 교체:
+        값: LZMES_MGR
+      설명: VOMES_MGR → LZMES_MGR 치환
+      조건:
+        파일타입: recv_schema
+      찾기:
+        정규식: VOMES_MGR
+    - 교체:
+        값: LY
+      설명: LH → LY 치환
+      조건:
+        파일타입: recv_schema
+      찾기:
+        정규식: LH
+    - 교체:
+        값: LZ
+      설명: VO → LZ 치환
+      조건:
+        파일타입: recv_schema
+      찾기:
+        정규식: VO
+    - 교체:
+        값: LYMES
+      설명: '송신시스템 치환: LZMES → LYMES'
+      조건:
+        파일타입: recv_schema
+      찾기:
+        정규식: LZMES
+    - 교체:
+        값: LZWMS
+      설명: '수신시스템 치환: LYWMS → LZWMS'
+      조건:
+        파일타입: recv_schema
+      찾기:
+        정규식: LYWMS
+    - 교체:
+        값: LYCORP
+      설명: '송신법인 치환: LZCORP → LYCORP'
+      조건:
+        파일타입: recv_schema
+      찾기:
+        정규식: LZCORP
+    - 교체:
+        값: LZCORP
+      설명: '수신법인 치환: LYCORP → LZCORP'
+      조건:
+        파일타입: recv_schema
+      찾기:
+        정규식: LYCORP
+    - 교체:
+        값: EMS_LY_LZ
+      설명: 'EMS명 치환: EMS_LZ_LY → EMS_LY_LZ'
+      조건:
+        파일타입: recv_schema
+      찾기:
+        정규식: EMS_LZ_LY
+    - 교체:
+        값: '3'
+      설명: 'Group ID 치환: 4 → 3'
+      조건:
+        파일타입: recv_schema
+      찾기:
+        정규식: '4'
+    - 교체:
+        값: EVT_0003
+      설명: 'Event_ID 치환: EVT_0004 → EVT_0003'
+      조건:
+        파일타입: recv_schema
+      찾기:
+        정규식: EVT_0004
+  send_file:
+    복사파일: /home/lycorp/process/bw/Application/PKG_LY_SEND/TASK_LY_01/Process/EMS_LY_LZ_GRP_003_EVT_0003_SND.process
+    원본파일: /home/lzcorp/process/bw/Application/PKG_LZ_SEND/TASK_LZ_01/Process/EMS_LZ_LY_GRP_004_EVT_0004_SND.process
+    치환목록:
+    - 교체:
+        값: LYMES_MGR
+      설명: LHMES_MGR → LYMES_MGR 치환
+      조건:
+        파일타입: send_file
+      찾기:
+        정규식: LHMES_MGR
+    - 교체:
+        값: LZMES_MGR
+      설명: VOMES_MGR → LZMES_MGR 치환
+      조건:
+        파일타입: send_file
+      찾기:
+        정규식: VOMES_MGR
+    - 교체:
+        값: LY
+      설명: LH → LY 치환
+      조건:
+        파일타입: send_file
+      찾기:
+        정규식: LH
+    - 교체:
+        값: LZ
+      설명: VO → LZ 치환
+      조건:
+        파일타입: send_file
+      찾기:
+        정규식: VO
+    - 교체:
+        값: LYMES
+      설명: '송신시스템 치환: LZMES → LYMES'
+      조건:
+        파일타입: send_file
+      찾기:
+        정규식: LZMES
+    - 교체:
+        값: LZWMS
+      설명: '수신시스템 치환: LYWMS → LZWMS'
+      조건:
+        파일타입: send_file
+      찾기:
+        정규식: LYWMS
+    - 교체:
+        값: LYCORP
+      설명: '송신법인 치환: LZCORP → LYCORP'
+      조건:
+        파일타입: send_file
+      찾기:
+        정규식: LZCORP
+    - 교체:
+        값: LZCORP
+      설명: '수신법인 치환: LYCORP → LZCORP'
+      조건:
+        파일타입: send_file
+      찾기:
+        정규식: LYCORP
+    - 교체:
+        값: EMS_LY_LZ
+      설명: 'EMS명 치환: EMS_LZ_LY → EMS_LY_LZ'
+      조건:
+        파일타입: send_file
+      찾기:
+        정규식: EMS_LZ_LY
+    - 교체:
+        값: '3'
+      설명: 'Group ID 치환: 4 → 3'
+      조건:
+        파일타입: send_file
+      찾기:
+        정규식: '4'
+    - 교체:
+        값: EVT_0003
+      설명: 'Event_ID 치환: EVT_0004 → EVT_0003'
+      조건:
+        파일타입: send_file
+      찾기:
+        정규식: EVT_0004
+  send_schema:
+    복사파일: /home/lycorp/process/bw/Application/PKG_LY_SEND/TASK_LY_01/SharedResources/LYDB_LYSCHEMA_TB_LY_SOURCE_3.xsd
+    원본파일: /home/lzcorp/process/bw/Application/PKG_LZ_SEND/TASK_LZ_01/SharedResources/LZDB_LZSCHEMA_TB_LZ_SOURCE_4.xsd
+    치환목록:
+    - 교체:
+        값: LYMES_MGR
+      설명: LHMES_MGR → LYMES_MGR 치환
+      조건:
+        파일타입: send_schema
+      찾기:
+        정규식: LHMES_MGR
+    - 교체:
+        값: LZMES_MGR
+      설명: VOMES_MGR → LZMES_MGR 치환
+      조건:
+        파일타입: send_schema
+      찾기:
+        정규식: VOMES_MGR
+    - 교체:
+        값: LY
+      설명: LH → LY 치환
+      조건:
+        파일타입: send_schema
+      찾기:
+        정규식: LH
+    - 교체:
+        값: LZ
+      설명: VO → LZ 치환
+      조건:
+        파일타입: send_schema
+      찾기:
+        정규식: VO
+    - 교체:
+        값: LYMES
+      설명: '송신시스템 치환: LZMES → LYMES'
+      조건:
+        파일타입: send_schema
+      찾기:
+        정규식: LZMES
+    - 교체:
+        값: LZWMS
+      설명: '수신시스템 치환: LYWMS → LZWMS'
+      조건:
+        파일타입: send_schema
+      찾기:
+        정규식: LYWMS
+    - 교체:
+        값: LYCORP
+      설명: '송신법인 치환: LZCORP → LYCORP'
+      조건:
+        파일타입: send_schema
+      찾기:
+        정규식: LZCORP
+    - 교체:
+        값: LZCORP
+      설명: '수신법인 치환: LYCORP → LZCORP'
+      조건:
+        파일타입: send_schema
+      찾기:
+        정규식: LYCORP
+    - 교체:
+        값: EMS_LY_LZ
+      설명: 'EMS명 치환: EMS_LZ_LY → EMS_LY_LZ'
+      조건:
+        파일타입: send_schema
+      찾기:
+        정규식: EMS_LZ_LY
+    - 교체:
+        값: '3'
+      설명: 'Group ID 치환: 4 → 3'
+      조건:
+        파일타입: send_schema
+      찾기:
+        정규식: '4'
+    - 교체:
+        값: EVT_0003
+      설명: 'Event_ID 치환: EVT_0004 → EVT_0003'
+      조건:
+        파일타입: send_schema
+      찾기:
+        정규식: EVT_0004
+row_3:
+  recv_file:
+    복사파일: /home/lzcorp/process/bw/Application/PKG_LZ_RECV/TASK_LZ_01/Process/EMS_LY_LZ_GRP_005_EVT_0005_RCV.process
+    원본파일: /home/lzcorp/process/bw/Application/PKG_LZ_RECV/TASK_LZ_01/Process/EMS_LY_LZ_GRP_006_EVT_0006_RCV.process
+    치환목록:
+    - 교체:
+        값: LYMES_MGR
+      설명: LHMES_MGR → LYMES_MGR 치환
+      조건:
+        파일타입: recv_file
+      찾기:
+        정규식: LHMES_MGR
+    - 교체:
+        값: LZMES_MGR
+      설명: VOMES_MGR → LZMES_MGR 치환
+      조건:
+        파일타입: recv_file
+      찾기:
+        정규식: VOMES_MGR
+    - 교체:
+        값: LY
+      설명: LH → LY 치환
+      조건:
+        파일타입: recv_file
+      찾기:
+        정규식: LH
+    - 교체:
+        값: LZ
+      설명: VO → LZ 치환
+      조건:
+        파일타입: recv_file
+      찾기:
+        정규식: VO
+    - 교체:
+        값: '5'
+      설명: 'Group ID 치환: 6 → 5'
+      조건:
+        파일타입: recv_file
+      찾기:
+        정규식: '6'
+    - 교체:
+        값: EVT_0005
+      설명: 'Event_ID 치환: EVT_0006 → EVT_0005'
+      조건:
+        파일타입: recv_file
+      찾기:
+        정규식: EVT_0006
+  recv_schema:
+    복사파일: /home/lzcorp/process/bw/Application/PKG_LZ_RECV/TASK_LZ_01/SharedResources/TB_LZ_DEST_5.xsd
+    원본파일: /home/lzcorp/process/bw/Application/PKG_LZ_RECV/TASK_LZ_01/SharedResources/TB_LZ_DEST_6.xsd
+    치환목록:
+    - 교체:
+        값: LYMES_MGR
+      설명: LHMES_MGR → LYMES_MGR 치환
+      조건:
+        파일타입: recv_schema
+      찾기:
+        정규식: LHMES_MGR
+    - 교체:
+        값: LZMES_MGR
+      설명: VOMES_MGR → LZMES_MGR 치환
+      조건:
+        파일타입: recv_schema
+      찾기:
+        정규식: VOMES_MGR
+    - 교체:
+        값: LY
+      설명: LH → LY 치환
+      조건:
+        파일타입: recv_schema
+      찾기:
+        정규식: LH
+    - 교체:
+        값: LZ
+      설명: VO → LZ 치환
+      조건:
+        파일타입: recv_schema
+      찾기:
+        정규식: VO
+    - 교체:
+        값: '5'
+      설명: 'Group ID 치환: 6 → 5'
+      조건:
+        파일타입: recv_schema
+      찾기:
+        정규식: '6'
+    - 교체:
+        값: EVT_0005
+      설명: 'Event_ID 치환: EVT_0006 → EVT_0005'
+      조건:
+        파일타입: recv_schema
+      찾기:
+        정규식: EVT_0006
+  send_file:
+    복사파일: /home/lycorp/process/bw/Application/PKG_LY_SEND/TASK_LY_01/Process/EMS_LY_LZ_GRP_005_EVT_0005_SND.process
+    원본파일: /home/lycorp/process/bw/Application/PKG_LY_SEND/TASK_LY_01/Process/EMS_LY_LZ_GRP_006_EVT_0006_SND.process
+    치환목록:
+    - 교체:
+        값: LYMES_MGR
+      설명: LHMES_MGR → LYMES_MGR 치환
+      조건:
+        파일타입: send_file
+      찾기:
+        정규식: LHMES_MGR
+    - 교체:
+        값: LZMES_MGR
+      설명: VOMES_MGR → LZMES_MGR 치환
+      조건:
+        파일타입: send_file
+      찾기:
+        정규식: VOMES_MGR
+    - 교체:
+        값: LY
+      설명: LH → LY 치환
+      조건:
+        파일타입: send_file
+      찾기:
+        정규식: LH
+    - 교체:
+        값: LZ
+      설명: VO → LZ 치환
+      조건:
+        파일타입: send_file
+      찾기:
+        정규식: VO
+    - 교체:
+        값: '5'
+      설명: 'Group ID 치환: 6 → 5'
+      조건:
+        파일타입: send_file
+      찾기:
+        정규식: '6'
+    - 교체:
+        값: EVT_0005
+      설명: 'Event_ID 치환: EVT_0006 → EVT_0005'
+      조건:
+        파일타입: send_file
+      찾기:
+        정규식: EVT_0006
+  send_schema:
+    복사파일: /home/lycorp/process/bw/Application/PKG_LY_SEND/TASK_LY_01/SharedResources/LYDB_LYSCHEMA_TB_LY_SOURCE_5.xsd
+    원본파일: /home/lycorp/process/bw/Application/PKG_LY_SEND/TASK_LY_01/SharedResources/LYDB_LYSCHEMA_TB_LY_SOURCE_6.xsd
+    치환목록:
+    - 교체:
+        값: LYMES_MGR
+      설명: LHMES_MGR → LYMES_MGR 치환
+      조건:
+        파일타입: send_schema
+      찾기:
+        정규식: LHMES_MGR
+    - 교체:
+        값: LZMES_MGR
+      설명: VOMES_MGR → LZMES_MGR 치환
+      조건:
+        파일타입: send_schema
+      찾기:
+        정규식: VOMES_MGR
+    - 교체:
+        값: LY
+      설명: LH → LY 치환
+      조건:
+        파일타입: send_schema
+      찾기:
+        정규식: LH
+    - 교체:
+        값: LZ
+      설명: VO → LZ 치환
+      조건:
+        파일타입: send_schema
+      찾기:
+        정규식: VO
+    - 교체:
+        값: '5'
+      설명: 'Group ID 치환: 6 → 5'
+      조건:
+        파일타입: send_schema
+      찾기:
+        정규식: '6'
+    - 교체:
+        값: EVT_0005
+      설명: 'Event_ID 치환: EVT_0006 → EVT_0005'
+      조건:
+        파일타입: send_schema
+      찾기:
+        정규식: EVT_0006
+row_4:
+  recv_file:
+    복사파일: /home/lycorp/process/bw/Application/PKG_LY_RECV/TASK_LY_01/Process/EMS_LZ_LY_GRP_007_EVT_0007_RCV.process
+    원본파일: /home/lzcorp/process/bw/Application/PKG_LZ_RECV/TASK_LZ_01/Process/EMS_LY_LZ_GRP_008_EVT_0008_RCV.process
+    치환목록:
+    - 교체:
+        값: LYMES_MGR
+      설명: LHMES_MGR → LYMES_MGR 치환
+      조건:
+        파일타입: recv_file
+      찾기:
+        정규식: LHMES_MGR
+    - 교체:
+        값: LZMES_MGR
+      설명: VOMES_MGR → LZMES_MGR 치환
+      조건:
+        파일타입: recv_file
+      찾기:
+        정규식: VOMES_MGR
+    - 교체:
+        값: LY
+      설명: LH → LY 치환
+      조건:
+        파일타입: recv_file
+      찾기:
+        정규식: LH
+    - 교체:
+        값: LZ
+      설명: VO → LZ 치환
+      조건:
+        파일타입: recv_file
+      찾기:
+        정규식: VO
+    - 교체:
+        값: LZMES
+      설명: '송신시스템 치환: LYMES → LZMES'
+      조건:
+        파일타입: recv_file
+      찾기:
+        정규식: LYMES
+    - 교체:
+        값: LYWMS
+      설명: '수신시스템 치환: LZWMS → LYWMS'
+      조건:
+        파일타입: recv_file
+      찾기:
+        정규식: LZWMS
+    - 교체:
+        값: LZCORP
+      설명: '송신법인 치환: LYCORP → LZCORP'
+      조건:
+        파일타입: recv_file
+      찾기:
+        정규식: LYCORP
+    - 교체:
+        값: LYCORP
+      설명: '수신법인 치환: LZCORP → LYCORP'
+      조건:
+        파일타입: recv_file
+      찾기:
+        정규식: LZCORP
+    - 교체:
+        값: EMS_LZ_LY
+      설명: 'EMS명 치환: EMS_LY_LZ → EMS_LZ_LY'
+      조건:
+        파일타입: recv_file
+      찾기:
+        정규식: EMS_LY_LZ
+    - 교체:
+        값: '7'
+      설명: 'Group ID 치환: 8 → 7'
+      조건:
+        파일타입: recv_file
+      찾기:
+        정규식: '8'
+    - 교체:
+        값: EVT_0007
+      설명: 'Event_ID 치환: EVT_0008 → EVT_0007'
+      조건:
+        파일타입: recv_file
+      찾기:
+        정규식: EVT_0008
+  recv_schema:
+    복사파일: /home/lycorp/process/bw/Application/PKG_LY_RECV/TASK_LY_01/SharedResources/TB_LY_DEST_7.xsd
+    원본파일: /home/lzcorp/process/bw/Application/PKG_LZ_RECV/TASK_LZ_01/SharedResources/TB_LZ_DEST_8.xsd
+    치환목록:
+    - 교체:
+        값: LYMES_MGR
+      설명: LHMES_MGR → LYMES_MGR 치환
+      조건:
+        파일타입: recv_schema
+      찾기:
+        정규식: LHMES_MGR
+    - 교체:
+        값: LZMES_MGR
+      설명: VOMES_MGR → LZMES_MGR 치환
+      조건:
+        파일타입: recv_schema
+      찾기:
+        정규식: VOMES_MGR
+    - 교체:
+        값: LY
+      설명: LH → LY 치환
+      조건:
+        파일타입: recv_schema
+      찾기:
+        정규식: LH
+    - 교체:
+        값: LZ
+      설명: VO → LZ 치환
+      조건:
+        파일타입: recv_schema
+      찾기:
+        정규식: VO
+    - 교체:
+        값: LZMES
+      설명: '송신시스템 치환: LYMES → LZMES'
+      조건:
+        파일타입: recv_schema
+      찾기:
+        정규식: LYMES
+    - 교체:
+        값: LYWMS
+      설명: '수신시스템 치환: LZWMS → LYWMS'
+      조건:
+        파일타입: recv_schema
+      찾기:
+        정규식: LZWMS
+    - 교체:
+        값: LZCORP
+      설명: '송신법인 치환: LYCORP → LZCORP'
+      조건:
+        파일타입: recv_schema
+      찾기:
+        정규식: LYCORP
+    - 교체:
+        값: LYCORP
+      설명: '수신법인 치환: LZCORP → LYCORP'
+      조건:
+        파일타입: recv_schema
+      찾기:
+        정규식: LZCORP
+    - 교체:
+        값: EMS_LZ_LY
+      설명: 'EMS명 치환: EMS_LY_LZ → EMS_LZ_LY'
+      조건:
+        파일타입: recv_schema
+      찾기:
+        정규식: EMS_LY_LZ
+    - 교체:
+        값: '7'
+      설명: 'Group ID 치환: 8 → 7'
+      조건:
+        파일타입: recv_schema
+      찾기:
+        정규식: '8'
+    - 교체:
+        값: EVT_0007
+      설명: 'Event_ID 치환: EVT_0008 → EVT_0007'
+      조건:
+        파일타입: recv_schema
+      찾기:
+        정규식: EVT_0008
+  send_file:
+    복사파일: /home/lzcorp/process/bw/Application/PKG_LZ_SEND/TASK_LZ_01/Process/EMS_LZ_LY_GRP_007_EVT_0007_SND.process
+    원본파일: /home/lycorp/process/bw/Application/PKG_LY_SEND/TASK_LY_01/Process/EMS_LY_LZ_GRP_008_EVT_0008_SND.process
+    치환목록:
+    - 교체:
+        값: LYMES_MGR
+      설명: LHMES_MGR → LYMES_MGR 치환
+      조건:
+        파일타입: send_file
+      찾기:
+        정규식: LHMES_MGR
+    - 교체:
+        값: LZMES_MGR
+      설명: VOMES_MGR → LZMES_MGR 치환
+      조건:
+        파일타입: send_file
+      찾기:
+        정규식: VOMES_MGR
+    - 교체:
+        값: LY
+      설명: LH → LY 치환
+      조건:
+        파일타입: send_file
+      찾기:
+        정규식: LH
+    - 교체:
+        값: LZ
+      설명: VO → LZ 치환
+      조건:
+        파일타입: send_file
+      찾기:
+        정규식: VO
+    - 교체:
+        값: LZMES
+      설명: '송신시스템 치환: LYMES → LZMES'
+      조건:
+        파일타입: send_file
+      찾기:
+        정규식: LYMES
+    - 교체:
+        값: LYWMS
+      설명: '수신시스템 치환: LZWMS → LYWMS'
+      조건:
+        파일타입: send_file
+      찾기:
+        정규식: LZWMS
+    - 교체:
+        값: LZCORP
+      설명: '송신법인 치환: LYCORP → LZCORP'
+      조건:
+        파일타입: send_file
+      찾기:
+        정규식: LYCORP
+    - 교체:
+        값: LYCORP
+      설명: '수신법인 치환: LZCORP → LYCORP'
+      조건:
+        파일타입: send_file
+      찾기:
+        정규식: LZCORP
+    - 교체:
+        값: EMS_LZ_LY
+      설명: 'EMS명 치환: EMS_LY_LZ → EMS_LZ_LY'
+      조건:
+        파일타입: send_file
+      찾기:
+        정규식: EMS_LY_LZ
+    - 교체:
+        값: '7'
+      설명: 'Group ID 치환: 8 → 7'
+      조건:
+        파일타입: send_file
+      찾기:
+        정규식: '8'
+    - 교체:
+        값: EVT_0007
+      설명: 'Event_ID 치환: EVT_0008 → EVT_0007'
+      조건:
+        파일타입: send_file
+      찾기:
+        정규식: EVT_0008
+  send_schema:
+    복사파일: /home/lzcorp/process/bw/Application/PKG_LZ_SEND/TASK_LZ_01/SharedResources/LZDB_LZSCHEMA_TB_LZ_SOURCE_7.xsd
+    원본파일: /home/lycorp/process/bw/Application/PKG_LY_SEND/TASK_LY_01/SharedResources/LYDB_LYSCHEMA_TB_LY_SOURCE_8.xsd
+    치환목록:
+    - 교체:
+        값: LYMES_MGR
+      설명: LHMES_MGR → LYMES_MGR 치환
+      조건:
+        파일타입: send_schema
+      찾기:
+        정규식: LHMES_MGR
+    - 교체:
+        값: LZMES_MGR
+      설명: VOMES_MGR → LZMES_MGR 치환
+      조건:
+        파일타입: send_schema
+      찾기:
+        정규식: VOMES_MGR
+    - 교체:
+        값: LY
+      설명: LH → LY 치환
+      조건:
+        파일타입: send_schema
+      찾기:
+        정규식: LH
+    - 교체:
+        값: LZ
+      설명: VO → LZ 치환
+      조건:
+        파일타입: send_schema
+      찾기:
+        정규식: VO
+    - 교체:
+        값: LZMES
+      설명: '송신시스템 치환: LYMES → LZMES'
+      조건:
+        파일타입: send_schema
+      찾기:
+        정규식: LYMES
+    - 교체:
+        값: LYWMS
+      설명: '수신시스템 치환: LZWMS → LYWMS'
+      조건:
+        파일타입: send_schema
+      찾기:
+        정규식: LZWMS
+    - 교체:
+        값: LZCORP
+      설명: '송신법인 치환: LYCORP → LZCORP'
+      조건:
+        파일타입: send_schema
+      찾기:
+        정규식: LYCORP
+    - 교체:
+        값: LYCORP
+      설명: '수신법인 치환: LZCORP → LYCORP'
+      조건:
+        파일타입: send_schema
+      찾기:
+        정규식: LZCORP
+    - 교체:
+        값: EMS_LZ_LY
+      설명: 'EMS명 치환: EMS_LY_LZ → EMS_LZ_LY'
+      조건:
+        파일타입: send_schema
+      찾기:
+        정규식: EMS_LY_LZ
+    - 교체:
+        값: '7'
+      설명: 'Group ID 치환: 8 → 7'
+      조건:
+        파일타입: send_schema
+      찾기:
+        정규식: '8'
+    - 교체:
+        값: EVT_0007
+      설명: 'Event_ID 치환: EVT_0008 → EVT_0007'
+      조건:
+        파일타입: send_schema
+      찾기:
+        정규식: EVT_0008

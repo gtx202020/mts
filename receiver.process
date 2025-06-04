@@ -1,0 +1,2048 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<pd:ProcessDefinition xmlns:pfx="http://www.tipco.com/schemas/COMMON/SharedResources/Schema/common/SchemaINFO.xsd" xmlns:pfx2="http://www.tibco.com/namespaces/tnt/plugin/file" xmlns:ns="http://www.tibco.com/namespaces/tnt/plugins/jms" xmlns:pfx3="http://www.tibco.com/schemas/PRE/SharedResources/Schema/source/AVDBSP1/AVDBS_MGR/TB_DBS_TESTTABLE_I.xsd" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:ns0="www.tibco.com/plugin/Sleep" xmlns:ns2="http://www.tibco.com/pe/EngineTypes" xmlns:tib="http://www.tibco.com/bw/xslt/custom-functions" xmlns:ns1="http://www.tibco.com/pe/DeployedVarsType" xmlns:ns4="http://www.tibco.com/pe/CheckpointSchema" xmlns:ns3="http://xmlns.tibco.com/bw/activity/xml/render/bytesEnvelope/2003/05" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:pd="http://xmlns.tibco.com/bw/process/2003">
+    <xsd:import namespace="http://www.tibco.com/schemas/COMMON/SharedResources/Schema/common/SchemaINFO.xsd" schemaLocation="/SharedResources/Schema/common/SchemaINFO.xsd"/>
+    <xsd:import namespace="http://www.tibco.com/schemas/PRE/SharedResources/Schema/source/AVDBSP1/AVDBS_MGR/TB_DBS_TESTTABLE_I.xsd" schemaLocation="/SharedResources/Schema/source/AVDBSP1/AVDBS_MGR/TB_DBS_TESTTABLE_I.xsd"/>
+    <pd:name>Processes/EMS_64000/GBNN_R07/PRE.AVIFTESTID_SDB01.GBNN.process</pd:name>
+    <pd:startName>JMS Topic Subscriber</pd:startName>
+    <pd:startX>0</pd:startX>
+    <pd:startY>0</pd:startY>
+    <pd:returnBindings/>
+    <pd:starter name="JMS Topic Subscriber">
+        <pd:type>com.tibco.plugin.jms.JMSTopicEventSource</pd:type>
+        <pd:resourceType>ae.activities.JMSTopicEventSource</pd:resourceType>
+        <pd:x>54</pd:x>
+        <pd:y>84</pd:y>
+        <config>
+            <PermittedMessageType>Bytes</PermittedMessageType>
+            <SessionAttributes>
+                <transacted>false</transacted>
+                <acknowledgeMode>23</acknowledgeMode>
+                <maxSessions>1</maxSessions>
+                <destination>AVC.%%Environment%%.PRE.AVIFTESTID_SDB01</destination>
+                <durable>true</durable>
+                <subscriptionName>AVC.%%Environment%%.PRE.AVIFTESTID_SDB01.GBNN</subscriptionName>
+            </SessionAttributes>
+            <ConfigurableHeaders>
+                <JMSDeliveryMode>PERSISTENT</JMSDeliveryMode>
+                <JMSExpiration>0</JMSExpiration>
+                <JMSPriority>4</JMSPriority>
+            </ConfigurableHeaders>
+            <ConnectionReference>/SharedResources/JMS/JMS-64000.sharedjmscon</ConnectionReference>
+            <_sequenceKey>"PRE.AVIFTESTID_SDB01.GBNN"</_sequenceKey>
+            <_customId>"PRE.AVIFTESTID_SDB01.GBNN"</_customId>
+        </config>
+        <pd:inputBindings/>
+    </pd:starter>
+    <pd:endName>End</pd:endName>
+    <pd:endX>1039</pd:endX>
+    <pd:endY>280</pd:endY>
+    <pd:errorSchemas/>
+    <pd:processVariables>
+        <DATA>
+            <xsd:element name="DATA">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element ref="pfx3:TB_DBS_TESTTABLE_I" minOccurs="0" maxOccurs="unbounded"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+        </DATA>
+        <INFO ref="pfx:INFO"/>
+    </pd:processVariables>
+    <pd:targetNamespace>http://xmlns.example.com/1359618729776</pd:targetNamespace>
+    <pd:activity name="RECEIVE_START">
+        <pd:type>com.tibco.pe.core.CallProcessActivity</pd:type>
+        <pd:resourceType>ae.process.subprocess</pd:resourceType>
+        <pd:x>374</pd:x>
+        <pd:y>219</pd:y>
+        <config>
+            <processName>/SharedProcesses/Log.process</processName>
+        </config>
+        <pd:inputBindings>
+            <pfx:INFO>
+                <pfx:PUBSUB>
+                    <xsl:value-of select="$INFO/pfx:INFO/pfx:PUBSUB"/>
+                </pfx:PUBSUB>
+                <pfx:GRP_ID>
+                    <xsl:value-of select="$INFO/pfx:INFO/pfx:GRP_ID"/>
+                </pfx:GRP_ID>
+                <pfx:IF_ID>
+                    <xsl:value-of select="$INFO/pfx:INFO/pfx:IF_ID"/>
+                </pfx:IF_ID>
+                <pfx:SOURCE_GROUP>
+                    <xsl:value-of select="$INFO/pfx:INFO/pfx:SOURCE_GROUP"/>
+                </pfx:SOURCE_GROUP>
+                <pfx:SOURCE_TABLE>
+                    <xsl:value-of select="$INFO/pfx:INFO/pfx:SOURCE_TABLE"/>
+                </pfx:SOURCE_TABLE>
+                <xsl:if test="$INFO/pfx:INFO/pfx:TARGET_GROUP">
+                    <pfx:TARGET_GROUP>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:TARGET_GROUP"/>
+                    </pfx:TARGET_GROUP>
+                </xsl:if>
+                <xsl:if test="$INFO/pfx:INFO/pfx:TARGET_TABLE">
+                    <pfx:TARGET_TABLE>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:TARGET_TABLE"/>
+                    </pfx:TARGET_TABLE>
+                </xsl:if>
+                <pfx:EVENT_TYPE>
+                    <xsl:value-of select="$_globalVariables/ns1:GlobalVariables/SSEAI/Constant/RECEIVE_START"/>
+                </pfx:EVENT_TYPE>
+                <pfx:STATUS>
+                    <xsl:value-of select="&quot;Y&quot;"/>
+                </pfx:STATUS>
+                <pfx:TX_ID>
+                    <xsl:value-of select="$INFO/pfx:INFO/pfx:TX_ID"/>
+                </pfx:TX_ID>
+                <xsl:if test="$INFO/pfx:INFO/pfx:SEND_NO">
+                    <pfx:SEND_NO>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:SEND_NO"/>
+                    </pfx:SEND_NO>
+                </xsl:if>
+                <xsl:if test="$INFO/pfx:INFO/pfx:RECORD_COUNT">
+                    <pfx:RECORD_COUNT>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:RECORD_COUNT"/>
+                    </pfx:RECORD_COUNT>
+                </xsl:if>
+                <xsl:if test="$INFO/pfx:INFO/pfx:RECORD_SIZE">
+                    <pfx:RECORD_SIZE>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:RECORD_SIZE"/>
+                    </pfx:RECORD_SIZE>
+                </xsl:if>
+                <xsl:if test="$INFO/pfx:INFO/pfx:JOB_RECORD_COUNT">
+                    <pfx:JOB_RECORD_COUNT>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:JOB_RECORD_COUNT"/>
+                    </pfx:JOB_RECORD_COUNT>
+                </xsl:if>
+                <xsl:if test="$INFO/pfx:INFO/pfx:FROM_SEQ">
+                    <pfx:FROM_SEQ>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:FROM_SEQ"/>
+                    </pfx:FROM_SEQ>
+                </xsl:if>
+                <xsl:if test="$INFO/pfx:INFO/pfx:TO_SEQ">
+                    <pfx:TO_SEQ>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:TO_SEQ"/>
+                    </pfx:TO_SEQ>
+                </xsl:if>
+                <pfx:CUR_DATE>
+                    <xsl:value-of select="current-dateTime()"/>
+                </pfx:CUR_DATE>
+                <pfx:MESSAGE>
+                    <xsl:value-of select="concat(&quot;RECV START #### Received Record Count=[&quot;,count($DATA/data/pfx3:TB_DBS_TESTTABLE_I),&quot;]&quot;)"/>
+                </pfx:MESSAGE>
+                <pfx:DATA>
+                    <xsl:value-of select="_processContext/ns2:ProcessContext/EngineName"/>
+                </pfx:DATA>
+                <xsl:if test="$INFO/pfx:INFO/pfx:SEQ">
+                    <pfx:SEQ>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:SEQ"/>
+                    </pfx:SEQ>
+                </xsl:if>
+                <xsl:if test="$INFO/pfx:INFO/pfx:TOTAL_COUNT">
+                    <pfx:TOTAL_COUNT>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:TOTAL_COUNT"/>
+                    </pfx:TOTAL_COUNT>
+                </xsl:if>
+                <xsl:if test="$INFO/pfx:INFO/pfx:TOTAL_DATA_COUNT">
+                    <pfx:TOTAL_DATA_COUNT>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:TOTAL_DATA_COUNT"/>
+                    </pfx:TOTAL_DATA_COUNT>
+                </xsl:if>
+                <xsl:if test="$INFO/pfx:INFO/pfx:IS_LAST">
+                    <pfx:IS_LAST>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:IS_LAST"/>
+                    </pfx:IS_LAST>
+                </xsl:if>
+                <pfx:PROCESS_START_TIME>
+                    <xsl:value-of select="$INFO/pfx:INFO/pfx:PROCESS_START_TIME"/>
+                </pfx:PROCESS_START_TIME>
+                <pfx:HOST_NAME>
+                    <xsl:value-of select="$INFO/pfx:INFO/pfx:HOST_NAME"/>
+                </pfx:HOST_NAME>
+            </pfx:INFO>
+        </pd:inputBindings>
+    </pd:activity>
+    <pd:activity name="InsertAll">
+        <pd:type>com.tibco.plugin.jdbc.JDBCUpdateActivity</pd:type>
+        <pd:resourceType>ae.activities.JDBCUpdateActivity</pd:resourceType>
+        <pd:x>374</pd:x>
+        <pd:y>219</pd:y>
+        <config>
+            <timeout>600</timeout>
+            <commit>false</commit>
+            <emptyStrAsNil>false</emptyStrAsNil>
+            <jdbcSharedConfig>/SharedResources/JDBC/GBNN.sharedjdbc</jdbcSharedConfig>
+            <statement>INSERT INTO HO_MGR.TB_SIC_IFI_ITEM_SPEC_I (
+    EAI_SEQ_ID
+    ,DATA_INTERFACE_TYPE_CODE
+    ,EAI_INTERFACE_DATE
+    ,APPLICATION_TRANSFER_FLAG
+    ,ITEM_CODE
+    ,ATTRIBUTE1
+    ,ATTRIBUTE2
+    ,ATTRIBUTE3
+    ) VALUES (
+    ?
+    ,?
+    ,SYSDATE
+    ,'N'
+    ,?
+    ,?
+    ,?
+    ,?
+    )
+</statement>
+            <batchUpdate>true</batchUpdate>
+            <Prepared_Param_DataType>
+                <parameter>
+                    <paramterName>EAI_SEQ_ID</paramterName>
+                    <dataType>DECIMAL</dataType>
+                </parameter>
+                <parameter>
+                    <paramterName>DATA_INTERFACE_TYPE_CODE</paramterName>
+                    <dataType>VARCHAR</dataType>
+                </parameter>
+                <parameter>
+                    <paramterName>ITEM_CODE</paramterName>
+                    <dataType>VARCHAR</dataType>
+                </parameter>
+                <parameter>
+                    <paramterName>ATTRIBUTE1</paramterName>
+                    <dataType>VARCHAR</dataType>
+                </parameter>
+                <parameter>
+                    <paramterName>ATTRIBUTE2</paramterName>
+                    <dataType>VARCHAR</dataType>
+                </parameter>
+                <parameter>
+                    <paramterName>ATTRIBUTE3</paramterName>
+                    <dataType>VARCHAR</dataType>
+                </parameter>
+            </Prepared_Param_DataType>
+        </config>
+        <pd:inputBindings>
+            <jdbcUpdateActivityInput>
+                <xsl:for-each select="$DATA/data/pfx3:TB_DBS_TESTTABLE_I">
+                    <Record>
+                        <EAI_SEQ_ID>
+                            <xsl:value-of select="EAI_SEQ_ID"/>
+                        </EAI_SEQ_ID>
+                        <DATA_INTERFACE_TYPE_CODE>
+                            <xsl:value-of select="DATA_INTERFACE_TYPE_CODE"/>
+                        </DATA_INTERFACE_TYPE_CODE>
+                        <ITEM_CODE>
+                            <xsl:value-of select="ITEM_CODE"/>
+                        </ITEM_CODE>
+                        <ATTRIBUTE1>
+                            <xsl:value-of select="SHOP_CODE"/>
+                        </ATTRIBUTE1>
+                        <ATTRIBUTE2>
+                            <xsl:value-of select="SUBSTOCK_NAME_CODE"/>
+                        </ATTRIBUTE2>
+                        <ATTRIBUTE3>
+                            <xsl:value-of select="REGISTER_USER_ID"/>
+                        </ATTRIBUTE3>
+                    </Record>    
+                </xsl:for-each>
+            </jdbcUpdateActivityInput>
+        </pd:inputBindings>
+    </pd:activity>
+    <pd:activity name="InsertStart">
+        <pd:type>com.tibco.pe.core.CallProcessActivity</pd:type>
+        <pd:resourceType>ae.process.subprocess</pd:resourceType>
+        <pd:x>634</pd:x>
+        <pd:y>277</pd:y>
+        <config>
+            <processName>/SharedResources/Log.process</processName>
+        </config>
+        <pd:inputBindings>
+            <pfx:INFO>
+                <pfx:PUBSUB>
+                    <xsl:value-of select="$INFO/pfx:INFO/pfx:PUBSUB"/>
+                </pfx:PUBSUB>
+                <pfx:GRP_ID>
+                    <xsl:value-of select="$INFO/pfx:INFO/pfx:GRP_ID"/>
+                </pfx:GRP_ID>
+                <pfx:IF_ID>
+                    <xsl:value-of select="$INFO/pfx:INFO/pfx:IF_ID"/>
+                </pfx:IF_ID>
+                <pfx:SOURCE_GROUP>
+                    <xsl:value-of select="$INFO/pfx:INFO/pfx:SOURCE_GROUP"/>
+                </pfx:SOURCE_GROUP>
+                <pfx:SOURCE_TABLE>
+                    <xsl:value-of select="$INFO/pfx:INFO/pfx:SOURCE_TABLE"/>
+                </pfx:SOURCE_TABLE>
+                <xsl:if test="$INFO/pfx:INFO/pfx:TARGET_GROUP">
+                    <pfx:TARGET_GROUP>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:TARGET_GROUP"/>
+                    </pfx:TARGET_GROUP>
+                </xsl:if>
+                <xsl:if test="$INFO/pfx:INFO/pfx:TARGET_TABLE">
+                    <pfx:TARGET_TABLE>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:TARGET_TABLE"/>
+                    </pfx:TARGET_TABLE>
+                </xsl:if>
+                <pfx:EVENT_TYPE>
+                    <xsl:value-of select="$_globalVariables/ns1:GlobalVariables/SSEAI/Constant/INSERT_S"/>
+                </pfx:EVENT_TYPE>
+                <pfx:STATUS>
+                    <xsl:value-of select="&quot;Y&quot;"/>
+                </pfx:STATUS>
+                <pfx:TX_ID>
+                    <xsl:value-of select="$INFO/pfx:INFO/pfx:TX_ID"/>
+                </pfx:TX_ID>
+                <xsl:if test="$INFO/pfx:INFO/pfx:SEND_NO">
+                    <pfx:SEND_NO>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:SEND_NO"/>
+                    </pfx:SEND_NO>
+                </xsl:if>
+                <xsl:if test="$INFO/pfx:INFO/pfx:RECORD_COUNT">
+                    <pfx:RECORD_COUNT>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:RECORD_COUNT"/>
+                    </pfx:RECORD_COUNT>
+                </xsl:if>
+                <xsl:if test="$INFO/pfx:INFO/pfx:RECORD_SIZE">
+                    <pfx:RECORD_SIZE>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:RECORD_SIZE"/>
+                    </pfx:RECORD_SIZE>
+                </xsl:if>
+                <xsl:if test="$INFO/pfx:INFO/pfx:JOB_RECORD_COUNT">
+                    <pfx:JOB_RECORD_COUNT>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:JOB_RECORD_COUNT"/>
+                    </pfx:JOB_RECORD_COUNT>
+                </xsl:if>
+                <xsl:if test="$INFO/pfx:INFO/pfx:FROM_SEQ">
+                    <pfx:FROM_SEQ>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:FROM_SEQ"/>
+                    </pfx:FROM_SEQ>
+                </xsl:if>
+                <xsl:if test="$INFO/pfx:INFO/pfx:TO_SEQ">
+                    <pfx:TO_SEQ>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:TO_SEQ"/>
+                    </pfx:TO_SEQ>
+                </xsl:if>
+                <pfx:CUR_DATE>
+                    <xsl:value-of select="current-dateTime()"/>
+                </pfx:CUR_DATE>
+                <pfx:MESSAGE>
+                    <xsl:value-of select="concat(&quot;Insert Start #### QueryCount=[&quot;,count($DATA/data/pfx3:TB_DBS_TESTTABLE_I),&quot;] at SEND_NO=[&quot;,$INFO/pfx:INFO/pfx:SEND_NO,&quot;]&quot;)"/>
+                </pfx:MESSAGE>
+                <pfx:DATA>
+                    <xsl:value-of select="tib:concat-sequence-format($DATA/data/pfx3:TB_DBS_TESTTABLE_I/EAI_SEQ_ID, &quot;,&quot;)"/>
+                </pfx:DATA>
+                <xsl:if test="$INFO/pfx:INFO/pfx:SEQ">
+                    <pfx:SEQ>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:SEQ"/>
+                    </pfx:SEQ>
+                </xsl:if>
+                <xsl:if test="$INFO/pfx:INFO/pfx:TOTAL_COUNT">
+                    <pfx:TOTAL_COUNT>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:TOTAL_COUNT"/>
+                    </pfx:TOTAL_COUNT>
+                </xsl:if>
+                <xsl:if test="$INFO/pfx:INFO/pfx:TOTAL_DATA_COUNT">
+                    <pfx:TOTAL_DATA_COUNT>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:TOTAL_DATA_COUNT"/>
+                    </pfx:TOTAL_DATA_COUNT>
+                </xsl:if>
+                <xsl:if test="$INFO/pfx:INFO/pfx:IS_LAST">
+                    <pfx:IS_LAST>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:IS_LAST"/>
+                    </pfx:IS_LAST>
+                </xsl:if>
+                <pfx:PROCESS_START_TIME>
+                    <xsl:value-of select="$INFO/pfx:INFO/pfx:PROCESS_START_TIME"/>
+                </pfx:PROCESS_START_TIME>
+                <pfx:HOST_NAME>
+                    <xsl:value-of select="$INFO/pfx:INFO/pfx:HOST_NAME"/>
+                </pfx:HOST_NAME>
+            </pfx:INFO>
+        </pd:inputBindings>
+    </pd:activity>
+    <pd:activity name="InsertEnd">
+        <pd:type>com.tibco.pe.core.CallProcessActivity</pd:type>
+        <pd:resourceType>ae.process.subprocess</pd:resourceType>    
+        <pd:x>787</pd:x>
+        <pd:y>278</pd:y>
+        <config>
+            <processName>/SharedResources/Log.process</processName>
+        </config>
+        <pd:inputBindings>
+            <pfx:INFO>
+                <pfx:PUBSUB>
+                    <xsl:value-of select="$INFO/pfx:INFO/pfx:PUBSUB"/>  
+                </pfx:PUBSUB>
+                <pfx:GRP_ID>
+                    <xsl:value-of select="$INFO/pfx:INFO/pfx:GRP_ID"/>
+                </pfx:GRP_ID>
+                <pfx:IF_ID>
+                    <xsl:value-of select="$INFO/pfx:INFO/pfx:IF_ID"/>
+                </pfx:IF_ID>
+                <pfx:SOURCE_GROUP>
+                    <xsl:value-of select="$INFO/pfx:INFO/pfx:SOURCE_GROUP"/>
+                </pfx:SOURCE_GROUP>
+                <pfx:SOURCE_TABLE>
+                    <xsl:value-of select="$INFO/pfx:INFO/pfx:SOURCE_TABLE"/>
+                </pfx:SOURCE_TABLE>
+                <xsl:if test="$INFO/pfx:INFO/pfx:TARGET_GROUP">
+                    <pfx:TARGET_GROUP>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:TARGET_GROUP"/>
+                    </pfx:TARGET_GROUP>
+                </xsl:if>
+                <xsl:if test="$INFO/pfx:INFO/pfx:TARGET_TABLE">
+                    <pfx:TARGET_TABLE>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:TARGET_TABLE"/>
+                    </pfx:TARGET_TABLE>
+                </xsl:if>
+                <pfx:EVENT_TYPE>
+                    <xsl:value-of select="$_globalVariables/ns1:GlobalVariables/SSEAI/Constant/INSERT_E"/>
+                </pfx:EVENT_TYPE>
+                <pfx:STATUS>
+                    <xsl:value-of select="&quot;Y&quot;"/>
+                </pfx:STATUS>
+                <pfx:TX_ID>
+                    <xsl:value-of select="$INFO/pfx:INFO/pfx:TX_ID"/>
+                </pfx:TX_ID>
+                <xsl:if test="$INFO/pfx:INFO/pfx:SEND_NO">
+                    <pfx:SEND_NO>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:SEND_NO"/>
+                    </pfx:SEND_NO>
+                </xsl:if>
+                <xsl:if test="$INFO/pfx:INFO/pfx:RECORD_COUNT">
+                    <pfx:RECORD_COUNT>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:RECORD_COUNT"/>
+                    </pfx:RECORD_COUNT>
+                </xsl:if>
+                <xsl:if test="$INFO/pfx:INFO/pfx:RECORD_SIZE">
+                    <pfx:RECORD_SIZE>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:RECORD_SIZE"/>
+                    </pfx:RECORD_SIZE>
+                </xsl:if>
+                <xsl:if test="$INFO/pfx:INFO/pfx:JOB_RECORD_COUNT">
+                    <pfx:JOB_RECORD_COUNT>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:JOB_RECORD_COUNT"/>
+                    </pfx:JOB_RECORD_COUNT>
+                </xsl:if>
+                <xsl:if test="$INFO/pfx:INFO/pfx:FROM_SEQ">
+                    <pfx:FROM_SEQ>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:FROM_SEQ"/>
+                    </pfx:FROM_SEQ>
+                </xsl:if>
+                <xsl:if test="$INFO/pfx:INFO/pfx:TO_SEQ">
+                    <pfx:TO_SEQ>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:TO_SEQ"/>
+                    </pfx:TO_SEQ>
+                </xsl:if>
+                <pfx:CUR_DATE>
+                    <xsl:value-of select="current-dateTime()"/>
+                </pfx:CUR_DATE>
+                <pfx:MESSAGE>
+                    <xsl:value-of select="concat(&quot;Insert End #### InsertCount=[&quot;,$InsertAll/jdbcUpdateActivityOutput/noOfUpdates,&quot;]&quot;)",count($DATA/data/pfx3:TB_DBS_TESTTABLE_I),&quot;] at SEND_NO=[&quot;,$INFO/pfx:INFO/pfx:SEND_NO,&quot;]&quot;)"/>
+                </pfx:MESSAGE>
+                <xsl:if test="$INFO/pfx:INFO/pfx:SEQ">
+                    <pfx:SEQ>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:SEQ"/>
+                    </pfx:SEQ>
+                </xsl:if>
+                <xsl:if test="$INFO/pfx:INFO/pfx:TOTAL_COUNT">
+                    <pfx:TOTAL_COUNT>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:TOTAL_COUNT"/>
+                    </pfx:TOTAL_COUNT>
+                </xsl:if>
+                <xsl:if test="$INFO/pfx:INFO/pfx:TOTAL_DATA_COUNT">
+                    <pfx:TOTAL_DATA_COUNT>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:TOTAL_DATA_COUNT"/>
+                    </pfx:TOTAL_DATA_COUNT>
+                </xsl:if>
+                <xsl:if test="$INFO/pfx:INFO/pfx:IS_LAST">
+                    <pfx:IS_LAST>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:IS_LAST"/>
+                    </pfx:IS_LAST>
+                </xsl:if>
+                <pfx:PROCESS_START_TIME>
+                    <xsl:value-of select="$INFO/pfx:INFO/pfx:PROCESS_START_TIME"/>
+                </pfx:PROCESS_START_TIME>
+                <pfx:HOST_NAME>
+                    <xsl:value-of select="$INFO/pfx:INFO/pfx:HOST_NAME"/>
+                </pfx:HOST_NAME>
+            </pfx:INFO>
+        </pd:inputBindings>
+    </pd:activity>
+    <pd:activity name="Confirm">
+        <pd:type>com.tibco.pe.core.ConfirmActivity</pd:type>
+        <pd:resourceType>activity.confirm</pd:resourceType>
+        <pd:x>863</pd:x>
+        <pd:y>279</pd:y>
+        <config>
+            <ConfirmEvent>JMS Topic Subscriber</ConfirmEvent>
+        </config>
+        <pd:inputBindings/>
+    </pd:activity>
+    <pd:activity name="RECEIVE_END">
+        <pd:type>com.tibco.pe.core.CallProcessActivity</pd:type>
+        <pd:resourceType>ae.process.subprocess</pd:resourceType>
+        <pd:x>938</pd:x>
+        <pd:y>280</pd:y>
+        <config>
+            <processName>/SharedResources/Log.process</processName>
+        </config>
+        <pd:inputBindings>
+            <pfx:INFO>
+                <pfx:PUBSUB>
+                    <xsl:value-of select="$INFO/pfx:INFO/pfx:PUBSUB"/>
+                </pfx:PUBSUB>
+                <pfx:GRP_ID>
+                    <xsl:value-of select=$INFO/pfx:INFO/pfx:GRP_ID/>
+                </pfx:GRP_ID>
+                <pfx:IF_ID>
+                    <xsl:value-of select=$INFO/pfx:INFO/pfx:IF_ID/>
+                </pfx:IF_ID>
+                <pfx:SOURCE_GROUP>
+                    <xsl:value-of select="$INFO/pfx:INFO/pfx:SOURCE_GROUP"/>
+                </pfx:SOURCE_GROUP>
+                <pfx:SOURCE_TABLE>
+                    <xsl:value-of select="$INFO/pfx:INFO/pfx:SOURCE_TABLE"/>
+                </pfx:SOURCE_TABLE>
+                <xsl:if test="$INFO/pfx:INFO/pfx:TARGET_GROUP">
+                    <pfx:TARGET_GROUP>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:TARGET_GROUP"/>
+                    </pfx:TARGET_GROUP>
+                </xsl:if>
+                <xsl:if test="$INFO/pfx:INFO/pfx:TARGET_TABLE">
+                    <pfx:TARGET_TABLE>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:TARGET_TABLE"/>
+                    </pfx:TARGET_TABLE>
+                </xsl:if>
+                <pfx:EVENT_TYPE>
+                    <xsl:value-of select="$_globalVariables/ns1:GlobalVariables/SSEAI/Constant/RECEIVE_END"/>
+                </pfx:EVENT_TYPE>
+                <pfx:STATUS>
+                    <xsl:value-of select="&quot;Y&quot;"/>
+                </pfx:STATUS>
+                <pfx:TX_ID>
+                    <xsl:value-of select="$INFO/pfx:INFO/pfx:TX_ID"/>
+                </pfx:TX_ID>
+                <xsl:if test="$INFO/pfx:INFO/pfx:SEND_NO">
+                    <pfx:SEND_NO>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:SEND_NO"/>
+                    </pfx:SEND_NO>
+                </xsl:if>
+                <pfx:RECORD_COUNT>
+                    <xsl:value-of select="count($DATA/data/pfx3:TB_DBS_TESTTABLE_I)"/>
+                </pfx:RECORD_COUNT>
+                <pfx:RECORD_SIZE>
+                    <xsl:value-of select="string-length($DATA/data)"/>
+                </pfx:RECORD_SIZE>
+                <xsl:if test="$INFO/pfx:INFO/pfx:JOB_RECORD_COUNT">
+                    <pfx:JOB_RECORD_COUNT>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:JOB_RECORD_COUNT"/>
+                    </pfx:JOB_RECORD_COUNT>
+                </xsl:if>
+                <xsl:if test="$INFO/pfx:INFO/pfx:JOB_RECORD_COUNT">
+                    <pfx:JOB_RECORD_COUNT>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:JOB_RECORD_COUNT"/>
+                    </pfx:JOB_RECORD_COUNT>
+                </xsl:if>
+                <xsl:if test="$INFO/pfx:INFO/pfx:FROM_SEQ">
+                    <pfx:FROM_SEQ>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:FROM_SEQ"/>
+                    </pfx:FROM_SEQ>
+                </xsl:if>
+                <xsl:if test="$INFO/pfx:INFO/pfx:TO_SEQ">
+                    <pfx:TO_SEQ>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:TO_SEQ"/>
+                    </pfx:TO_SEQ>
+                </xsl:if>
+                <pfx:CUR_DATE>
+                    <xsl:value-of select="current-dateTime()"/>
+                </pfx:CUR_DATE>
+                <pfx:MESSAGE>
+                    <xsl:value-of select="concat(&quot;RECV END #### Received RecordCount=[&quot;,count($DATA/data/pfx3:TB_DBS_TESTTABLE_I),&quot;]&quot;)"/>
+                </pfx:MESSAGE>
+                <xsl:if test="$INFO/pfx:INFO/pfx:TOTAL_COUNT">
+                    <pfx:TOTAL_COUNT>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:TOTAL_COUNT"/>
+                    </pfx:TOTAL_COUNT>
+                </xsl:if>
+                <xsl:if test="$INFO/pfx:INFO/pfx:TOTAL_DATA_COUNT">
+                    <pfx:TOTAL_DATA_COUNT>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:TOTAL_DATA_COUNT"/>
+                    </pfx:TOTAL_DATA_COUNT>
+                </xsl:if>
+                <xsl:if test="$INFO/pfx:INFO/pfx:IS_LAST">
+                    <pfx:IS_LAST>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:IS_LAST"/>
+                    </pfx:IS_LAST>
+                </xsl:if>
+                <pfx:PROCESS_START_TIME>
+                    <xsl:value-of select="$INFO/pfx:INFO/pfx:PROCESS_START_TIME"/>
+                </pfx:PROCESS_START_TIME>
+                <pfx:HOST_NAME>
+                    <xsl:value-of select="$INFO/pfx:INFO/pfx:HOST_NAME"/>
+                </pfx:HOST_NAME>
+            </pfx:INFO>
+        </pd:inputBindings>
+    </pd:activity>
+    <pd:activity name="Check GBNN_2">
+        <pd:type>com.tibco.plugin.jdbc.JDBCQueryActivity</pd:type>
+        <pd:resourceType>ae.activities.JDBCQueryActivity</pd:resourceType>
+        <pd:x>610</pd:x>
+        <pd:y>120</pd:y>
+        <config>
+            <timeout>%%SSEAI/JDBC/_QueryTimeout%%</timeout>
+            <commit>false</commit>
+            <maxRows>%%SSEAI/JDBC/_QueryMaxRow%%</maxRows>
+            <emptyStrAsNil>false</emptyStrAsNil>
+            <jdbcSharedConfig>/SharedResources/JDBC/GBNN.sharedjdbc</jdbcSharedConfig>
+            <statement>SELECT 1 FROM DUAL</statement>
+            <oraObjects/>
+            <oraTables/>
+            <QueryOutputCachedSchemaColumns>1</QueryOutputCachedSchemaColumns>
+            <QueryOutputCachedSchemaDataTypes>2</QueryOutputCachedSchemaDataTypes>
+            <QueryOutputCachedSchemaDataTypesName>NUMBER</QueryOutputCachedSchemaDataTypesName>
+            <QueryOutputCachedSchemaStatus>OptionElement</QueryOutputCachedSchemaStatus>
+        </config>
+        <pd:inputBindings>
+            <JDBCQueryActivityInput/>
+        </pd:inputBindings>
+    </pd:activity>
+    <pd:activity name="CheckErr">
+        <pd:type>com.tibco.pe.core.CallProcessActivity</pd:type>
+        <pd:resourceType>ae.process.subprocess</pd:resourceType>
+        <pd:x>708</pd:x>
+        <pd:y>177</pd:y>
+        <config>
+            <processName>/SharedResources/Log.process</processName>
+        </config>
+        <pd:inputBindings>
+            <pfx:INFO>
+                <pfx:PUBSUB>
+                    <xsl:value-of select="$INFO/pfx:INFO/pfx:PUBSUB"/>
+                </pfx:PUBSUB>
+                <pfx:GRP_ID>
+                    <xsl:value-of select="$INFO/pfx:INFO/pfx:GRP_ID"/>
+                </pfx:GRP_ID>
+                <pfx:IF_ID>
+                    <xsl:value-of select="$INFO/pfx:INFO/pfx:IF_ID"/>
+                </pfx:IF_ID>
+                <pfx:SOURCE_GROUP>
+                    <xsl:value-of select="$INFO/pfx:INFO/pfx:SOURCE_GROUP"/>
+                </pfx:SOURCE_GROUP>
+                <pfx:SOURCE_TABLE>
+                    <xsl:value-of select="$INFO/pfx:INFO/pfx:SOURCE_TABLE"/>
+                </pfx:SOURCE_TABLE>
+                <xsl:if test="$INFO/pfx:INFO/pfx:TARGET_GROUP">
+                    <pfx:TARGET_GROUP>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:TARGET_GROUP"/>
+                    </pfx:TARGET_GROUP>
+                </xsl:if>
+                <xsl:if test="$INFO/pfx:INFO/pfx:TARGET_TABLE">
+                    <pfx:TARGET_TABLE>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:TARGET_TABLE"/>
+                    </pfx:TARGET_TABLE>
+                </xsl:if>
+                <pfx:EVENT_TYPE>
+                    <xsl:value-of select="$_globalVariables/ns1:GlobalVariables/SSEAI/Constant/ERROR"/>
+                </pfx:EVENT_TYPE>
+                <pfx:STATUS>
+                    <xsl:value-of select="&quot;Y&quot;"/>
+                </pfx:STATUS>
+                <pfx:TX_ID>
+                    <xsl:value-of select="$INFO/pfx:INFO/pfx:TX_ID"/>
+                </pfx:TX_ID>
+                <xsl:if test="$INFO/pfx:INFO/pfx:SEND_NO">
+                    <pfx:SEND_NO>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:SEND_NO"/>
+                    </pfx:SEND_NO>
+                </xsl:if>
+                <xsl:if test="$INFO/pfx:INFO/pfx:RECORD_COUNT">
+                    <pfx:RECORD_COUNT>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:RECORD_COUNT"/>
+                    </pfx:RECORD_COUNT>
+                </xsl:if>
+                <xsl:if test="$INFO/pfx:INFO/pfx:RECORD_SIZE">
+                    <pfx:RECORD_SIZE>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:RECORD_SIZE"/>
+                    </pfx:RECORD_SIZE>
+                </xsl:if>
+                <xsl:if test="$INFO/pfx:INFO/pfx:JOB_RECORD_COUNT">
+                    <pfx:JOB_RECORD_COUNT>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:JOB_RECORD_COUNT"/>
+                    </pfx:JOB_RECORD_COUNT>
+                </xsl:if>
+                <xsl:if test="$INFO/pfx:INFO/pfx:FROM_SEQ">
+                    <pfx:FROM_SEQ>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:FROM_SEQ"/>
+                    </pfx:FROM_SEQ>
+                </xsl:if>
+                <xsl:if test="$INFO/pfx:INFO/pfx:TO_SEQ">
+                    <pfx:TO_SEQ>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:TO_SEQ"/>
+                    </pfx:TO_SEQ>
+                </xsl:if>
+                <pfx:CUR_DATE>
+                    <xsl:value-of select="current-dateTime()"/>
+                </pfx:CUR_DATE>
+                <pfx:MESSAGE>
+                    <xsl:value-of select="&quot;ChkErr #### Connection Error when Executing Insert to DB. BW will not confirm to EMS. And try insert again util connection recover.&quot;"/>
+                </pfx:MESSAGE>
+                <pfx:PROCESS_START_TIME>
+                    <xsl:value-of select="$INFO/pfx:INFO/pfx:PROCESS_START_TIME"/>
+                </pfx:PROCESS_START_TIME>
+                <pfx:HOST_NAME>
+                    <xsl:value-of select="$INFO/pfx:INFO/pfx:HOST_NAME"/>
+                </pfx:HOST_NAME>
+            </pfx:INFO>
+        </pd:inputBindings>
+    </pd:activity>
+    <pd:activity name="Catch">
+        <pd:type>com.tibco.pe.core.CatchActivity</pd:type>
+        <pd:resourceType>ae.activities.Catch</pd:resourceType>
+        <pd:x>397</pd:x>
+        <pd:y>117</pd:y>
+        <pd:handler>true</pd:handler>
+        <config>
+            <catchAll>true</catchAll>
+        </config>
+        <pd:inputBindings/>
+    </pd:activity>
+    <pd:activity name="OnError">
+        <pd:type>com.tibco.pe.core.CallProcessActivity</pd:type>
+        <pd:resourceType>ae.process.subprocess</pd:resourceType>
+        <pd:x>467</pd:x>
+        <pd:y>118</pd:y>
+        <config>
+            <processName>/SharedResources/Log.process</processName>
+        </config>
+        <pd:inputBindings/>
+            <pfx:INFO>
+                <pfx:PUBSUB>
+                    <xsl:value-of select="$INFO/pfx:INFO/pfx:PUBSUB"/>
+                </pfx:PUBSUB>
+                <pfx:GRP_ID>
+                    <xsl:value-of select="$INFO/pfx:INFO/pfx:GRP_ID"/>
+                </pfx:GRP_ID>
+                <pfx:IF_ID>
+                    <xsl:value-of select="$INFO/pfx:INFO/pfx:IF_ID"/>
+                </pfx:IF_ID>
+                <pfx:SOURCE_GROUP>
+                    <xsl:value-of select="$INFO/pfx:INFO/pfx:SOURCE_GROUP"/>
+                </pfx:SOURCE_GROUP>
+                <pfx:SOURCE_TABLE>
+                    <xsl:value-of select="$INFO/pfx:INFO/pfx:SOURCE_TABLE"/>
+                </pfx:SOURCE_TABLE>
+                <xsl:if test="$INFO/pfx:INFO/pfx:TARGET_GROUP">
+                    <pfx:TARGET_GROUP>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:TARGET_GROUP"/>
+                    </pfx:TARGET_GROUP>
+                </xsl:if>
+                <xsl:if test="$INFO/pfx:INFO/pfx:TARGET_TABLE">
+                    <pfx:TARGET_TABLE>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:TARGET_TABLE"/>
+                    </pfx:TARGET_TABLE>
+                </xsl:if>
+                <pfx:EVENT_TYPE>
+                    <xsl:value-of select="$_globalVariables/ns1:GlobalVariables/SSEAI/Constant/ERROR"/>
+                </pfx:EVENT_TYPE>
+                <pfx:STATUS>
+                    <xsl:value-of select="&quot;Y&quot;"/>
+                </pfx:STATUS>
+                <pfx:TX_ID>
+                    <xsl:value-of select="$INFO/pfx:INFO/pfx:TX_ID"/>
+                </pfx:TX_ID>
+                <xsl:if test="$INFO/pfx:INFO/pfx:SEND_NO">
+                    <pfx:SEND_NO>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:SEND_NO"/>
+                    </pfx:SEND_NO>
+                </xsl:if>
+                <xsl:if test="$INFO/pfx:INFO/pfx:RECORD_COUNT">
+                    <pfx:RECORD_COUNT>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:RECORD_COUNT"/>
+                    </pfx:RECORD_COUNT>
+                </xsl:if>
+                <xsl:if test="$INFO/pfx:INFO/pfx:RECORD_SIZE">
+                    <pfx:RECORD_SIZE>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:RECORD_SIZE"/>
+                    </pfx:RECORD_SIZE>
+                </xsl:if>   
+                <xsl:if test="$INFO/pfx:INFO/pfx:JOB_RECORD_COUNT">
+                    <pfx:JOB_RECORD_COUNT>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:JOB_RECORD_COUNT"/>
+                    </pfx:JOB_RECORD_COUNT>
+                </xsl:if>
+                <xsl:if test="$INFO/pfx:INFO/pfx:FROM_SEQ">
+                    <pfx:FROM_SEQ>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:FROM_SEQ"/>
+                    </pfx:FROM_SEQ>
+                </xsl:if>
+                <xsl:if test="$INFO/pfx:INFO/pfx:TO_SEQ">
+                    <pfx:TO_SEQ>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:TO_SEQ"/>
+                    </pfx:TO_SEQ>
+                </xsl:if>
+                <pfx:CUR_DATE>
+                    <xsl:value-of select="current-dateTime()"/>
+                </pfx:CUR_DATE>
+                <pfx:MESSAGE>
+                    <xsl:value-of select="concat(&quot;OnError #### [&quot;,$INFO/pfx:INFO/pfx:GRP_ID,&quot;.&quot;,$INFO/pfx:INFO/pfx:IF_ID,&quot;.&quot;,$INFO/pfx:INFO/pfx:TARGET_GROUP,&quot;] &quot;,$_error/ns2:ErrorReport/StackTrace)"/>
+                </pfx:MESSAGE>
+                <pfx:DATA>
+                    <xsl:value-of select="tib:concat-sequence-format($DATA/data/pfx3:TB_DBS_TESTTABLE_I/EAI_SEQ_ID, &quot;,&quot;)"/>
+                </pfx:DATA>
+                <pfx:PROCESS_START_TIME>
+                    <xsl:value-of select="$INFO/pfx:INFO/pfx:PROCESS_START_TIME"/>
+                </pfx:PROCESS_START_TIME>
+                <pfx:HOST_NAME>
+                    <xsl:value-of select="$INFO/pfx:INFO/pfx:HOST_NAME"/>
+                </pfx:HOST_NAME>
+            </pfx:INFO>
+        </pd:inputBindings>
+    </pd:activity>
+    <pd:activity name="SMS4Exp">
+        <pd:type>com.tibco.pe.core.CallProcessActivity</pd:type>
+        <pd:resourceType>ae.process.subprocess</pd:resourceType>
+        <pd:x>538</pd:x>
+        <pd:y>118</pd:y>
+        <config>
+            <processName>/SharedResources/SendSMS.process</processName>
+        </config>
+        <pd:inputBindings>
+            <pfx:INFO>
+                <pfx:PUBSUB>
+                    <xsl:value-of select="$INFO/pfx:INFO/pfx:PUBSUB"/>
+                </pfx:PUBSUB>
+                <pfx:GRP_ID>
+                    <xsl:value-of select="$INFO/pfx:INFO/pfx:GRP_ID"/>
+                </pfx:GRP_ID>
+                <pfx:IF_ID>
+                    <xsl:value-of select="$INFO/pfx:INFO/pfx:IF_ID"/>
+                </pfx:IF_ID>
+                <pfx:SOURCE_GROUP>
+                    <xsl:value-of select="$INFO/pfx:INFO/pfx:SOURCE_GROUP"/>
+                </pfx:SOURCE_GROUP>
+                <pfx:SOURCE_TABLE>
+                    <xsl:value-of select="$INFO/pfx:INFO/pfx:SOURCE_TABLE"/>
+                </pfx:SOURCE_TABLE>
+                <xsl:if test="$INFO/pfx:INFO/pfx:TARGET_GROUP">
+                    <pfx:TARGET_GROUP>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:TARGET_GROUP"/>
+                    </pfx:TARGET_GROUP>
+                </xsl:if>
+                <xsl:if test="$INFO/pfx:INFO/pfx:TARGET_TABLE">
+                    <pfx:TARGET_TABLE>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:TARGET_TABLE"/>
+                    </pfx:TARGET_TABLE>
+                </xsl:if>
+                <pfx:EVENT_TYPE>
+                    <xsl:value-of select="$_globalVariables/ns1:GlobalVariables/SSEAI/Constant/ERROR"/>
+                </pfx:EVENT_TYPE>
+                <pfx:STATUS>
+                    <xsl:value-of select="&quot;Y&quot;"/>
+                </pfx:STATUS>
+                <pfx:TX_ID>
+                    <xsl:value-of select="$INFO/pfx:INFO/pfx:TX_ID"/>
+                </pfx:TX_ID>
+                <xsl:if test="$INFO/pfx:INFO/pfx:SEND_NO">
+                    <pfx:SEND_NO>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:SEND_NO"/>
+                    </pfx:SEND_NO>
+                </xsl:if>
+                <xsl:if test="$INFO/pfx:INFO/pfx:RECORD_COUNT">
+                    <pfx:RECORD_COUNT>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:RECORD_COUNT"/>
+                    </pfx:RECORD_COUNT>
+                </xsl:if>
+                <xsl:if test="$INFO/pfx:INFO/pfx:RECORD_SIZE">
+                    <pfx:RECORD_SIZE>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:RECORD_SIZE"/>
+                    </pfx:RECORD_SIZE>
+                </xsl:if>
+                <xsl:if test="$INFO/pfx:INFO/pfx:JOB_RECORD_COUNT">
+                    <pfx:JOB_RECORD_COUNT>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:JOB_RECORD_COUNT"/>
+                    </pfx:JOB_RECORD_COUNT>
+                </xsl:if>
+                <xsl:if test="$INFO/pfx:INFO/pfx:FROM_SEQ">
+                    <pfx:FROM_SEQ>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:FROM_SEQ"/>
+                    </pfx:FROM_SEQ>
+                </xsl:if>
+                <xsl:if test="$INFO/pfx:INFO/pfx:TO_SEQ">
+                    <pfx:TO_SEQ>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:TO_SEQ"/>
+                    </pfx:TO_SEQ>
+                </xsl:if>
+                <pfx:CUR_DATE>
+                    <xsl:value-of select="current-dateTime()"/>
+                </pfx:CUR_DATE>
+                <pfx:MESSAGE>
+                    <xsl:value-of select="concat(&quot;Exp] &quot;,$_globalVariables/ns1:GlobalVariables/Deployment, &quot; &quot;,$INFO/pfx:INFO/pfx:GRP_ID,&quot;.&quot;.$INFO/pfx:INFO/pfx:IF_ID,&quot;.&quot;,$INFO/pfx:INFO/pfx:INFO/pfx:TARGET_GROUP,&quot;] &quot;,$_error/ns2:ErrorReport/Msg)"/>
+                </pfx:MESSAGE>
+                <pfx:PROCESS_START_TIME>
+                    <xsl:value-of select="$INFO/pfx:INFO/pfx:PROCESS_START_TIME"/>
+                </pfx:PROCESS_START_TIME>
+                <pfx:HOST_NAME>
+                    <xsl:value-of select="$INFO/pfx:INFO/pfx:HOST_NAME"/>
+                </pfx:HOST_NAME>
+            </pfx:INFO>
+        </pd:inputBindings>
+    </pd:activity>
+    <pd:activity name="ErrEnd">
+        <pd:type>com.tibco.pe.core.CallProcessActivity</pd:type>
+        <pd:resourceType>ae.process.subprocess</pd:resourceType>
+        <pd:x>915</pd:x>
+        <pd:y>120</pd:y>
+        <config>
+            <processName>/SharedResources/Log.process</processName>
+        </config>
+        <pd:inputBindings>
+            <pfx:INFO>
+                <pfx:PUBSUB>
+                    <xsl:value-of select="$INFO/pfx:INFO/pfx:PUBSUB"/>
+                </pfx:PUBSUB>
+                <pfx:GRP_ID>
+                    <xsl:value-of select="$INFO/pfx:INFO/pfx:GRP_ID"/>
+                </pfx:GRP_ID>
+                <pfx:IF_ID>
+                    <xsl:value-of select="$INFO/pfx:INFO/pfx:IF_ID"/>
+                </pfx:IF_ID>
+                <pfx:SOURCE_GROUP>
+                    <xsl:value-of select="$INFO/pfx:INFO/pfx:SOURCE_GROUP"/>
+                </pfx:SOURCE_GROUP>
+                <pfx:SOURCE_TABLE>
+                    <xsl:value-of select="$INFO/pfx:INFO/pfx:SOURCE_TABLE"/>
+                </pfx:SOURCE_TABLE>
+                <xsl:if test="$INFO/pfx:INFO/pfx:TARGET_GROUP">
+                    <pfx:TARGET_GROUP>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:TARGET_GROUP"/>
+                    </pfx:TARGET_GROUP>
+                </xsl:if>
+                <xsl:if test="$INFO/pfx:INFO/pfx:TARGET_TABLE">
+                    <pfx:TARGET_TABLE>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:TARGET_TABLE"/>
+                    </pfx:TARGET_TABLE>
+                </xsl:if>
+                <pfx:EVENT_TYPE>
+                    <xsl:value-of select="$_globalVariables/ns1:GlobalVariables/SSEAI/Constant/ERROR"/>
+                </pfx:EVENT_TYPE>
+                <pfx:STATUS>
+                    <xsl:value-of select="&quot;E&quot;"/>
+                </pfx:STATUS>
+                <pfx:TX_ID>
+                    <xsl:value-of select="$INFO/pfx:INFO/pfx:TX_ID"/>
+                </pfx:TX_ID>
+                <xsl:if test="$INFO/pfx:INFO/pfx:SEND_NO">
+                    <pfx:SEND_NO>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:SEND_NO"/>
+                    </pfx:SEND_NO>
+                </xsl:if>
+                <xsl:if test="$INFO/pfx:INFO/pfx:RECORD_COUNT">
+                    <pfx:RECORD_COUNT>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:RECORD_COUNT"/>
+                    </pfx:RECORD_COUNT>
+                </xsl:if>
+                <xsl:if test="$INFO/pfx:INFO/pfx:RECORD_SIZE">
+                    <pfx:RECORD_SIZE>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:RECORD_SIZE"/>
+                    </pfx:RECORD_SIZE>
+                </xsl:if>
+                <xsl:if test="$INFO/pfx:INFO/pfx:JOB_RECORD_COUNT">
+                    <pfx:JOB_RECORD_COUNT>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:JOB_RECORD_COUNT"/>
+                    </pfx:JOB_RECORD_COUNT>
+                </xsl:if>
+                <xsl:if test="$INFO/pfx:INFO/pfx:FROM_SEQ">
+                    <pfx:FROM_SEQ>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:FROM_SEQ"/>
+                    </pfx:FROM_SEQ>
+                </xsl:if>
+                <xsl:if test="$INFO/pfx:INFO/pfx:TO_SEQ">
+                    <pfx:TO_SEQ>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:TO_SEQ"/>
+                    </pfx:TO_SEQ>
+                </xsl:if>
+                <pfx:CUR_DATE>
+                    <xsl:value-of select="current-dateTime()"/>
+                </pfx:CUR_DATE>
+                <pfx:MESSAGE>
+                    <xsl:value-of select="concat(&quot;WriteFile End #### &quot;, &quot;File Name=[&quot;,$Write-File/pfx2:WriteActivityOutputClass/fileInfo/size,&quot;][&quot;,$Write-File/pfx2:WriteActivityOutputClass/fileInfo/fullName,&quot;]&quot;)"/>
+                </pfx:MESSAGE>
+                <xsl:if test="$INFO/pfx:INFO/pfx:TOTAL_COUNT">
+                    <pfx:TOTAL_COUNT>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:TOTAL_COUNT"/>
+                    </pfx:TOTAL_COUNT>
+                </xsl:if>
+                <xsl:if test="$INFO/pfx:INFO/pfx:TOTAL_DATA_COUNT">
+                    <pfx:TOTAL_DATA_COUNT>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:TOTAL_DATA_COUNT"/>
+                    </pfx:TOTAL_DATA_COUNT>
+                </xsl:if>
+                <xsl:if test="$INFO/pfx:INFO/pfx:IS_LAST">
+                    <pfx:IS_LAST>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:IS_LAST"/>
+                    </pfx:IS_LAST>
+                </xsl:if>
+                <pfx:PROCESS_START_TIME>
+                    <xsl:value-of select="$INFO/pfx:INFO/pfx:PROCESS_START_TIME"/>
+                </pfx:PROCESS_START_TIME>
+                <pfx:HOST_NAME>
+                    <xsl:value-of select="$INFO/pfx:INFO/pfx:HOST_NAME"/>
+                </pfx:HOST_NAME>
+            </pfx:INFO>
+        </pd:inputBindings>
+    </pd:activity>
+    <pd:activity name="ErrSend">
+        <pd:type>com.tibco.plugin.jms.JMSTopicPublishActivity</pd:type>
+        <pd:resourceType>ae.activities.JMSTopicPublishActivity</pd:resourceType>
+        <pd:x>690</pd:x>
+        <pd:y>119</pd:y>
+        <config>
+            <PermittedMessageType>Bytes</PermittedMessageType>
+            <SessionAttributes>
+                <transacted>false</transacted>
+                <acknowledgeMode>1</acknowledgeMode>
+                <maxSessions>1</maxSessions>
+                <destination>AVC.%%Environment%%.PRE.AVIFTESTID_SDB01.GBNN.ERR</destination>
+            </SessionAttributes>
+            <ConfigurableHeaders>
+                <JMSDeliveryMode>PERSISTENT</JMSDeliveryMode>
+                <JMSExpiration>0</JMSExpiration>
+                <JMSPriority>4</JMSPriority>
+            </ConfigurableHeaders>
+            <ConnectionReference>/SharedResources/JMS/JMS-64000.sharedjmscon</ConnectionReference>
+        </config>
+        <pd:inputBindings>
+            <ns:ActivityInput>
+                <Body>
+                    <xsl:value-of select="$JMS-Topic-Subscriber/ns:ActivityOutput/Body"/>
+                </Body>
+            </ns:ActivityInput>
+        </pd:inputBindings>
+    </pd:activity>
+    <pd:activity name="Render XML">
+        <pd:type>com.tibco.plugin.xml.XMLRenderActivity</pd:type>
+        <pd:resourceType>ae.activities.XMLRenderActivity</pd:resourceType>
+        <pd:x>771</pd:x>
+        <pd:y>122</pd:y>
+        <config>
+            <renderAsText>binary</renderAsText>
+            <validateInput>false</validateInput>
+            <term>
+                <xsd:element name="root">
+                    <xsd:complexType>
+                        <xsd:sequence>
+                            <xsd:element ref="pfx3:TB_DBS_TESTTABLE_I" minOccurs="0" maxOccurs="unbounded"/>
+                            <xsd:element ref="pfx:INFO"/>
+                        </xsd:sequence>
+                    </xsd:complexType>
+                </xsd:element>
+            </term>
+        </config>
+        <pd:inputBindings>
+            <ns3:xmlInput>
+                <root>
+                    <xsl:copy-of select="$DATA/data/pfx3:TB_DBS_TESTTABLE_I"/>
+                    <xsl:copy-of select="$DATA/data/pfx:INFO"/>
+                </root>
+            </ns3:xmlInput>
+        </pd:inputBindings>
+    </pd:activity>
+    <pd:activity name="Write File">
+        <pd:type>com.tibco.plugin.file.FileWriteActivity</pd:type>
+        <pd:resourceType>ae.activities.FileWriteActivity</pd:resourceType>
+        <pd:x>843</pd:x>
+        <pd:y>121</pd:y>
+        <config>
+            <encoding>binary</encoding>
+            <compressFile>None</compressFile>
+        </config>
+        <pd:inputBindings>
+            <pfx2:WriteActivityInputBinaryClass>
+                <fileName>
+                    <xsl:value-of select="concat($_globalVariables/ns1:GlobalVariables/DirError, $INFO/pfx:INFO/pfx:GRP_ID,&quot;.&quot;,$INFO/pfx:INFO/pfx:IF_ID,&quot;.&quot;,$INFO/pfx:INFO/pfx:TARGET_GROUP,&quot;_&quot;,tib:format-dateTime('yyyyMMdd_HHmmssSSS', current-dateTime()),&quot;.xml&quot;)"/>
+                </fileName>
+                <binaryContent>
+                    <xsl:value-of select="$Render-XML/xmlBytes"/>
+                </binaryContent>
+            </pfx2:WriteActivityInputBinaryClass>
+        </pd:inputBindings>
+    </pd:activity>
+    <pd:activity name="Group">
+        <pd:type>com.tibco.pe.core.LoopGroup</pd:type>
+        <pd:resourceType>ae.process.group</pd:resourceType>
+        <pd:x>356</pd:x>
+        <pd:y>271</pd:y>
+        <pd:width>227</pd:width>
+        <pd:height>181</pd:height>
+        <pd:collapsedWidth>57</pd:collapsedWidth>
+        <pd:collapsedHeight>70</pd:collapsedHeight>
+        <pd:groupVariables/>
+        <pd:joinToggle>inherit</pd:joinToggle>
+        <config>
+            <pd:groupType>errorLoop</pd:groupType>
+            <pd:serializable>false</pd:serializable>
+            <pd:indexSlot>index</pd:indexSlot>
+            <pd:errorCondition>$index &gt;= 100000</pd:errorCondition>
+            <pd:suspendAfterErrorRetry>false</pd:suspendAfterErrorRetry>
+        </config>
+        <pd:inputBindings/>
+        <pd:expanded>true</pd:expanded>
+        <pd:transition>
+            <pd:from>start</pd:from>
+            <pd:to>Sleep</pd:to>
+            <pd:xpathDescription/>
+            <pd:lineType>Default</pd:lineType>
+            <pd:lineColor>-16777216</pd:lineColor>
+            <pd:conditionType>always</pd:conditionType>
+        </pd:transiton>
+        <pd:transition>
+            <pd:from>Check GBNN</pd:from>
+            <pd:to>end</pd:to>
+            <pd:xpathDescription/>
+            <pd:lineType>Default</pd:lineType>
+            <pd:lineColor>-16777216</pd:lineColor>
+            <pd:conditionType>always</pd:conditionType>
+        </pd:transiton>
+        <pd:transition>
+            <pd:from>Sleep</pd:from>
+            <pd:to>Check GBNN</pd:to>
+            <pd:lineType>Default</pd:lineType>
+            <pd:lineColor>-16777216</pd:lineColor>
+            <pd:conditionType>otherwise</pd:conditionType>
+        </pd:transiton>
+        <pd:transition>
+            <pd:from>SendSMS</pd:from>
+            <pd:to>LogRetry</pd:to>
+            <pd:lineType>Default</pd:lineType>
+            <pd:lineColor>-16777216</pd:lineColor>
+            <pd:conditionType>always</pd:conditionType>
+        </pd:transiton>
+        <pd:transition>
+            <pd:from>Sleep</pd:from>
+            <pd:to>SendSMS</pd:to>
+            <pd:xpathDescription>Err Every 5min</pd:xpathDescription>
+            <pd:lineType>Default</pd:lineType>
+            <pd:lineColor>-16777216</pd:lineColor>
+            <pd:conditionType>xpath</pd:conditionType>
+            <pd:xpath>$index mod 30 = 2</pd:xpath>
+        </pd:transiton>
+        <pd:transition>
+            <pd:from>LogRetry</pd:from>
+            <pd:to>Check GBNN</pd:to>
+            <pd:lineType>Default</pd:lineType>
+            <pd:lineColor>-16777216</pd:lineColor>
+            <pd:conditionType>always</pd:conditionType>
+        </pd:transiton>
+        <pd:activiy name="Sleep">
+            <pd:type>com.tibco.plugin.timer.SleepActivity</pd:type>
+            <pd:resourceType>ae.activities.sleep</pd:resourceType>
+            <pd:x>397</pd:x>
+            <pd:y>317</pd:y>
+            <config/>
+            <pd:inputBindings>
+                <ns0:SleepInputSchema>
+                    <IntervalInMillisec>
+                        <xsl:value-of select="if($index=1) then 1 else $_globalVariables/ns1:GlobalVariables/SSEAI/JDBC/_CheckSleepTime"/>
+                    </IntervalInMillisec>
+                </ns0:SleepInputSchema>
+            </pd:inputBindings>
+        </pd:activity>
+        <pd:activity name="SendSMS">
+            <pd:type>com.tibco.pe.core.CallProcessActivity</pd:type>
+            <pd:resourceType>ae.process.subprocess</pd:resourceType>
+            <pd:x>397</pd:x>
+            <pd:y>317</pd:y>
+            <config>
+                <processName>/SharedProcesses/SendSMS.process</processName>
+            </config>
+            <pd:inputBindings>
+                <pfx:INFO>
+                    <pfx:PUBSUB>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:PUBSUB"/>
+                    </pfx:PUBSUB>
+                    <pfx:GRP_ID>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:GRP_ID"/>
+                    </pfx:GRP_ID>
+                    <pfx:IF_ID>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:IF_ID"/>
+                    </pfx:IF_ID>
+                    <pfx:SOURCE_GROUP>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:SOURCE_GROUP"/>
+                    </pfx:SOURCE_GROUP>
+                    <pfx:SOURCE_TABLE>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:SOURCE_TABLE"/>
+                    </pfx:SOURCE_TABLE>
+                    <xsl:if test="$INFO/pfx:INFO/pfx:TARGET_GROUP">
+                        <pfx:TARGET_GROUP>
+                            <xsl:value-of select="$INFO/pfx:INFO/pfx:TARGET_GROUP"/>
+                        </pfx:TARGET_GROUP>
+                    </xsl:if>
+                    <xsl:if test="$INFO/pfx:INFO/pfx:TARGET_TABLE">
+                        <pfx:TARGET_TABLE>
+                            <xsl:value-of select="$INFO/pfx:INFO/pfx:TARGET_TABLE"/>
+                        </pfx:TARGET_TABLE>
+                    </xsl:if>
+                    <pfx:EVENT_TYPE>
+                        <xsl:value-of select="$_globalVariables/ns1:GlobalVariables/SSEAI/Constant/ERROR"/>
+                    </pfx:EVENT_TYPE>
+                    <pfx:STATUS>
+                        <xsl:value-of select="&quot;E&quot;"/>
+                    </pfx:STATUS>
+                    <pfx:TX_ID>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:TX_ID"/>
+                    </pfx:TX_ID>
+                    <pfx:CUR_DATE>
+                        <xsl:value-of select="current-dateTime()"/>
+                    </pfx:CUR_DATE>
+                    <pfx:MESSAGE>
+                        <xsl:value-of select="concat(&quot;ChkErr] &quot;,substring-before($_processContext/ns2:ProcessContext/EngineName, &quot;-&quot;), &quot; &quot;,$INFO/pfx:INFO/pfx:GRP_ID, &quot;.&quot;,$INFO/pfx:INFO/pfx:IF_ID, &quot;.&quot;,$INFO/pfx:INFO/pfx:TARGET_GROUP, &quot;]&quot;)"/> 
+                    </pfx:MESSAGE>
+                    <pfx:PROCESS_START_TIME>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:PROCESS_START_TIME"/>
+                    </pfx:PROCESS_START_TIME>
+                    <pfx:HOST_NAME>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:HOST_NAME"/>
+                    </pfx:HOST_NAME>
+                </pfx:INFO>
+            </pd:inputBindings>
+        </pd:activity>
+        <pd:activity name="LogRetry"> 
+            <pd:type>com.tibco.pe.core.CallProcessActivity</pd:type> 
+            <pd:resourceType>ae.process.subprocess</pd:resourceType>
+            <pd:x>497</pd:x>
+            <pd:y>390</pd:y>
+            <config>
+                <processName>/SharedProcesses/Log.process</processName>
+            </config>
+            <pd:inputBindings>
+                <pfx:INFO>
+                    <pfx:PUBSUB>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:PUBSUB"/>
+                    </pfx:PUBSUB>
+                    <pfx:GRP_ID>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:GRP_ID"/>
+                    </pfx:GRP_ID>
+                    <pfx:IF_ID>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:IF_ID"/>
+                    </pfx:IF_ID>
+                    <pfx:SOURCE_GROUP>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:SOURCE_GROUP"/>
+                    </pfx:SOURCE_GROUP>
+                    <pfx:SOURCE_TABLE>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:SOURCE_TABLE"/>
+                    </pfx:SOURCE_TABLE>
+                    <xsl:if test="$INFO/pfx:INFO/pfx:TARGET_GROUP">
+                        <pfx:TARGET_GROUP>
+                            <xsl:value-of select="$INFO/pfx:INFO/pfx:TARGET_GROUP"/>
+                        </pfx:TARGET_GROUP>
+                    </xsl:if>
+                    <xsl:if test="$INFO/pfx:INFO/pfx:TARGET_TABLE">
+                        <pfx:TARGET_TABLE>
+                            <xsl:value-of select="$INFO/pfx:INFO/pfx:TARGET_TABLE"/>
+                        </pfx:TARGET_TABLE>
+                    </xsl:if>
+                    <pfx:EVENT_TYPE>
+                        <xsl:value-of select="$_globalVariables/ns1:GlobalVariables/SSEAI/Constant/ERROR"/>
+                    </pfx:EVENT_TYPE>
+                    <pfx:STATUS>
+                        <xsl:value-of select="&quot;E&quot;"/>
+                    </pfx:STATUS>
+                    <pfx:TX_ID>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:TX_ID"/>
+                    </pfx:TX_ID>
+                    <pfx:CUR_DATE>
+                        <xsl:value-of select="current-dateTime()"/>
+                    </pfx:CUR_DATE>
+                    <pfx:MESSAGE>
+                        <xsl:value-of select="concat(&quot;ChkErr #### Retry #&quot;,$index)"/>
+                    </pfx:MESSAGE>
+                    <pfx:PROCESS_START_TIME>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:PROCESS_START_TIME"/>
+                    </pfx:PROCESS_START_TIME>
+                    <pfx:HOST_NAME>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:HOST_NAME"/>
+                    </pfx:HOST_NAME>
+                </pfx:INFO>
+            </pd:inputBindings>
+        </pd:activity>
+        <pd:activity name="Check GBNN">
+            <pd:type>com.tibco.plugin.jdbc.JDBCQueryActivity</pd:type>
+            <pd:resourceType>ae.activities.JDBCQueryActivity</pd:resourceType>
+            <pd:x>505</pd:x>
+            <pd:y>318</pd:y>
+            <config>
+                <timeout>%%SSEAI/JDBC/_QueryTimeout%%</timeout>
+                <commit>false</commit>
+                <maxRows>%%SSEAI/JDBC/_QueryMaxRow%%</maxRows>
+                <emptyStrAsNil>false</emptyStrAsNil>
+                <commit>false</commit>
+                <jdbcSharedConfig>/SharedResources/JDBC/GBNN.sharedjdbc</jdbcSharedConfig>
+                <statement>SELECT 1 FROM DUAL</statement>
+                <oraObjects/>
+                <oraTables/>
+                <QueryOutputCachedSchemaColumns>1</QueryOutputCachedSchemaColumns>
+                <QueryOutputCachedSchemaDataTypes>2</QueryOutputCachedSchemaDataTypes>
+                <QueryOutputCachedSchemaDataTypesName>NUMBER</QueryOutputCachedSchemaDataTypesName>
+                <QueryOutputCachedSchemaStatus>OptionElement</QueryOutputCachedSchemaStatus>
+            </config>
+            <pd:inputBindings>
+                <JDBCQueryActivityInput/>
+            </pd:inputBindings>
+        </pd:activity>
+    </pd:group>
+    <pd:group name="PrepareData">
+        <pd:type>com.tibco.pe.core.LoopGroup</pd:type>
+        <pd:resourceType>ae.process.group</pd:resourceType>
+        <pd:x>207</pd:x>
+        <pd:y>146</pd:y>
+        <pd:width>104</pd:width>
+        <pd:height>151</pd:height>
+        <pd:collapsedWidth>57</pd:collapsedWidth>
+        <pd:collapsedHeight>70</pd:collapsedHeight>
+        <pd:groupVariables/>
+        <pd:joinToggle>inherit</pd:joinToggle>
+        <config>
+            <pd:groupType>simpleGroup</pd:groupType>
+            <pd:serializable>false</pd:serializable>
+        </config>
+        <pd:inputBindings/>
+        <pd:expanded>true</pd:expanded>
+        <pd:transition>
+            <pd:from>start</pd:from>
+            <pd:to>INFO</pd:to>
+            <pd:lineType>Default</pd:lineType>
+            <pd:lineColor>-16777216</pd:lineColor>
+            <pd:conditionType>always</pd:conditionType>
+        </pd:transition>
+        <pd:transition>
+            <pd:from>start</pd:from>
+            <pd:to>DATA</pd:to>
+            <pd:lineType>Default</pd:lineType>
+            <pd:lineColor>-16777216</pd:lineColor>
+            <pd:conditionType>always</pd:conditionType>
+        </pd:transition>
+        <pd:transition>
+            <pd:from>DATA</pd:from>
+            <pd:to>end</pd:to>
+            <pd:lineType>Default</pd:lineType>
+            <pd:lineColor>-16777216</pd:lineColor>
+            <pd:conditionType>always</pd:conditionType>
+        </pd:transition>
+        <pd:transition>
+            <pd:from>INFO</pd:from>
+            <pd:to>end</pd:to>
+            <pd:lineType>Default</pd:lineType>
+            <pd:lineColor>-16777216</pd:lineColor>
+            <pd:conditionType>always</pd:conditionType>
+        </pd:transition>
+        <pd:activity name="INFO">
+            <pd:type>com.tibco.pe.core.AssignActivity</pd:type>
+            <pd:resourceType>ae.process.assignActivity</pd:resourceType>
+            <pd:x>260</pd:x>
+            <pd:y>194</pd:y>
+            <config>
+                <variableName>INFO</variableName>
+            </config>
+            <pd:inputBindings>
+                <pfx:INFO>
+                    <pfx:PUBSUB>
+                        <xsl:value-of select="&quot;SUB&quot;"/>
+                    </pfx:PUBSUB>
+                    <pfx:GRP_ID>
+                        <xsl:value-of select="$Parse-XML/root/pfx:INFO/pfx:GRP_ID"/>
+                    </pfx:GRP_ID>
+                    <pfx:IF_ID>
+                        <xsl:value-of select="$Parse-XML/root/pfx:INFO/pfx:IF_ID"/>
+                    </pfx:IF_ID>
+                    <pfx:SOURCE_GROUP>
+                        <xsl:value-of select="$Parse-XML/root/pfx:INFO/pfx:SOURCE_GROUP"/>
+                    </pfx:SOURCE_GROUP>
+                    <pfx:SOURCE_TABLE>
+                        <xsl:value-of select="$Parse-XML/root/pfx:INFO/pfx:SOURCE_TABLE"/>
+                    </pfx:SOURCE_TABLE>
+                    <pfx:TARGET_GROUP>
+                        <xsl:value-of select="&quot;GBNN&quot;"/>
+                    </pfx:TARGET_GROUP>
+                    <pfx:TARGET_TABLE>
+                        <xsl:value-of select="&quot;HO_MGR.TB_SIC_IFI_ITEM_SPEC_I&quot;"/>
+                    </pfx:TARGET_TABLE>
+                    <pfx:EVENT_TYPE>
+                        <xsl:value-of select="&quot;ASSIGN&quot;"/>
+                    </pfx:EVENT_TYPE>
+                    <pfx:STATUS>
+                        <xsl:value-of select="&quot;Y&quot;"/>
+                    </pfx:STATUS>
+                    <pfx:TX_ID>
+                        <xsl:value-of select="$Parse-XML/root/pfx:INFO/pfx:TX_ID"/>
+                    </pfx:TX_ID>
+                    <xsl:if test="$Parse-XML/root/pfx:INFO/pfx:SEND_NO">
+                        <pfx:SEND_NO>
+                            <xsl:value-of select="$Parse-XML/root/pfx:INFO/pfx:SEND_NO"/>
+                        </pfx:SEND_NO>
+                    </xsl:if>
+                    <xsl:if test="$Parse-XML/root/pfx:INFO/pfx:RECORD_COUNT">
+                        <pfx:RECORD_COUNT>
+                            <xsl:value-of select="$Parse-XML/root/pfx:INFO/pfx:RECORD_COUNT"/>
+                        </pfx:RECORD_COUNT>
+                    </xsl:if>
+                    <xsl:if test="$Parse-XML/root/pfx:INFO/pfx:RECORD_SIZE">
+                        <pfx:RECORD_SIZE>
+                            <xsl:value-of select="$Parse-XML/root/pfx:INFO/pfx:RECORD_SIZE"/>
+                        </pfx:RECORD_SIZE>
+                    </xsl:if>
+                    <xsl:if test="$Parse-XML/root/pfx:INFO/pfx:JOB_RECORD_COUNT">
+                        <pfx:JOB_RECORD_COUNT>
+                            <xsl:value-of select="$Parse-XML/root/pfx:INFO/pfx:JOB_RECORD_COUNT"/>
+                        </pfx:JOB_RECORD_COUNT>
+                    </xsl:if>
+                    <xsl:if test="$Parse-XML/root/pfx:INFO/pfx:FROM_SEQ">
+                        <pfx:FROM_SEQ>
+                            <xsl:value-of select="$Parse-XML/root/pfx:INFO/pfx:FROM_SEQ"/>
+                        </pfx:FROM_SEQ>
+                    </xsl:if>
+                    <xsl:if test="$Parse-XML/root/pfx:INFO/pfx:TO_SEQ">
+                        <pfx:TO_SEQ>
+                            <xsl:value-of select="$Parse-XML/root/pfx:INFO/pfx:TO_SEQ"/>
+                        </pfx:TO_SEQ>
+                    </xsl:if>
+                    <pfx:CUR_DATE>
+                        <xsl:value-of select="current-dateTime()"/>
+                    </pfx:CUR_DATE>
+                    <pfx:MESSAGE>
+                        <xsl:value-of select="&quot;&quot;"/>
+                    </pfx:MESSAGE>
+                    <xsl:if test="$Parse-XML/root/pfx:INFO/pfx:DATA">
+                        <pfx:DATA>
+                            <xsl:value-of select="$Parse-XML/root/pfx:INFO/pfx:DATA"/>
+                        </pfx:DATA>
+                    </xsl:if>
+                    <xsl:if test="$Parse-XML/root/pfx:INFO/pfx:SEQ">
+                        <pfx:SEQ>
+                            <xsl:value-of select="$Parse-XML/root/pfx:INFO/pfx:SEQ"/>
+                        </pfx:SEQ>
+                    </xsl:if>
+                    <xsl:if test="$Parse-XML/root/pfx:INFO/pfx:TOTAL_DATA_COUNT">
+                        <pfx:TOTAL_DATA_COUNT>
+                            <xsl:value-of select="$Parse-XML/root/pfx:INFO/pfx:TOTAL_DATA_COUNT"/>
+                        </pfx:TOTAL_DATA_COUNT>
+                    </xsl:if>
+                    <pfx:IS_LAST>
+                        <xsl:value-of select="$Parse-XML/root/pfx:INFO/pfx:IS_LAST"/>
+                    </pfx:IS_LAST>
+                    <pfx:PROCESS_START_TIME>
+                        <xsl:value-of select="current-dateTime()"/>
+                    </pfx:PROCESS_START_TIME>
+                    <pfx:HOST_NAME>
+                        <xsl:value-of select="$Parse-XML/root/pfx:INFO/pfx:HOST_NAME"/>
+                    </pfx:HOST_NAME>
+                </pfx:INFO>
+            </pd:inputBindings>
+        </pd:activity>
+        <pd:activity name="DATA">
+            <pd:type>com.tibco.pe.core.AssignActivity</pd:type>
+            <pd:resourceType>ae.activity.assignActivity</pd:resourceType>
+            <pd:x>260</pd:x>
+            <pd:y>243</pd:y>
+            <config>
+                <variableName>DATA</variableName>
+            </config>
+            <pd:inputBindings>
+                <data>
+                    <xsl:for-each select="$Parse-XML/root/pfx:TB_DBS_TESTTABLE_I">
+                        <pfx3:TB_DBS_TESTTABLE_I>
+                            <EAI_SEQ_ID>
+                                <xsl:value-of select="EAI_SEQ_ID"/>
+                            </EAI_SEQ_ID>
+                            <xsl:if test="DATA_INTERFACE_TYPE_CODE">
+                                <DATA_INTERFACE_TYPE_CODE>
+                                    <xsl:value-of select="DATA_INTERFACE_TYPE_CODE"/>
+                                </DATA_INTERFACE_TYPE_CODE>
+                            </xsl:if>
+                            <xsl:if test="ITEM_CODE">
+                                <ITEM_CODE>
+                                    <xsl:value-of select="ITEM_CODE"/>
+                                </ITEM_CODE>
+                            </xsl:if>
+                            <xsl:if test="SHOP_CODE">
+                                <SHOP_CODE>
+                                    <xsl:value-of select="SHOP_CODE"/>
+                                </SHOP_CODE>
+                            </xsl:if>
+                            <xsl:if test="SUBSTOCK_NAME_CODE">
+                                <SUBSTOCK_NAME_CODE>
+                                    <xsl:value-of select="SUBSTOCK_NAME_CODE"/>
+                                </SUBSTOCK_NAME_CODE>
+                            </xsl:if>
+                            <xsl:if test="REGISTER_USER_ID">
+                                <REGISTER_USER_ID>
+                                    <xsl:value-of select="REGISTER_USER_ID"/>
+                                </REGISTER_USER_ID>
+                            </xsl:if>
+                            <xsl:if test="CREATION_DATE">
+                                <CREATION_DATE>
+                                    <xsl:value-of select="CREATION_DATE"/>
+                                </CREATION_DATE>
+                            </xsl:if>
+                            <xsl:if test="CREATION_USER_ID">
+                                <CREATION_USER_ID>
+                                    <xsl:value-of select="CREATION_USER_ID"/>
+                                </CREATION_USER_ID>
+                            </xsl:if>
+                        </pfx3:TB_DBS_TESTTABLE_I>
+                    </xsl:for-each>
+                </data>
+            </pd:inputBindings>
+        </pd:activity>
+    </pd:group>
+    <pd:activity name="InsertNoData">
+        <pd:type>com.tibco.pe.core.CallProcessActivity</pd:type>
+        <pd:resourceType>ae.process.subprocess</pd:resourceType>
+        <pd:x>797</pd:x>
+        <pd:y>219</pd:y>
+        <config>
+            <processName>/SharedProcesses/Log.process</processName>
+        </config>
+        <pd:inputBindings>
+            <pfx:INFO>
+                <pfx:PUBSUB>
+                    <xsl:value-of select="$INFO/pfx:INFO/pfx:PUBSUB"/>
+                </pfx:PUBSUB>
+                <pfx:GRP_ID>
+                    <xsl:value-of select="$INFO/pfx:INFO/pfx:GRP_ID"/>
+                </pfx:GRP_ID>
+                <pfx:IF_ID>
+                    <xsl:value-of select="$INFO/pfx:INFO/pfx:IF_ID"/>
+                </pfx:IF_ID>
+                <pfx:SOURCE_GROUP>
+                    <xsl:value-of select="$INFO/pfx:INFO/pfx:SOURCE_GROUP"/>
+                </pfx:SOURCE_GROUP>
+                <pfx:SOURCE_TABLE>
+                    <xsl:value-of select="$INFO/pfx:INFO/pfx:SOURCE_TABLE"/>
+                </pfx:SOURCE_TABLE>
+                <xsl:if test="$INFO/pfx:INFO/pfx:TARGET_GROUP">
+                    <pfx:TARGET_GROUP>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:TARGET_GROUP"/>
+                    </pfx:TARGET_GROUP>
+                </xsl:if>
+                <xsl:if test="$INFO/pfx:INFO/pfx:TARGET_TABLE">
+                    <pfx:TARGET_TABLE>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:TARGET_TABLE"/>
+                    </pfx:TARGET_TABLE>
+                </xsl:if>
+                <pfx:EVENT_TYPE>
+                    <xsl:value-of select="&quot;NO_DATA&quot;"/>
+                </pfx:EVENT_TYPE>
+                <pfx:STATUS>
+                    <xsl:value-of select="&quot;Y&quot;"/>
+                </pfx:STATUS>
+                <pfx:TX_ID>
+                    <xsl:value-of select="$INFO/pfx:INFO/pfx:TX_ID"/>
+                </pfx:TX_ID>
+                <xsl:if test="$INFO/pfx:INFO/pfx:SEND_NO">
+                    <pfx:SEND_NO>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:SEND_NO"/>
+                    </pfx:SEND_NO>
+                </xsl:if>
+                <xsl:if test="$INFO/pfx:INFO/pfx:RECORD_COUNT">
+                    <pfx:RECORD_COUNT>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:RECORD_COUNT"/>
+                    </pfx:RECORD_COUNT>
+                </xsl:if>
+                <xsl:if test="$INFO/pfx:INFO/pfx:RECORD_SIZE">
+                    <pfx:RECORD_SIZE>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:RECORD_SIZE"/>
+                    </pfx:RECORD_SIZE>
+                </xsl:if>
+                <xsl:if test="$INFO/pfx:INFO/pfx:JOB_RECORD_COUNT">
+                    <pfx:JOB_RECORD_COUNT>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:JOB_RECORD_COUNT"/>
+                    </pfx:JOB_RECORD_COUNT>
+                </xsl:if>
+                <xsl:if test="$INFO/pfx:INFO/pfx:FROM_SEQ">
+                    <pfx:FROM_SEQ>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:FROM_SEQ"/>
+                    </pfx:FROM_SEQ>
+                </xsl:if>
+                <xsl:if test="$INFO/pfx:INFO/pfx:TO_SEQ">
+                    <pfx:TO_SEQ>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:TO_SEQ"/>
+                    </pfx:TO_SEQ>
+                </xsl:if>
+                <pfx:CUR_DATE>
+                    <xsl:value-of select="current-dateTime()"/>
+                </pfx:CUR_DATE>
+                <pfx:MESSAGE>
+                    <xsl:value-of select="&quot;InsertNoData #### No Data to Insert&quot;"/>
+                </pfx:MESSAGE>
+                <xsl:if test="$INFO/pfx:INFO/pfx:TOTAL_COUNT">
+                    <pfx:TOTAL_COUNT>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:TOTAL_COUNT"/>
+                    </pfx:TOTAL_COUNT>
+                </xsl:if>
+                <xsl:if test="$INFO/pfx:INFO/pfx:TOTAL_DATA_COUNT">
+                    <pfx:TOTAL_DATA_COUNT>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:TOTAL_DATA_COUNT"/>
+                    </pfx:TOTAL_DATA_COUNT>
+                </xsl:if>
+                <xsl:if test="$INFO/pfx:INFO/pfx:IS_LAST">
+                    <pfx:IS_LAST>
+                        <xsl:value-of select="$INFO/pfx:INFO/pfx:IS_LAST"/>
+                    </pfx:IS_LAST>
+                </xsl:if>
+                <pfx:PROCESS_START_TIME>
+                    <xsl:value-of select="$INFO/pfx:INFO/pfx:PROCESS_START_TIME"/>
+                </pfx:PROCESS_START_TIME>
+                <pfx:HOST_NAME>
+                    <xsl:value-of select="$INFO/pfx:INFO/pfx:HOST_NAME"/>
+                </pfx:HOST_NAME>
+            </pfx:INFO>
+        </pd:inputBindings>
+    </pd:activity>
+    <pd:activity name="Confirm1">
+        <pd:type>com.tibco.pe.core.ConfirmActivity</pd:type>
+        <pd:resourceType>activity.confirm</pd:resourceType>
+        <pd:x>988</pd:x>
+        <pd:y>122</pd:y>
+        <config>
+            <ConfirmEvent>JMS Topic Subscriber</ConfirmEvent>
+        </config>
+        <pd:inputBindings/>
+    </pd:activity>
+    <pd:activity name="Null">
+        <pd:type>com.tibco.pe.core.NullActivity</pd:type>
+        <pd:resourceType>activity.null</pd:resourceType>
+        <pd:x>1076</pd:x>
+        <pd:y>123</pd:y>
+        <config/>
+        <pd:inputBindings/>
+    </pd:activity>
+    <pd:activity name="Parse XML">
+        <pd:type>com.tibco.plugin.xml.XMLParserActivity</pd:type>
+        <pd:resourceType>ae.activities.XMLParserActivity</pd:resourceType>
+        <pd:x>566</pd:x>
+        <pd:y>227</pd:y>
+        <config>
+            <inputStyle>binary</inputStyle>
+            <xsdVersion>default</xsdVersion>
+            <validateOutput>false</validateOutput>
+            <term>
+                <xsd:element name="root">
+                    <xsd:complexType>
+                        <xsd:sequence>
+                            <xsd:element ref="pfx3:TB_DBS_TESTTABLE_I" minOccurs="0" maxOccurs="unbounded"/>
+                            <xsd:element ref="pfx:INFO"/>
+                        </xsd:sequence>
+                    </xsd:complexType>
+                </xsd:element>
+            </term>
+        </config>
+        <pd:inputBindings>
+            <xmlBinary>
+                <bytes>
+                    <xsl:value-of select="$JMS-Topic-Subscriber/ns:ActivityOutput/Body"/>
+                </bytes>
+            </xmlBinary>
+        </pd:inputBindings>
+    </pd:activity>
+    <pd:activity name="RSleep">
+        <pd:type>com.tibco.plugin.timer.SleepActivity</pd:type>
+        <pd:resourceType>ae.activities.sleep</pd:resourceType>
+        <pd:x>136</pd:x>
+        <pd:y>229</pd:y>
+        <config/>
+        <pd:inputBindings>
+            <ns0:SleepInputSchema>
+                <intervalInMillisec>
+                    <xsl:value-of select="$_globalVariables/ns1:GlobalVariables/SSEAI/JDBC/_RSleep"/>
+                </intervalInMillisec>
+            </ns0:SleepInputSchema>
+        </pd:inputBindings>
+    </pd:activity>
+    <pd:transition>
+        <pd:from>InsertStart</pd:from>
+        <pd:to>InsertAll</pd:to>
+        <pd:lineType>Default</pd:lineType>
+        <pd:lineColor>-16777216</pd:lineColor>
+        <pd:conditionType>always</pd:conditionType>
+    </pd:transition>
+    <pd:transition>
+        <pd:from>InsertAll</pd:from>
+        <pd:to>InsertEnd</pd:to>
+        <pd:lineType>Default</pd:lineType>
+        <pd:lineColor>-16777216</pd:lineColor>
+        <pd:conditionType>always</pd:conditionType>
+    </pd:transition>
+    <pd:transition>
+        <pd:from>InsertEnd</pd:from>
+        <pd:to>Confirm</pd:to>
+        <pd:lineType>Default</pd:lineType>
+        <pd:lineColor>-16777216</pd:lineColor>
+        <pd:conditionType>always</pd:conditionType>
+    </pd:transition>
+    <pd:transition>
+        <pd:from>Confirm</pd:from>
+        <pd:to>RECEIVE_END</pd:to>
+        <pd:lineType>Default</pd:lineType>
+        <pd:lineColor>-16777216</pd:lineColor>
+        <pd:conditionType>always</pd:conditionType>
+    </pd:transition>
+    <pd:transition>
+        <pd:from>Check GBNN_2</pd:from>
+        <pd:to>CheckErr</pd:to>
+        <pd:lineType>Default</pd:lineType>
+        <pd:lineColor>-16777216</pd:lineColor>
+        <pd:conditionType>always</pd:conditionType>
+    </pd:transition>
+    <pd:transition>
+        <pd:from>CheckErr</pd:from>
+        <pd:to>End</pd:to>
+        <pd:lineType>One Bend</pd:lineType>
+        <pd:lineColor>-16777216</pd:lineColor>
+        <pd:conditionType>always</pd:conditionType>
+    </pd:transition>
+    <pd:transition>
+        <pd:from>Catch</pd:from>
+        <pd:to>OnError</pd:to>
+        <pd:lineType>Default</pd:lineType>
+        <pd:lineColor>-16777216</pd:lineColor>
+        <pd:conditionType>always</pd:conditionType>
+    </pd:transition>
+    <pd:transition>
+        <pd:from>OnError</pd:from>
+        <pd:to>SMS4Exp</pd:to>
+        <pd:lineType>Default</pd:lineType>
+        <pd:lineColor>-16777216</pd:lineColor>
+        <pd:conditionType>always</pd:conditionType>
+    </pd:transition>
+    <pd:transition>
+        <pd:from>ErrEnd</pd:from>
+        <pd:to>Confirm1</pd:to>
+        <pd:lineType>Default</pd:lineType>
+        <pd:lineColor>-16777216</pd:lineColor>
+        <pd:conditionType>always</pd:conditionType>
+    </pd:transition>
+    <pd:transition>
+        <pd:from>ErrSend</pd:from>
+        <pd:to>Render XML</pd:to>
+        <pd:lineType>Default</pd:lineType>
+        <pd:lineColor>-16777216</pd:lineColor>
+        <pd:conditionType>always</pd:conditionType>
+    </pd:transition>
+    <pd:transition>
+        <pd:from>Render XML</pd:from>
+        <pd:to>Write File</pd:to>
+        <pd:lineType>Default</pd:lineType>
+        <pd:lineColor>-16777216</pd:lineColor>
+        <pd:conditionType>always</pd:conditionType>
+    </pd:transition>
+    <pd:transition>
+        <pd:from>Write File</pd:from>
+        <pd:to>ErrEnd</pd:to>
+        <pd:lineType>Default</pd:lineType>
+        <pd:lineColor>-16777216</pd:lineColor>
+        <pd:conditionType>always</pd:conditionType>
+    </pd:transition>
+    <pd:transition>
+        <pd:from>RECEIVE_START</pd:from>
+        <pd:to>Group</pd:to>
+        <pd:xpathDescription>Is Exist?</pd:xpathDescription>
+        <pd:lineType>Default</pd:lineType>
+        <pd:lineColor>-16777216</pd:lineColor>
+        <pd:conditionType>xpath</pd:conditionType>
+        <pd:xpath>count($DATA/data/pfx3:TB_DBS_TESTTABLE_I) &gt; 0</pd:xpath>
+    </pd:transition>
+    <pd:transition>
+        <pd:from>Group</pd:from>
+        <pd:to>InsertStart</pd:to>
+        <pd:lineType>Default</pd:lineType>
+        <pd:lineColor>-16777216</pd:lineColor>
+        <pd:conditionType>always</pd:conditionType>
+    </pd:transition>
+    <pd:transition>
+        <pd:from>PrepareData</pd:from>
+        <pd:to>RECEIVE_START</pd:to>
+        <pd:lineType>Default</pd:lineType>
+        <pd:lineColor>-16777216</pd:lineColor>
+        <pd:conditionType>always</pd:conditionType>
+    </pd:transition>
+    <pd:transition>
+        <pd:from>RECEIVE_START</pd:from>
+        <pd:to>InsertNoData</pd:to>
+        <pd:lineType>Default</pd:lineType>
+        <pd:lineColor>-16777216</pd:lineColor>
+        <pd:conditionType>otherwise</pd:conditionType>
+    </pd:transition>
+    <pd:transition>
+        <pd:from>InsertNoData</pd:from>
+        <pd:to>Confirm</pd:to>
+        <pd:lineType>One Bend</pd:lineType>
+        <pd:lineColor>-16777216</pd:lineColor>
+        <pd:conditionType>always</pd:conditionType>
+    </pd:transition>
+    <pd:transition>
+        <pd:from>Confirm1</pd:from>
+        <pd:to>Null</pd:to>
+        <pd:lineType>Default</pd:lineType>
+        <pd:lineColor>-16777216</pd:lineColor>
+        <pd:conditionType>error</pd:conditionType>
+    </pd:transition>
+    <pd:transition>
+        <pd:from>SMS4Exp</pd:from>
+        <pd:to>Check GBNN_2</pd:to>
+        <pd:lineType>Default</pd:lineType>
+        <pd:lineColor>-16777216</pd:lineColor>
+        <pd:conditionType>always</pd:conditionType>
+    </pd:transition>
+    <pd:transition>
+        <pd:from>Check GBNN_2</pd:from>
+        <pd:to>ErrSend</pd:to>
+        <pd:lineType>Default</pd:lineType>
+        <pd:lineColor>-16777216</pd:lineColor>
+        <pd:conditionType>always</pd:conditionType>
+    </pd:transition>
+    <pd:transition>
+        <pd:from>RECEIVE_END</pd:from>
+        <pd:to>End</pd:to>
+        <pd:lineType>Default</pd:lineType>
+        <pd:lineColor>-16777216</pd:lineColor>
+        <pd:conditionType>always</pd:conditionType>
+    </pd:transition>
+    <pd:transition>
+        <pd:from>Confirm1</pd:from>
+        <pd:to>End</pd:to>
+        <pd:lineType>Default</pd:lineType>
+        <pd:lineColor>-16777216</pd:lineColor>
+        <pd:conditionType>always</pd:conditionType>
+    </pd:transition>
+    <pd:transition>
+        <pd:from>Null</pd:from>
+        <pd:to>End</pd:to>
+        <pd:lineType>Default</pd:lineType>
+        <pd:lineColor>-16777216</pd:lineColor>
+        <pd:conditionType>always</pd:conditionType>
+    </pd:transition>
+    <pd:transition>
+        <pd:from>JMS Topic Subscriber</pd:from>
+        <pd:to>Parse XML</pd:to>
+        <pd:lineType>Default</pd:lineType>
+        <pd:lineColor>-16777216</pd:lineColor>
+        <pd:conditionType>always</pd:conditionType>
+    </pd:transition>
+    <pd:transition>
+        <pd:from>Parse XML</pd:from>
+        <pd:to>RSleep</pd:to>
+        <pd:lineType>Default</pd:lineType>
+        <pd:lineColor>-16777216</pd:lineColor>
+        <pd:conditionType>always</pd:conditionType>
+    </pd:transition>
+    <pd:transition>
+        <pd:from>RSleep</pd:from>
+        <pd:to>PrepareData</pd:to>
+        <pd:lineType>Default</pd:lineType>
+        <pd:lineColor>-16777216</pd:lineColor>
+        <pd:conditionType>always</pd:conditionType>
+    </pd:transition>
+    <pd:label>
+        <pd:name>Label</pd:name>
+        <pd:description>JMS Topic Sub
+Configuration
+Misc
+Output Editor</pd:description>
+        </pd:x>120</pd:x>
+        <pd:y>60</pd:y>
+        <pd:width>76</pd:width>
+        <pd:height>63</pd:height>
+        <pd:fontName>Dialog.plain-plain-9</pd:fontName>
+        <pd:fontColor>-16777216</pd:fontColor>
+        <pd:color>-3355648</pd:color>
+        <pd:type>solid</pd:type>
+        <pd:thickness>0</pd:thickness>
+        <pd:fade>true</pd:fade>
+    </pd:label>
+    <pd:label>
+        <pd:name>Label (1)</pd:name>
+        <pd:description>INFO / DATA
+Configuration
+Input</pd:description>
+        <pd:x>244</pd:x>
+        <pd:y>307</pd:y>
+        <pd:width>75</pd:width>
+        <pd:height>52</pd:height>
+        <pd:fontName>Dialog.plain-plain-9</pd:fontName>
+        <pd:fontColor>-16777216</pd:fontColor>
+        <pd:color>-3355648</pd:color>
+        <pd:type>solid</pd:type>
+        <pd:thickness>0</pd:thickness>
+        <pd:fade>true</pd:fade>
+    </pd:label>
+    <pd:label>
+        <pd:name>Label (1) (1)</pd:name>
+        <pd:description>RECEIVE_START
+Input</pd:description>
+        <pd:x>362</pd:x>
+        <pd:y>168</pd:y>
+        <pd:width>89</pd:width>
+        <pd:height>39</pd:height>
+        <pd:fontName>Dialog.plain-plain-9</pd:fontName>
+        <pd:fontColor>-16777216</pd:fontColor>
+        <pd:color>-3355648</pd:color>
+        <pd:type>solid</pd:type>
+        <pd:thickness>0</pd:thickness>
+        <pd:fade>true</pd:fade>
+    </pd:label>
+    <pd:label>
+        <pd:name>Label (1) (1) (1)</pd:name>
+        <pd:description>Is Exist?
+Configuration</pd:description>
+        <pd:x>456</pd:x>
+        <pd:y>248</pd:y>
+        <pd:width>68</pd:width>
+        <pd:height>41</pd:height>
+        <pd:fontName>Dialog.plain-plain-9</pd:fontName>
+        <pd:fontColor>-16777216</pd:fontColor>
+        <pd:color>-3355648</pd:color>
+        <pd:type>solid</pd:type>
+        <pd:thickness>0</pd:thickness>
+        <pd:fade>true</pd:fade>
+    </pd:label>
+    <pd:label>
+        <pd:name>Label (1) (1) (2)</pd:name>
+        <pd:description>Check~~~
+Configuration</pd:description>
+        <pd:x>596</pd:x>
+        <pd:y>378</pd:y>
+        <pd:width>70</pd:width>
+        <pd:height>40</pd:height>
+        <pd:fontName>Dialog.plain-plain-9</pd:fontName>
+        <pd:fontColor>-16777216</pd:fontColor>
+        <pd:color>-3355648</pd:color>
+        <pd:type>solid</pd:type>
+        <pd:thickness>0</pd:thickness>
+        <pd:fade>true</pd:fade>
+    </pd:label>
+    <pd:label>
+        <pd:name>Label (1) (1) (3)</pd:name>
+        <pd:description>InsertStart
+Input</pd:description>
+        <pd:x>623</pd:x>
+        <pd:y>242</pd:y>
+        <pd:width>64</pd:width>
+        <pd:height>40</pd:height>
+        <pd:fontName>Dialog.plain-plain-9</pd:fontName>
+        <pd:fontColor>-16777216</pd:fontColor>
+        <pd:color>-3355648</pd:color>
+        <pd:type>solid</pd:type>
+        <pd:thickness>0</pd:thickness>
+        <pd:fade>true</pd:fade>
+    </pd:label>
+    <pd:label>
+        <pd:name>Label (1) (1) (3) (1)</pd:name>
+        <pd:description>InsertAll
+Configuration
+Input</pd:description>
+        <pd:x>711</pd:x>
+        <pd:y>239</pd:y>
+        <pd:width>72</pd:width>
+        <pd:height>51</pd:height>
+        <pd:fontName>Dialog.plain-plain-9</pd:fontName>
+        <pd:fontColor>-16777216</pd:fontColor>
+        <pd:color>-3355648</pd:color>
+        <pd:type>solid</pd:type>
+        <pd:thickness>0</pd:thickness>
+        <pd:fade>true</pd:fade>
+    </pd:label>
+    <pd:label>
+        <pd:name>Label (1) (1) (3) (3)</pd:name>
+        <pd:description>RECEIVE_END
+Input</pd:description>
+        <pd:x>941</pd:x>
+        <pd:y>236</pd:y>
+        <pd:width>81</pd:width>
+        <pd:height>48</pd:height>
+        <pd:fontName>Dialog.plain-plain-9</pd:fontName>
+        <pd:fontColor>-16777216</pd:fontColor>
+        <pd:color>-3355648</pd:color>
+        <pd:type>solid</pd:type>
+        <pd:thickness>0</pd:thickness>
+        <pd:fade>true</pd:fade>
+    </pd:label>
+    <pd:label>
+        <pd:name>Label (1) (1) (2) (1)</pd:name>
+        <pd:description>Check~~~2
+Configuration</pd:description>
+        <pd:x>597</pd:x>
+        <pd:y>79</pd:y>
+        <pd:width>71</pd:width>
+        <pd:height>39</pd:height>
+        <pd:fontName>Dialog.plain-plain-9</pd:fontName>
+        <pd:fontColor>-16777216</pd:fontColor>
+        <pd:color>-3355648</pd:color>
+        <pd:type>solid</pd:type>
+        <pd:thickness>0</pd:thickness>
+        <pd:fade>true</pd:fade>
+    </pd:label>
+    <pd:label>
+        <pd:name>Label (1) (1) (2) (1) (1)</pd:name>
+        <pd:description>ErrSend
+Configuration
+Input Editor
+Input</pd:description>
+        <pd:x>686</pd:x>
+        <pd:y>74</pd:y>
+        <pd:width>69</pd:width>
+        <pd:height>67</pd:height>
+        <pd:fontName>Dialog.plain-plain-9</pd:fontName>
+        <pd:fontColor>-16777216</pd:fontColor>
+        <pd:color>-3355648</pd:color>
+        <pd:type>solid</pd:type>
+        <pd:thickness>0</pd:thickness>
+        <pd:fade>true</pd:fade>
+    </pd:label>
+    <pd:label>
+        <pd:name>Label (1) (1) (2) (1) (2)</pd:name>
+        <pd:description>RENDER XML
+Input Editor
+Input</pd:description>
+        <pd:x>778</pd:x>
+        <pd:y>74</pd:y>
+        <pd:width>66</pd:width>
+        <pd:height>51</pd:height>
+        <pd:fontName>Dialog.plain-plain-9</pd:fontName>
+        <pd:fontColor>-16777216</pd:fontColor>
+        <pd:color>-3355648</pd:color>
+        <pd:type>solid</pd:type>
+        <pd:thickness>0</pd:thickness>
+        <pd:fade>true</pd:fade>
+    </pd:label>
+    <pd:label>
+        <pd:name>Label (1) (1) (2) (1) (2)</pd:name>
+        <pd:description>RENDER XML
+Input Editor
+Input</pd:description>
+        <pd:x>778</pd:x>
+        <pd:y>74</pd:y>
+        <pd:width>66</pd:width>
+        <pd:height>51</pd:height>
+        <pd:fontName>Dialog.plain-plain-9</pd:fontName>
+        <pd:fontColor>-16777216</pd:fontColor>
+        <pd:color>-3355648</pd:color>
+        <pd:type>solid</pd:type>
+        <pd:thickness>0</pd:thickness>
+        <pd:fade>true</pd:fade>
+    </pd:label>
+    <pd:label>
+        <pd:name>Label (1) (1) (2) (1) (3)</pd:name>
+        <pd:description>OnError
+Input</pd:description>
+        <pd:x>458</pd:x>
+        <pd:y>86</pd:y>
+        <pd:width>66</pd:width>
+        <pd:height>42</pd:height>
+        <pd:fontName>Dialog.plain-plain-9</pd:fontName>
+        <pd:fontColor>-16777216</pd:fontColor>
+        <pd:color>-3355648</pd:color>
+        <pd:type>solid</pd:type>
+        <pd:thickness>0</pd:thickness>
+        <pd:fade>true</pd:fade>
+    </pd:label>
+</pd:ProcessDefinition>
