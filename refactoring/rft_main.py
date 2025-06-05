@@ -12,7 +12,6 @@ from typing import Optional
 
 # 리팩토링된 모듈들 import
 try:
-    from rft_ex_sqlite import ExcelToSQLiteConverter
     from rft_interface_processor import InterfaceProcessor
     from rft_yaml_processor import YAMLProcessor
     from rft_interface_reader import InterfaceExcelReader, BWProcessFileParser
@@ -28,7 +27,6 @@ class RFTMainController:
     
     def __init__(self):
         """메인 컨트롤러 초기화"""
-        self.excel_converter = ExcelToSQLiteConverter()
         self.interface_processor = InterfaceProcessor()
         self.yaml_processor = YAMLProcessor()
         self.interface_reader = InterfaceExcelReader()
@@ -45,54 +43,20 @@ class RFTMainController:
         print("\n" + "=" * 80)
         print("리팩토링된 인터페이스 처리 도구 (RFT - Refactored Tools)")
         print("=" * 80)
-        print("1. Excel을 SQLite로 변환")
-        print("2. 인터페이스 데이터 처리 (복사행 기준으로 매칭행 찾기)")
-        print("3. YAML 생성 (Excel/CSV → YAML)")
-        print("4. YAML 실행 (파일 복사 및 치환)")
-        print("5. 인터페이스 정보 읽기")
-        print("6. BW 프로세스 파일 파싱")
-        print("7. 전체 파이프라인 실행")
-        print("8. 테스트 실행")
-        print("9. 도구 정보 및 도움말")
+        print("1. 인터페이스 데이터 처리 (복사행 기준으로 매칭행 찾기)")
+        print("2. YAML 생성 (Excel/CSV → YAML)")
+        print("3. YAML 실행 (파일 복사 및 치환)")
+        print("4. 인터페이스 정보 읽기")
+        print("5. BW 프로세스 파일 파싱")
+        print("6. 전체 파이프라인 실행")
+        print("7. 테스트 실행")
+        print("8. 도구 정보 및 도움말")
         print("0. 종료")
         print("=" * 80)
     
-    def run_excel_to_sqlite(self):
-        """1. Excel을 SQLite로 변환"""
-        print("\n=== Excel to SQLite 변환 ===")
-        
-        while True:
-            print("\n1-1. Excel 파일을 SQLite로 변환")
-            print("1-2. 테스트 데이터베이스 생성")
-            print("0. 이전 메뉴로")
-            
-            choice = input("\n선택하세요: ").strip()
-            
-            if choice == "1-1":
-                excel_path = input("Excel 파일 경로를 입력하세요: ").strip()
-                if excel_path:
-                    success = self.excel_converter.convert_excel_to_sqlite(excel_path)
-                    if success:
-                        print(f"✓ 변환 완료: {self.excel_converter.db_filename}")
-                    else:
-                        print("✗ 변환 실패")
-                else:
-                    print("파일 경로를 입력해야 합니다.")
-                    
-            elif choice == "1-2":
-                success = self.excel_converter.create_test_database()
-                if success:
-                    print(f"✓ 테스트 데이터베이스 생성 완료: {self.excel_converter.db_filename}")
-                else:
-                    print("✗ 테스트 데이터베이스 생성 실패")
-                    
-            elif choice == "0":
-                break
-            else:
-                print("잘못된 선택입니다.")
     
     def run_interface_processing(self):
-        """2. 인터페이스 데이터 처리"""
+        """1. 인터페이스 데이터 처리"""
         print("\n=== 인터페이스 데이터 처리 ===")
         print("SQLite 데이터베이스에서 LY/LZ 시스템을 찾아 LH/VO 시스템과 매칭합니다.")
         
@@ -113,7 +77,7 @@ class RFTMainController:
             print("✗ 인터페이스 처리 실패")
     
     def run_yaml_generation(self):
-        """3. YAML 생성"""
+        """2. YAML 생성"""
         print("\n=== YAML 생성 ===")
         print("Excel/CSV 파일을 읽어 파일 복사 및 치환 규칙이 담긴 YAML을 생성합니다.")
         
@@ -137,7 +101,7 @@ class RFTMainController:
             print("✗ YAML 생성 실패")
     
     def run_yaml_execution(self):
-        """4. YAML 실행"""
+        """3. YAML 실행"""
         print("\n=== YAML 실행 ===")
         print("YAML 파일에 정의된 파일 복사 및 치환 작업을 실행합니다.")
         print("⚠️  주의: 실제 파일이 복사되고 수정됩니다!")
@@ -172,7 +136,7 @@ class RFTMainController:
             print("✗ YAML 실행 실패")
     
     def run_interface_reading(self):
-        """5. 인터페이스 정보 읽기"""
+        """4. 인터페이스 정보 읽기"""
         print("\n=== 인터페이스 정보 읽기 ===")
         print("특별한 형식의 Excel 파일에서 인터페이스 정보를 읽습니다.")
         
@@ -208,7 +172,7 @@ class RFTMainController:
             print("✗ 인터페이스 정보 읽기 실패")
     
     def run_bw_parsing(self):
-        """6. BW 프로세스 파일 파싱"""
+        """5. BW 프로세스 파일 파싱"""
         print("\n=== BW 프로세스 파일 파싱 ===")
         print("TIBCO BW .process 파일에서 INSERT 쿼리와 파라미터를 추출합니다.")
         
@@ -241,7 +205,7 @@ class RFTMainController:
             print("✗ BW 프로세스 파일 파싱 실패")
     
     def run_full_pipeline(self):
-        """7. 전체 파이프라인 실행"""
+        """6. 전체 파이프라인 실행"""
         print("\n=== 전체 파이프라인 실행 ===")
         print("Excel → SQLite → 인터페이스 처리 → YAML 생성 순서로 실행됩니다.")
         
@@ -254,23 +218,19 @@ class RFTMainController:
             print(f"오류: 파일을 찾을 수 없습니다 - {excel_path}")
             return
         
-        print("\n1단계: Excel to SQLite 변환")
-        if not self.excel_converter.convert_excel_to_sqlite(excel_path):
+        print("\n주의: iflist.sqlite 데이터베이스가 이미 존재한다고 가정합니다.")
+        
+        print("\n1단계: 인터페이스 데이터 처리")
+        if not self.interface_processor.process_interface_data(self.default_output_csv):
             print("✗ 1단계 실패")
             return
         print("✓ 1단계 완료")
         
-        print("\n2단계: 인터페이스 데이터 처리")
-        if not self.interface_processor.process_interface_data(self.default_output_csv):
+        print("\n2단계: YAML 생성")
+        if not self.yaml_processor.generate_yaml_from_excel(self.default_output_csv, self.default_yaml):
             print("✗ 2단계 실패")
             return
         print("✓ 2단계 완료")
-        
-        print("\n3단계: YAML 생성")
-        if not self.yaml_processor.generate_yaml_from_excel(self.default_output_csv, self.default_yaml):
-            print("✗ 3단계 실패")
-            return
-        print("✓ 3단계 완료")
         
         print("\n✓ 전체 파이프라인 실행 완료!")
         print(f"  - 데이터베이스: {self.default_db}")
@@ -279,7 +239,7 @@ class RFTMainController:
         print("\n다음 단계: '4. YAML 실행'을 통해 실제 파일 복사 및 치환을 수행하세요.")
     
     def run_tests(self):
-        """8. 테스트 실행"""
+        """7. 테스트 실행"""
         print("\n=== 테스트 실행 ===")
         
         while True:
@@ -329,7 +289,7 @@ class RFTMainController:
                 print("잘못된 선택입니다.")
     
     def show_help(self):
-        """9. 도구 정보 및 도움말"""
+        """8. 도구 정보 및 도움말"""
         print("\n=== 도구 정보 및 도움말 ===")
         print(f"리팩토링된 인터페이스 처리 도구 v1.0")
         print(f"작성일: {datetime.datetime.now().strftime('%Y-%m-%d')}")
@@ -338,23 +298,21 @@ class RFTMainController:
         print("  기존의 개별 스크립트들을 리팩토링하여 하나의 통합된 도구로 제공합니다.")
         
         print("\n주요 기능:")
-        print("  1. Excel 파일을 SQLite 데이터베이스로 변환")
-        print("  2. LY/LZ 시스템을 LH/VO 시스템과 자동 매칭")
-        print("  3. 파일 복사 및 내용 치환을 위한 YAML 규칙 생성")
-        print("  4. YAML 기반 자동 파일 처리")
-        print("  5. BW 프로세스 파일 분석")
-        print("  6. 포괄적인 테스트 지원")
+        print("  1. LY/LZ 시스템을 LH/VO 시스템과 자동 매칭")
+        print("  2. 파일 복사 및 내용 치환을 위한 YAML 규칙 생성")
+        print("  3. YAML 기반 자동 파일 처리")
+        print("  4. BW 프로세스 파일 분석")
+        print("  5. 포괄적인 테스트 지원")
         
         print("\n사용 순서:")
         print("  1) Excel 파일 준비 (인터페이스 목록)")
-        print("  2) '1. Excel을 SQLite로 변환' 실행")
-        print("  3) '2. 인터페이스 데이터 처리' 실행")
-        print("  4) '3. YAML 생성' 실행")
-        print("  5) '4. YAML 실행' 실행 (실제 파일 처리)")
-        print("  또는 '7. 전체 파이프라인 실행'으로 1~4단계 자동 실행")
+        print("  2) iflist.sqlite 데이터베이스가 준비되어 있어야 함")
+        print("  3) '1. 인터페이스 데이터 처리' 실행")
+        print("  4) '2. YAML 생성' 실행")
+        print("  5) '3. YAML 실행' 실행 (실제 파일 처리)")
+        print("  또는 '6. 전체 파이프라인 실행'으로 자동 실행")
         
         print("\n파일 구조:")
-        print("  - rft_ex_sqlite.py: Excel → SQLite 변환")
         print("  - rft_interface_processor.py: 인터페이스 데이터 처리")
         print("  - rft_yaml_processor.py: YAML 생성 및 실행")
         print("  - rft_interface_reader.py: 인터페이스 정보 읽기")
@@ -376,22 +334,20 @@ class RFTMainController:
                 choice = input("\n원하는 작업을 선택하세요: ").strip()
                 
                 if choice == "1":
-                    self.run_excel_to_sqlite()
-                elif choice == "2":
                     self.run_interface_processing()
-                elif choice == "3":
+                elif choice == "2":
                     self.run_yaml_generation()
-                elif choice == "4":
+                elif choice == "3":
                     self.run_yaml_execution()
-                elif choice == "5":
+                elif choice == "4":
                     self.run_interface_reading()
-                elif choice == "6":
+                elif choice == "5":
                     self.run_bw_parsing()
-                elif choice == "7":
+                elif choice == "6":
                     self.run_full_pipeline()
-                elif choice == "8":
+                elif choice == "7":
                     self.run_tests()
-                elif choice == "9":
+                elif choice == "8":
                     self.show_help()
                 elif choice == "0":
                     print("\n프로그램을 종료합니다.")
@@ -416,7 +372,6 @@ def main():
     
     # 필요한 모듈 파일들이 있는지 확인
     required_files = [
-        "rft_ex_sqlite.py",
         "rft_interface_processor.py", 
         "rft_yaml_processor.py",
         "rft_interface_reader.py",

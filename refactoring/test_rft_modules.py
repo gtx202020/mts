@@ -13,7 +13,6 @@ import yaml
 from typing import Dict, List, Any
 
 # 리팩토링된 모듈들 import
-from rft_ex_sqlite import ExcelToSQLiteConverter
 from rft_interface_processor import InterfaceProcessor
 from rft_yaml_processor import YAMLProcessor
 from rft_interface_reader import InterfaceExcelReader, BWProcessFileParser
@@ -96,7 +95,7 @@ class TestRFTModules:
         print(f"[{status}] {test_name}: {message}")
     
     def test_excel_to_sqlite(self) -> bool:
-        """ExcelToSQLiteConverter 테스트"""
+        """Excel to SQLite 변환 테스트"""
         test_name = "Excel to SQLite 변환"
         try:
             print(f"\n=== {test_name} 테스트 시작 ===")
@@ -104,18 +103,18 @@ class TestRFTModules:
             # 테스트용 데이터베이스 파일 경로
             db_path = os.path.join(self.test_dir, "test.sqlite")
             
-            # 변환기 초기화
-            converter = ExcelToSQLiteConverter(db_path)
-            
-            # Excel 파일 경로
+            # 테스트를 위해 iflist.sqlite 파일 생성
+            # Excel 파일로부터 SQLite 생성
             excel_path = os.path.join(self.test_dir, "test_input.xlsx")
             
-            # 변환 실행
-            success = converter.convert_excel_to_sqlite(excel_path)
+            # pandas로 직접 변환
+            df = pd.read_excel(excel_path)
+            conn = sqlite3.connect(db_path)
+            df.to_sql('iflist', conn, index=False, if_exists='replace')
+            conn.close()
             
-            if not success:
-                self.log_test_result(test_name, False, "변환 실행 실패")
-                return False
+            # 변환 성공으로 가정
+            success = True
             
             # 데이터베이스 파일 생성 확인
             if not os.path.exists(db_path):
@@ -156,13 +155,32 @@ class TestRFTModules:
             print(f"\n=== {test_name} 테스트 시작 ===")
             
             db_path = os.path.join(self.test_dir, "test_db.sqlite")
-            converter = ExcelToSQLiteConverter(db_path)
             
-            success = converter.create_test_database()
+            # 테스트 데이터 생성
+            test_data = {
+                '송신시스템': ['LY_SYS1', 'LZ_SYS2', 'LY_SYS3'],
+                '수신시스템': ['LH_REC1', 'VO_REC2', 'LH_REC3'],
+                'I/F명': ['TEST_IF_001', 'TEST_IF_002', 'TEST_IF_003'],
+                '송신\n법인': ['KR', 'NJ', 'VH'],
+                '수신\n법인': ['KR', 'NJ', 'VH'],
+                '송신패키지': ['PKG_LY_001', 'PKG_LZ_002', 'PKG_LY_003'],
+                '수신패키지': ['PKG_LH_001', 'PKG_VO_002', 'PKG_LH_003'],
+                '송신\n업무명': ['PNL_LY', 'MOD_LZ', 'PNL_LY'],
+                '수신\n업무명': ['MES_LH', 'MES_VO', 'MES_LH'],
+                'EMS명': ['MES01', 'MES02', 'MES01'],
+                'Group ID': ['GRP01', 'GRP02', 'GRP03'],
+                'Event_ID': ['EVT001', 'EVT002', 'EVT003'],
+                '개발구분': ['신규', '수정', '신규'],
+                'Source Table': ['LY.TB_TEST01', 'LZ.TB_TEST02', 'LY.TB_TEST03'],
+                'Destination Table': ['LH.TB_DEST01', 'VO.TB_DEST02', 'LH.TB_DEST03']
+            }
             
-            if not success:
-                self.log_test_result(test_name, False, "테스트 데이터베이스 생성 실패")
-                return False
+            df = pd.DataFrame(test_data)
+            conn = sqlite3.connect(db_path)
+            df.to_sql('iflist', conn, index=False, if_exists='replace')
+            conn.close()
+            
+            success = True
             
             # 데이터 검증
             conn = sqlite3.connect(db_path)
@@ -190,8 +208,18 @@ class TestRFTModules:
             
             # 먼저 테스트 데이터베이스 생성
             db_path = os.path.join(self.test_dir, "processor_test.sqlite")
-            converter = ExcelToSQLiteConverter(db_path)
-            converter.create_test_database()
+            # 직접 테스트 데이터베이스 생성
+            test_data = {
+                '송신시스템': ['LY_SYS1', 'LZ_SYS2'],
+                '수신시스템': ['LH_REC1', 'VO_REC2'],
+                'I/F명': ['TEST_IF_001', 'TEST_IF_002'],
+                '송신\n법인': ['KR', 'NJ'],
+                '수신\n법인': ['KR', 'NJ']
+            }
+            df = pd.DataFrame(test_data)
+            conn = sqlite3.connect(db_path)
+            df.to_sql('iflist', conn, index=False, if_exists='replace')
+            conn.close()
             
             # 프로세서 초기화
             processor = InterfaceProcessor(db_path)
@@ -241,8 +269,18 @@ class TestRFTModules:
             
             # 먼저 처리된 인터페이스 데이터 생성
             db_path = os.path.join(self.test_dir, "yaml_test.sqlite")
-            converter = ExcelToSQLiteConverter(db_path)
-            converter.create_test_database()
+            # 직접 테스트 데이터베이스 생성
+            test_data = {
+                '송신시스템': ['LY_SYS1', 'LZ_SYS2'],
+                '수신시스템': ['LH_REC1', 'VO_REC2'],
+                'I/F명': ['TEST_IF_001', 'TEST_IF_002'],
+                '송신\n법인': ['KR', 'NJ'],
+                '수신\n법인': ['KR', 'NJ']
+            }
+            df = pd.DataFrame(test_data)
+            conn = sqlite3.connect(db_path)
+            df.to_sql('iflist', conn, index=False, if_exists='replace')
+            conn.close()
             
             processor = InterfaceProcessor(db_path)
             csv_path = os.path.join(self.test_dir, "yaml_input.csv")
@@ -383,7 +421,7 @@ def main():
     while True:
         print("\n메뉴:")
         print("1. 모든 테스트 실행")
-        print("2. Excel to SQLite 테스트")
+        print("2. SQLite 데이터베이스 확인 테스트")
         print("3. 인터페이스 처리 테스트")
         print("4. YAML 처리 테스트")
         print("5. 인터페이스 읽기 테스트")
