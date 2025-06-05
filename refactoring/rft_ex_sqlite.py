@@ -1,12 +1,12 @@
 """
 Excel을 SQLite 데이터베이스로 변환하는 모듈
 
-이 모듈은 Excel 파일을 읽어서 SQLite 데이터베이스로 변환합니다.
+'작업용 EAI-BW.xlsx' 파일의 'IF현황' 시트를 읽어서 iflist.sqlite로 변환합니다.
 """
 
-import os
-import sqlite3
 import pandas as pd
+import sqlite3
+import os
 from typing import Optional
 
 
@@ -22,19 +22,26 @@ class ExcelToSQLiteConverter:
         """
         self.db_filename = db_filename
         self.table_name = "iflist"
+        self.default_excel_file = "작업용 EAI-BW.xlsx"
+        self.default_sheet_name = "IF현황"
     
-    def convert_excel_to_sqlite(self, excel_path: str) -> bool:
+    def convert_excel_to_sqlite(self, excel_path: Optional[str] = None, sheet_name: Optional[str] = None) -> bool:
         """
         Excel 파일을 SQLite 데이터베이스로 변환
         
         Args:
-            excel_path: Excel 파일 경로
+            excel_path: Excel 파일 경로 (기본값: '작업용 EAI-BW.xlsx')
+            sheet_name: 시트명 (기본값: 'IF현황')
             
         Returns:
             변환 성공 여부
         """
         try:
-            print(f"Excel 파일 읽기 시작: {excel_path}")
+            # 기본값 설정
+            excel_path = excel_path or self.default_excel_file
+            sheet_name = sheet_name or self.default_sheet_name
+            
+            print(f"Excel 파일 읽기 시작: {excel_path}, 시트: {sheet_name}")
             
             # Excel 파일이 존재하는지 확인
             if not os.path.exists(excel_path):
@@ -42,36 +49,36 @@ class ExcelToSQLiteConverter:
                 return False
             
             # Excel 파일 읽기
-            df = pd.read_excel(excel_path, engine='openpyxl')
+            df = pd.read_excel(excel_path, sheet_name=sheet_name, dtype=str)
             print(f"Excel 데이터 로드 완료: {len(df)}행 x {len(df.columns)}열")
-            
-            # 기존 데이터베이스 파일 삭제 (있는 경우)
-            if os.path.exists(self.db_filename):
-                os.remove(self.db_filename)
-                print(f"기존 데이터베이스 파일 삭제: {self.db_filename}")
             
             # SQLite 데이터베이스 연결
             conn = sqlite3.connect(self.db_filename)
             
-            # DataFrame을 SQLite 테이블로 저장
-            df.to_sql(self.table_name, conn, index=False, if_exists='replace')
-            
-            # 데이터 검증
-            cursor = conn.cursor()
-            cursor.execute(f"SELECT COUNT(*) FROM {self.table_name}")
-            row_count = cursor.fetchone()[0]
-            
-            cursor.execute(f"PRAGMA table_info({self.table_name})")
-            columns = cursor.fetchall()
-            
-            conn.close()
-            
-            print(f"SQLite 데이터베이스 생성 완료: {self.db_filename}")
-            print(f"테이블명: {self.table_name}")
-            print(f"저장된 행 수: {row_count}")
-            print(f"컬럼 수: {len(columns)}")
-            
-            return True
+            try:
+                # DataFrame을 SQLite 테이블로 저장
+                df.to_sql(self.table_name, conn, index=False, if_exists='replace')
+                
+                # 데이터 검증
+                cursor = conn.cursor()
+                cursor.execute(f"SELECT COUNT(*) FROM {self.table_name}")
+                row_count = cursor.fetchone()[0]
+                
+                cursor.execute(f"PRAGMA table_info({self.table_name})")
+                columns = cursor.fetchall()
+                
+                print(f"SQLite 데이터베이스 생성 완료: {self.db_filename}")
+                print(f"테이블명: {self.table_name}")
+                print(f"저장된 행 수: {row_count}")
+                print(f"컬럼 수: {len(columns)}")
+                
+                return True
+                
+            except Exception as e:
+                print(f"데이터베이스 생성 중 오류 발생: {str(e)}")
+                return False
+            finally:
+                conn.close()
             
         except Exception as e:
             print(f"Excel to SQLite 변환 중 오류 발생: {str(e)}")
@@ -79,68 +86,28 @@ class ExcelToSQLiteConverter:
     
     def create_test_database(self) -> bool:
         """
-        테스트용 SQLite 데이터베이스 생성
+        기본 Excel 파일을 사용하여 데이터베이스 생성
         
         Returns:
             생성 성공 여부
         """
-        try:
-            print("테스트 데이터베이스 생성 시작")
-            
-            # 테스트 데이터 생성
-            test_data = {
-                '송신시스템': ['LY_SYS1', 'LZ_SYS2', 'LY_SYS3'],
-                '수신시스템': ['LH_REC1', 'VO_REC2', 'LH_REC3'],
-                'I/F명': ['TEST_IF_001', 'TEST_IF_002', 'TEST_IF_003'],
-                '송신\n법인': ['KR', 'NJ', 'VH'],
-                '수신\n법인': ['KR', 'NJ', 'VH'],
-                '송신패키지': ['PKG_LY_001', 'PKG_LZ_002', 'PKG_LY_003'],
-                '수신패키지': ['PKG_LH_001', 'PKG_VO_002', 'PKG_LH_003'],
-                '송신\n업무명': ['PNL_LY', 'MOD_LZ', 'PNL_LY'],
-                '수신\n업무명': ['MES_LH', 'MES_VO', 'MES_LH'],
-                'EMS명': ['MES01', 'MES02', 'MES01'],
-                'Group ID': ['GRP01', 'GRP02', 'GRP03'],
-                'Event_ID': ['EVT001', 'EVT002', 'EVT003'],
-                '개발구분': ['신규', '수정', '신규'],
-                'Source Table': ['LY.TB_TEST01', 'LZ.TB_TEST02', 'LY.TB_TEST03'],
-                'Destination Table': ['LH.TB_DEST01', 'VO.TB_DEST02', 'LH.TB_DEST03'],
-                'Routing': ['RT_LY_01', 'RT_LZ_02', 'RT_LY_03'],
-                '스케쥴': ['매일 09:00', '매일 18:00', '매일 12:00'],
-                '주기구분': ['일배치', '일배치', '일배치'],
-                '주기': ['Daily', 'Daily', 'Daily'],
-                '송신\nDB Name': ['LYDB', 'LZDB', 'LYDB'],
-                '송신 \nSchema': ['LYSCH', 'LZSCH', 'LYSCH']
-            }
-            
-            df = pd.DataFrame(test_data)
-            
-            # 기존 데이터베이스 파일 삭제 (있는 경우)
-            if os.path.exists(self.db_filename):
-                os.remove(self.db_filename)
-                print(f"기존 데이터베이스 파일 삭제: {self.db_filename}")
-            
-            # SQLite 데이터베이스 연결
-            conn = sqlite3.connect(self.db_filename)
-            
-            # DataFrame을 SQLite 테이블로 저장
-            df.to_sql(self.table_name, conn, index=False, if_exists='replace')
-            
-            # 데이터 검증
-            cursor = conn.cursor()
-            cursor.execute(f"SELECT COUNT(*) FROM {self.table_name}")
-            row_count = cursor.fetchone()[0]
-            
-            conn.close()
-            
-            print(f"테스트 SQLite 데이터베이스 생성 완료: {self.db_filename}")
-            print(f"테이블명: {self.table_name}")
-            print(f"저장된 행 수: {row_count}")
-            
-            return True
-            
-        except Exception as e:
-            print(f"테스트 데이터베이스 생성 중 오류 발생: {str(e)}")
-            return False
+        return self.convert_excel_to_sqlite()
+
+
+def convert_default_excel():
+    """기본 Excel 파일을 SQLite로 변환하는 함수 (스크립트 실행용)"""
+    df = pd.read_excel('작업용 EAI-BW.xlsx', sheet_name='IF현황', dtype=str)
+    db_filename = 'iflist.sqlite'
+    conn = sqlite3.connect(db_filename)
+
+    try:
+        df.to_sql('iflist', conn, index=False, if_exists='replace')
+        print(f"데이터베이스 생성 완료: {db_filename}")
+        print(f"행 수: {len(df)}")
+    except Exception as e:
+        print(f"데이터베이스 생성 중 오류 발생: {str(e)}")
+    finally:
+        conn.close()
 
 
 def main():
@@ -153,22 +120,34 @@ def main():
     
     while True:
         print("\n메뉴:")
-        print("1. Excel 파일을 SQLite로 변환")
-        print("2. 테스트 데이터베이스 생성")
+        print("1. 기본 Excel 파일을 SQLite로 변환 (작업용 EAI-BW.xlsx)")
+        print("2. 사용자 지정 Excel 파일을 SQLite로 변환")
         print("0. 종료")
         
         choice = input("\n선택하세요: ").strip()
         
         if choice == "1":
+            success = converter.convert_excel_to_sqlite()
+            if success:
+                print("✓ 변환 완료")
+            else:
+                print("✗ 변환 실패")
+                
+        elif choice == "2":
             excel_path = input("Excel 파일 경로를 입력하세요: ").strip()
+            sheet_name = input("시트명을 입력하세요 (Enter: IF현황): ").strip()
+            if not sheet_name:
+                sheet_name = "IF현황"
+                
             if excel_path:
-                converter.convert_excel_to_sqlite(excel_path)
+                success = converter.convert_excel_to_sqlite(excel_path, sheet_name)
+                if success:
+                    print("✓ 변환 완료")
+                else:
+                    print("✗ 변환 실패")
             else:
                 print("파일 경로를 입력해야 합니다.")
                 
-        elif choice == "2":
-            converter.create_test_database()
-            
         elif choice == "0":
             print("프로그램을 종료합니다.")
             break
@@ -178,4 +157,8 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    # 스크립트로 직접 실행되면 기본 변환 수행
+    convert_default_excel()
+
+
+
