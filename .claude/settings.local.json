@@ -5,7 +5,8 @@
       "Bash(pip3 install:*)",
       "Bash(grep:*)",
       "Bash(mkdir:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "mcp__ide__getDiagnostics"
     ],
     "deny": []
   }

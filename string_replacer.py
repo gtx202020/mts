@@ -131,8 +131,8 @@ def generate_yaml_from_excel(excel_path, yaml_path):
             
             # no_namespace_schema 처리 로직
             if preserve_no_namespace:
-                # SharedResources 이전 부분은 그대로 유지하고 SharedResources 이후만 새로운 로직 적용
-                namespace = f"http://www.tibco.com/ns/no_namespace_schema{schema_location}"
+                # SharedResources 이전 부분은 상수로 대체하고 SharedResources 이후만 새로운 로직 적용
+                namespace = f"http://www.tibco.com/ns/no_namespace_schema_location{schema_location}"
             else:
                 # 기존 로직 그대로 적용
                 namespace = f"http://www.tibco.com/schemas{relative_path}"
@@ -287,8 +287,8 @@ def generate_yaml_from_excel(excel_path, yaml_path):
             replacements.extend(fixed_replacements)
 
             # IFID와 수신업무명 조합 치환 규칙 추가
-            origin_ifid_with_susin = f"{match_row['Group ID']}.{match_row['Event_ID']}.{match_row['수신\n업무명']}"
-            dest_ifid_with_susin = f"{normal_row['Group ID']}.{match_row['Event_ID']}.{normal_row['수신\n업무명']}"
+            origin_ifid_with_susin = f"{match_row['Group ID']}.{match_row['Event_ID']}.{match_row['수신' + chr(10) + '업무명']}"
+            dest_ifid_with_susin = f"{normal_row['Group ID']}.{match_row['Event_ID']}.{normal_row['수신' + chr(10) + '업무명']}"
             
             # IFID와 수신업무명 조합이 다른 경우에만 치환 규칙 추가
             if origin_ifid_with_susin != dest_ifid_with_susin:
@@ -343,112 +343,114 @@ def generate_yaml_from_excel(excel_path, yaml_path):
                 })
 
             # 송신업무명 &quot; 형식 치환 규칙 추가
-            if match_row['송신\n업무명'] != normal_row['송신\n업무명']:
+            send_task_col = '송신' + chr(10) + '업무명'
+            if match_row[send_task_col] != normal_row[send_task_col]:
                 replacements.append({
                     "설명": "송신업무명 &quot; 형식 치환",
                     "찾기": {
-                        "정규식": f'&quot;{match_row["송신\n업무명"]}&quot;'
+                        "정규식": f'&quot;{match_row[send_task_col]}&quot;'
                     },
                     "교체": {
-                        "값": f'&quot;{normal_row["송신\n업무명"]}&quot;'
+                        "값": f'&quot;{normal_row[send_task_col]}&quot;'
                     }
                 })
 
             # 수신업무명 &quot; 형식 치환 규칙 추가
-            if match_row['수신\n업무명'] != normal_row['수신\n업무명']:
+            recv_task_col = '수신' + chr(10) + '업무명'
+            if match_row[recv_task_col] != normal_row[recv_task_col]:
                 replacements.append({
                     "설명": "수신업무명 &quot; 형식 치환",
                     "찾기": {
-                        "정규식": f'&quot;{match_row["수신\n업무명"]}&quot;'
+                        "정규식": f'&quot;{match_row[recv_task_col]}&quot;'
                     },
                     "교체": {
-                        "값": f'&quot;{normal_row["수신\n업무명"]}&quot;'
+                        "값": f'&quot;{normal_row[recv_task_col]}&quot;'
                     }
                 })
 
             # 송신업무명 치환 규칙 추가 (pd:from/to Check 형식)
-            if match_row['송신\n업무명'] != normal_row['송신\n업무명']:
+            if match_row[send_task_col] != normal_row[send_task_col]:
                 # pd:from 태그 치환
                 replacements.append({
                     "설명": "송신업무명 from 태그 치환",
                     "찾기": {
-                        "정규식": f'(<pd:from>Check {match_row["송신\n업무명"]})'
+                        "정규식": f'(<pd:from>Check {match_row[send_task_col]})'
                     },
                     "교체": {
-                        "값": f'<pd:from>Check {normal_row["송신\n업무명"]}'
+                        "값": f'<pd:from>Check {normal_row[send_task_col]}'
                     }
                 })
                 # pd:to 태그 치환
                 replacements.append({
                     "설명": "송신업무명 to 태그 치환",
                     "찾기": {
-                        "정규식": f'(<pd:to>Check {match_row["송신\n업무명"]})'
+                        "정규식": f'(<pd:to>Check {match_row[send_task_col]})'
                     },
                     "교체": {
-                        "값": f'<pd:to>Check {normal_row["송신\n업무명"]}'
+                        "값": f'<pd:to>Check {normal_row[send_task_col]}'
                     }
                 })
                 # pd:activity name 태그 치환
                 replacements.append({
                     "설명": "송신업무명 activity name 태그 치환",
                     "찾기": {
-                        "정규식": f'(<pd:activity\\s+name="Check {match_row["송신\n업무명"]})'
+                        "정규식": f'(<pd:activity\\s+name="Check {match_row[send_task_col]})'
                     },
                     "교체": {
-                        "값": f'<pd:activity name="Check {normal_row["송신\n업무명"]}'
+                        "값": f'<pd:activity name="Check {normal_row[send_task_col]}'
                     }
                 })
                 # sharedjdbc 치환
                 replacements.append({
                     "설명": "송신업무명 sharedjdbc 치환",
                     "찾기": {
-                        "정규식": f'{match_row["송신\n업무명"]}\\.sharedjdbc'
+                        "정규식": f'{match_row[send_task_col]}\\.sharedjdbc'
                     },
                     "교체": {
-                        "값": f'{normal_row["송신\n업무명"]}.sharedjdbc'
+                        "값": f'{normal_row[send_task_col]}.sharedjdbc'
                     }
                 })
 
             # 수신업무명 치환 규칙 추가 (pd:from/to Check 형식)
-            if match_row['수신\n업무명'] != normal_row['수신\n업무명']:
+            if match_row[recv_task_col] != normal_row[recv_task_col]:
                 # pd:from 태그 치환
                 replacements.append({
                     "설명": "수신업무명 from 태그 치환",
                     "찾기": {
-                        "정규식": f'(<pd:from>Check {match_row["수신\n업무명"]})'
+                        "정규식": f'(<pd:from>Check {match_row[recv_task_col]})'
                     },
                     "교체": {
-                        "값": f'<pd:from>Check {normal_row["수신\n업무명"]}'
+                        "값": f'<pd:from>Check {normal_row[recv_task_col]}'
                     }
                 })
                 # pd:to 태그 치환
                 replacements.append({
                     "설명": "수신업무명 to 태그 치환",
                     "찾기": {
-                        "정규식": f'(<pd:to>Check {match_row["수신\n업무명"]})'
+                        "정규식": f'(<pd:to>Check {match_row[recv_task_col]})'
                     },
                     "교체": {
-                        "값": f'<pd:to>Check {normal_row["수신\n업무명"]}'
+                        "값": f'<pd:to>Check {normal_row[recv_task_col]}'
                     }
                 })
                 # pd:activity name 태그 치환
                 replacements.append({
                     "설명": "수신업무명 activity name 태그 치환",
                     "찾기": {
-                        "정규식": f'(<pd:activity\\s+name="Check {match_row["수신\n업무명"]})'
+                        "정규식": f'(<pd:activity\\s+name="Check {match_row[recv_task_col]})'
                     },
                     "교체": {
-                        "값": f'<pd:activity name="Check {normal_row["수신\n업무명"]}'
+                        "값": f'<pd:activity name="Check {normal_row[recv_task_col]}'
                     }
                 })
                 # sharedjdbc 치환
                 replacements.append({
                     "설명": "수신업무명 sharedjdbc 치환",
                     "찾기": {
-                        "정규식": f'{match_row["수신\n업무명"]}\\.sharedjdbc'
+                        "정규식": f'{match_row[recv_task_col]}\\.sharedjdbc'
                     },
                     "교체": {
-                        "값": f'{normal_row["수신\n업무명"]}.sharedjdbc'
+                        "값": f'{normal_row[recv_task_col]}.sharedjdbc'
                     }
                 })
             
