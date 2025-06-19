@@ -36,7 +36,7 @@ def process_file_path(file_path, check_flag):
     prod_path = file_path.replace('_TEST_SOURCE', '_PROD_SOURCE')
     
     # 파일 존재 여부 확인
-    file_exists = "1" if os.path.exists(prod_path) else ""
+    file_exists = "1" if os.path.exists(prod_path) else "0"
     
     # 디렉토리 파일 개수 확인
     dir_path = os.path.dirname(prod_path)
@@ -84,112 +84,120 @@ def generate_excel_and_yaml(input_excel_path, output_excel_path, output_yaml_pat
     # 각 행 처리
     for idx, row in df.iterrows():
         # 송신 데이터 처리
-        send_has_check = False  # 송신 생성여부가 있는지 확인
-        send_data = {}
+        send_data = {"구분": "송신"}
         
-        # 먼저 생성여부가 있는지 확인
         for file_col, check_col in send_types:
-            if check_col in df.columns:
+            if file_col in df.columns and check_col in df.columns:
+                file_path = row.get(file_col)
                 check_flag = row.get(check_col)
-                if not pd.isna(check_flag) and float(check_flag) == 1.0:
-                    send_has_check = True
-                    break
-        
-        # 생성여부가 있을 때만 송신 데이터 처리
-        if send_has_check:
-            for file_col, check_col in send_types:
-                if file_col in df.columns and check_col in df.columns:
-                    file_path = row.get(file_col)
-                    check_flag = row.get(check_col)
+                
+                # 컬럼명에서 "송신" 제거
+                clean_file_col = file_col.replace('송신', '')
+                clean_check_col = check_col.replace('송신', '')
+                
+                # 원본 데이터 저장
+                send_data[clean_file_col] = file_path if not pd.isna(file_path) else ""
+                
+                # 생성여부 처리 (1이 아니면 0으로)
+                if pd.isna(check_flag):
+                    send_data[clean_check_col] = "0"
+                else:
+                    send_data[clean_check_col] = "1" if float(check_flag) == 1.0 else "0"
+                
+                # 생성여부가 1인 경우만 PROD 변환 처리
+                if not pd.isna(check_flag) and float(check_flag) == 1.0 and not pd.isna(file_path) and isinstance(file_path, str):
+                    prod_path, file_exists, file_count = process_file_path(file_path, check_flag)
                     
-                    # 파일경로가 있을 때만 처리
-                    if not pd.isna(file_path) and isinstance(file_path, str):
-                        prod_path, file_exists, file_count = process_file_path(file_path, check_flag)
-                        
-                        # 원본 데이터 저장
-                        send_data[file_col] = file_path
-                        send_data[check_col] = check_flag
-                        
-                        # PROD 데이터 저장
-                        send_data[f"{file_col}PROD"] = prod_path
-                        send_data[f"{check_col}PROD"] = file_exists
-                        
-                        # DFPROD 데이터 저장
-                        if file_col == '송신파일경로':
-                            send_data["송신DFPROD"] = file_count
-                        else:  # 송신스키마파일명
-                            send_data["송신스키마DFPROD"] = file_count
-                        
-                        # YAML 데이터 추가
-                        if prod_path and file_path:
-                            yaml_data['files'].append({
-                                'source': file_path,
-                                'destination': prod_path
-                            })
-            
-            # 송신 데이터가 있으면 결과에 추가
-            if send_data:
-                result_data.append(send_data)
+                    # PROD 데이터 저장
+                    send_data[f"{clean_file_col}PROD"] = prod_path
+                    send_data[f"{clean_check_col}PROD"] = file_exists
+                    
+                    # DFPROD 데이터 저장
+                    if '파일경로' in clean_file_col:
+                        send_data["DFPROD"] = file_count
+                    else:  # 스키마파일명
+                        send_data["스키마DFPROD"] = file_count
+                    
+                    # YAML 데이터 추가
+                    if prod_path and file_path:
+                        yaml_data['files'].append({
+                            'source': file_path,
+                            'destination': prod_path
+                        })
+                else:
+                    # 생성여부가 0인 경우 빈 값으로 설정
+                    send_data[f"{clean_file_col}PROD"] = ""
+                    send_data[f"{clean_check_col}PROD"] = "0"
+                    if '파일경로' in clean_file_col:
+                        send_data["DFPROD"] = ""
+                    else:
+                        send_data["스키마DFPROD"] = ""
+        
+        # 송신 데이터 추가
+        result_data.append(send_data)
         
         # 수신 데이터 처리
-        recv_has_check = False  # 수신 생성여부가 있는지 확인
-        recv_data = {}
+        recv_data = {"구분": "수신"}
         
-        # 먼저 생성여부가 있는지 확인
         for file_col, check_col in recv_types:
-            if check_col in df.columns:
+            if file_col in df.columns and check_col in df.columns:
+                file_path = row.get(file_col)
                 check_flag = row.get(check_col)
-                if not pd.isna(check_flag) and float(check_flag) == 1.0:
-                    recv_has_check = True
-                    break
-        
-        # 생성여부가 있을 때만 수신 데이터 처리
-        if recv_has_check:
-            for file_col, check_col in recv_types:
-                if file_col in df.columns and check_col in df.columns:
-                    file_path = row.get(file_col)
-                    check_flag = row.get(check_col)
+                
+                # 컬럼명에서 "수신" 제거
+                clean_file_col = file_col.replace('수신', '')
+                clean_check_col = check_col.replace('수신', '')
+                
+                # 원본 데이터 저장
+                recv_data[clean_file_col] = file_path if not pd.isna(file_path) else ""
+                
+                # 생성여부 처리 (1이 아니면 0으로)
+                if pd.isna(check_flag):
+                    recv_data[clean_check_col] = "0"
+                else:
+                    recv_data[clean_check_col] = "1" if float(check_flag) == 1.0 else "0"
+                
+                # 생성여부가 1인 경우만 PROD 변환 처리
+                if not pd.isna(check_flag) and float(check_flag) == 1.0 and not pd.isna(file_path) and isinstance(file_path, str):
+                    prod_path, file_exists, file_count = process_file_path(file_path, check_flag)
                     
-                    # 파일경로가 있을 때만 처리
-                    if not pd.isna(file_path) and isinstance(file_path, str):
-                        prod_path, file_exists, file_count = process_file_path(file_path, check_flag)
-                        
-                        # 원본 데이터 저장
-                        recv_data[file_col] = file_path
-                        recv_data[check_col] = check_flag
-                        
-                        # PROD 데이터 저장
-                        recv_data[f"{file_col}PROD"] = prod_path
-                        recv_data[f"{check_col}PROD"] = file_exists
-                        
-                        # DFPROD 데이터 저장
-                        if file_col == '수신파일경로':
-                            recv_data["수신DFPROD"] = file_count
-                        else:  # 수신스키마파일명
-                            recv_data["수신스키마DFPROD"] = file_count
-                        
-                        # YAML 데이터 추가
-                        if prod_path and file_path:
-                            yaml_data['files'].append({
-                                'source': file_path,
-                                'destination': prod_path
-                            })
-            
-            # 수신 데이터가 있으면 결과에 추가
-            if recv_data:
-                result_data.append(recv_data)
+                    # PROD 데이터 저장
+                    recv_data[f"{clean_file_col}PROD"] = prod_path
+                    recv_data[f"{clean_check_col}PROD"] = file_exists
+                    
+                    # DFPROD 데이터 저장
+                    if '파일경로' in clean_file_col:
+                        recv_data["DFPROD"] = file_count
+                    else:  # 스키마파일명
+                        recv_data["스키마DFPROD"] = file_count
+                    
+                    # YAML 데이터 추가
+                    if prod_path and file_path:
+                        yaml_data['files'].append({
+                            'source': file_path,
+                            'destination': prod_path
+                        })
+                else:
+                    # 생성여부가 0인 경우 빈 값으로 설정
+                    recv_data[f"{clean_file_col}PROD"] = ""
+                    recv_data[f"{clean_check_col}PROD"] = "0"
+                    if '파일경로' in clean_file_col:
+                        recv_data["DFPROD"] = ""
+                    else:
+                        recv_data["스키마DFPROD"] = ""
+        
+        # 수신 데이터 추가
+        result_data.append(recv_data)
     
     # 결과 데이터프레임 생성
     result_df = pd.DataFrame(result_data)
     
-    # 컬럼 순서 정의 - 모든 가능한 컬럼을 포함
-    all_columns = []
-    # 송신 관련 컬럼
-    all_columns.extend(['송신파일경로', '송신파일경로PROD', '송신파일생성여부', '송신파일생성여부PROD', '송신DFPROD'])
-    all_columns.extend(['송신스키마파일명', '송신스키마파일명PROD', '송신스키마파일생성여부', '송신스키마파일생성여부PROD', '송신스키마DFPROD'])
-    # 수신 관련 컬럼
-    all_columns.extend(['수신파일경로', '수신파일경로PROD', '수신파일생성여부', '수신파일생성여부PROD', '수신DFPROD'])
-    all_columns.extend(['수신스키마파일명', '수신스키마파일명PROD', '수신스키마파일생성여부', '수신스키마파일생성여부PROD', '수신스키마DFPROD'])
+    # 컬럼 순서 정의 - 구분 컬럼을 맨 앞에, 송신/수신 제거된 컬럼명 사용
+    all_columns = ['구분']
+    # 파일경로 관련 컬럼
+    all_columns.extend(['파일경로', '파일경로PROD', '파일생성여부', '파일생성여부PROD', 'DFPROD'])
+    # 스키마파일명 관련 컬럼
+    all_columns.extend(['스키마파일명', '스키마파일명PROD', '스키마파일생성여부', '스키마파일생성여부PROD', '스키마DFPROD'])
     
     # 모든 컬럼에 대해 빈 값으로 채우기
     for col in all_columns:
