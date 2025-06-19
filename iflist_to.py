@@ -83,6 +83,21 @@ def generate_excel_and_yaml(input_excel_path, output_excel_path, output_yaml_pat
     
     # 각 행 처리
     for idx, row in df.iterrows():
+        # PROD_SOURCE가 포함된 행은 건너뛰기
+        skip_row = False
+        
+        # 송신/수신 파일경로와 스키마파일명 확인
+        for col in ['송신파일경로', '수신파일경로', '송신스키마파일명', '수신스키마파일명']:
+            if col in df.columns:
+                value = row.get(col)
+                if not pd.isna(value) and isinstance(value, str) and 'PROD_SOURCE' in value:
+                    skip_row = True
+                    debug_print(f"Row {idx} skipped: PROD_SOURCE found in {col}")
+                    break
+        
+        if skip_row:
+            continue
+        
         # 송신 데이터 처리
         send_data = {"구분": "송신"}
         
