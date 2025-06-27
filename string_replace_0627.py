@@ -227,25 +227,25 @@ def generate_yaml_from_excel(excel_path, yaml_path):
                 }
             }]
             
-            # 추가 치환 규칙: RTS_GM2 → RTS_GM 2 (프로세스 이름 보호)
+            # 추가 치환 규칙: "Check RTS_GM2" → "Check RTS_GM 2" (프로세스 이름 보호)
             replacements.append({
-                "설명": "RTS_GM2 → RTS_GM 2 치환",
+                "설명": "Check RTS_GM2 → Check RTS_GM 2 치환",
                 "찾기": {
-                    "정규식": "RTS_GM2"
+                    "정규식": r'"([Cc]heck\s+)RTS_GM2"'
                 },
                 "교체": {
-                    "값": "RTS_GM 2"
+                    "값": r'"\1RTS_GM 2"'
                 }
             })
             
-            # 추가 치환 규칙: RTS_GM → RTS_GM2 (시스템 이름 변경)
+            # 추가 치환 규칙: "Check RTS_GM" → "Check RTS_GM2" (시스템 이름 변경)
             replacements.append({
-                "설명": "RTS_GM → RTS_GM2 치환",
+                "설명": "Check RTS_GM → Check RTS_GM2 치환",
                 "찾기": {
-                    "정규식": "RTS_GM"
+                    "정규식": r'"([Cc]heck\s+)RTS_GM"'
                 },
                 "교체": {
-                    "값": "RTS_GM2"
+                    "값": r'"\1RTS_GM2"'
                 }
             })
             
