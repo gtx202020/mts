@@ -104,16 +104,16 @@ TASK_KEYWORDS = ["PNL", "EAS", "MOD", "MES"]
 
 # 색상 설정
 COLORS = {
-    'yellow': '#FFFF00',      # 노란색
-    'green': '#90EE90',       # 연두색
-    'orange': '#FFA500',      # 주황색
-    'error': '#FFC000',       # 오류 표시용 주황색
-    'white': '#FFFFFF',       # 흰색
-    'gray': '#F2F2F2',        # 회색
-    'blue_very_light': '#E6F2FF',  # 매우 밝은 파란색
-    'blue_light': '#99CCFF',        # 밝은 파란색
-    'blue_medium': '#3399FF',       # 중간 파란색
-    'blue_dark': '#0066CC'          # 진한 파란색
+    'yellow': 'FFFF00',      # 노란색
+    'green': '90EE90',       # 연두색
+    'orange': 'FFA500',      # 주황색
+    'error': 'FFC000',       # 오류 표시용 주황색
+    'white': 'FFFFFF',       # 흰색
+    'gray': 'F2F2F2',        # 회색
+    'blue_very_light': 'E6F2FF',  # 매우 밝은 파란색
+    'blue_light': '99CCFF',        # 밝은 파란색
+    'blue_medium': '3399FF',       # 중간 파란색
+    'blue_dark': '0066CC'          # 진한 파란색
 }
 
 # 오류 표시를 위한 주황색 배경 정의
@@ -851,19 +851,19 @@ if not df_excel_output.empty:
             worksheet = writer.sheets['ProcessedData']
             
             # 색상 형식 정의
-            yellow_format = workbook.add_format({'bg_color': COLORS['yellow']})
-            green_format = workbook.add_format({'bg_color': COLORS['green']})
-            exist_format = workbook.add_format({'bg_color': COLORS['green']})
-            not_exist_format = workbook.add_format({'bg_color': COLORS['orange']})
-            error_format = workbook.add_format({'bg_color': COLORS['error']})
-            white_format = workbook.add_format({'bg_color': COLORS['white']})
+            yellow_format = workbook.add_format({'bg_color': '#' + COLORS['yellow']})
+            green_format = workbook.add_format({'bg_color': '#' + COLORS['green']})
+            exist_format = workbook.add_format({'bg_color': '#' + COLORS['green']})
+            not_exist_format = workbook.add_format({'bg_color': '#' + COLORS['orange']})
+            error_format = workbook.add_format({'bg_color': '#' + COLORS['error']})
+            white_format = workbook.add_format({'bg_color': '#' + COLORS['white']})
             
             # 디렉토리 파일 개수에 따른 색상 형식 정의
-            df_color_none = workbook.add_format({'bg_color': COLORS['gray']})
-            df_color_very_low = workbook.add_format({'bg_color': COLORS['blue_very_light']})
-            df_color_low = workbook.add_format({'bg_color': COLORS['blue_light']})
-            df_color_medium = workbook.add_format({'bg_color': COLORS['blue_medium']})
-            df_color_high = workbook.add_format({'bg_color': COLORS['blue_dark']})
+            df_color_none = workbook.add_format({'bg_color': '#' + COLORS['gray']})
+            df_color_very_low = workbook.add_format({'bg_color': '#' + COLORS['blue_very_light']})
+            df_color_low = workbook.add_format({'bg_color': '#' + COLORS['blue_light']})
+            df_color_medium = workbook.add_format({'bg_color': '#' + COLORS['blue_medium']})
+            df_color_high = workbook.add_format({'bg_color': '#' + COLORS['blue_dark']})
 
             # 노란색 행 적용
             if yellow_row_indices:
