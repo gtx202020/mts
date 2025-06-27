@@ -43,14 +43,12 @@ from openpyxl.styles import PatternFill
 # 시스템 변환 규칙
 # 키: 필터링할 패턴, 값: 변환할 대상
 SYSTEM_CONVERSION_RULES = {
-    'LY': 'LH',  # LY 시스템을 LH로 변환
-    'LZ': 'VO'   # LZ 시스템을 VO로 변환
+    'RTS_GM2': 'RTS_GM'  # RTS_GM2를 RTS_GM으로 변환
 }
 
 # 업무명 변환 규칙
 BUSINESS_NAME_MAPPING = {
-    'PNL_LY': 'MES_LH',
-    'MOD_LZ': 'MES_VO'
+    'RTS_GM2': 'RTS_GM'
 }
 
 # 법인 코드 매핑
@@ -87,6 +85,7 @@ TABLE_NAME = 'iflist'
 OUTPUT_VERSION = 'v8.4'
 
 # 컬럼명 설정
+COLUMN_MAPP_SEQ = '매핑SEQ'
 COLUMN_SEND_SYSTEM = '송신시스템'
 COLUMN_RECV_SYSTEM = '수신시스템'
 COLUMN_IF_NAME = 'I/F명'
@@ -464,9 +463,12 @@ try:
         df_complete_table = pd.DataFrame(all_rows_from_db, columns=column_names_from_db)
         print(f"원본 전체 테이블에 총 {len(df_complete_table)}개의 행이 로드되었습니다.")
 
-        # 2. df_filtered 생성: 송신시스템 또는 수신시스템에 변환 규칙 패턴 포함 조건
+        # 2. df_filtered 생성: 매핑SEQ='BBB' AND (송신시스템 또는 수신시스템에 변환 규칙 패턴 포함 조건)
         # 필터 패턴 목록
         filter_patterns = list(SYSTEM_CONVERSION_RULES.keys())
+        
+        # 매핑SEQ 조건
+        cond_mapp_seq = df_complete_table[COLUMN_MAPP_SEQ] == 'BBB'
         
         # 필터 조건 동적 생성
         cond_b_contains = pd.Series([False] * len(df_complete_table))
@@ -476,13 +478,14 @@ try:
             cond_b_contains |= df_complete_table[COLUMN_SEND_SYSTEM].astype(str).str.contains(pattern, na=False)
             cond_c_contains |= df_complete_table[COLUMN_RECV_SYSTEM].astype(str).str.contains(pattern, na=False)
         
-        df_filtered = df_complete_table[cond_b_contains | cond_c_contains].copy()
+        # AND 조건으로 결합: 매핑SEQ='BBB' AND (송신/수신시스템에 패턴 포함)
+        df_filtered = df_complete_table[cond_mapp_seq & (cond_b_contains | cond_c_contains)].copy()
         
         if df_filtered.empty:
             patterns_str = '/'.join(filter_patterns)
-            print(f"초기 필터링 조건('{patterns_str}' 포함)에 맞는 데이터가 없습니다. 후속 처리를 진행할 수 없습니다.")
+            print(f"초기 필터링 조건(매핑SEQ='BBB' AND '{patterns_str}' 포함)에 맞는 데이터가 없습니다. 후속 처리를 진행할 수 없습니다.")
         else:
-            print(f"초기 필터링 후 df_filtered에 {len(df_filtered)}개의 행이 남았습니다.")
+            print(f"초기 필터링 후 df_filtered에 {len(df_filtered)}개의 행이 남았습니다. (매핑SEQ='BBB' AND 시스템에 '{'/'.join(filter_patterns)}' 포함)")
 
 except sqlite3.Error as e:
     print(f"SQLite 오류 발생: {e}")
