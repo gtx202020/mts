@@ -217,24 +217,16 @@ def generate_yaml_from_excel(excel_path, yaml_path):
             if not source_filename or not target_process_path:
                 return []
             
-            replacements = [{
-                "설명": "프로세스 이름 치환",
-                "찾기": {
-                    "정규식": f'<pd:name>Processes/[^<]*</pd:name>'
-                },
-                "교체": {
-                    "값": f'<pd:name>Processes/{target_process_path}</pd:name>'
-                }
-            }]
+            replacements = []
             
-            # 추가 치환 규칙: "Check RTS_GM2" → "Check RTS_GM 2" (프로세스 이름 보호)
+            # 추가 치환 규칙: "Check RTS_GM2" 또는 >Check RTS_GM2< → "Check RTS_GM 2" (프로세스 이름 보호)
             replacements.append({
-                "설명": "Check RTS_GM2 → Check RTS_GM 2 치환",
+                "설명": "Check RTS_GM2 → Check RTS_GM 2 치환 (따옴표/태그 대응)",
                 "찾기": {
-                    "정규식": r'"([Cc]heck\s+)RTS_GM2"'
+                    "정규식": r'([">\s])([Cc]heck\s+)RTS_GM2(["<\s])'
                 },
                 "교체": {
-                    "값": r'"\1RTS_GM 2"'
+                    "값": r'\1\2RTS_GM 2\3'
                 }
             })
             
@@ -246,6 +238,17 @@ def generate_yaml_from_excel(excel_path, yaml_path):
                 },
                 "교체": {
                     "값": "RTS_GM2"
+                }
+            })
+            
+            # 프로세스 이름 치환 (RTS_GM 관련 치환 이후에 실행)
+            replacements.append({
+                "설명": "프로세스 이름 치환",
+                "찾기": {
+                    "정규식": f'<pd:name>Processes/[^<]*</pd:name>'
+                },
+                "교체": {
+                    "값": f'<pd:name>Processes/{target_process_path}</pd:name>'
                 }
             })
             
