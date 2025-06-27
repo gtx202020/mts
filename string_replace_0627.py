@@ -47,11 +47,9 @@ def generate_yaml_from_excel(excel_path, yaml_path):
             f"{i//2 + 1}번째 행": {}
         }
         
-        # namespace 저장 변수
-        송신_namespace = None
-        송신_schema_location = None
-        수신_namespace = None
-        수신_schema_location = None
+        # 파일경로에서 계산된 namespace 저장 변수
+        송신_namespace_from_path = None
+        수신_namespace_from_path = None
         
         def modify_path(path):
             """파일 경로를 수정하는 함수 (테스트용)"""
@@ -145,27 +143,25 @@ def generate_yaml_from_excel(excel_path, yaml_path):
             
             return namespace, schema_location
 
-        def create_schema_replacements(filename, schema_path, source_file_path=None, namespace=None, schema_location=None):
+        def create_schema_replacements(filename, schema_path, source_file_path=None):
             """스키마 파일 치환 목록 생성"""
             if not filename.endswith('.xsd'):
                 return []
             
             base_name = os.path.splitext(filename)[0]
             
-            # namespace가 외부에서 전달되지 않은 경우에만 계산
-            if namespace is None or schema_location is None:
-                # 소스 파일에서 기존 namespace 확인
-                has_no_namespace = False
-                if source_file_path:
-                    existing_namespace = extract_existing_namespace(source_file_path, base_name)
-                    if existing_namespace and 'no_namespace_schema' in existing_namespace:
-                        has_no_namespace = True
-                        debug_print(f"no_namespace_schema 감지됨: {existing_namespace}")
-                
-                # namespace 생성 (no_namespace 여부에 따라 다르게 처리)
-                namespace, schema_location = process_schema_path(schema_path, preserve_no_namespace=has_no_namespace)
-                if not namespace or not schema_location:
-                    return []
+            # 소스 파일에서 기존 namespace 확인
+            has_no_namespace = False
+            if source_file_path:
+                existing_namespace = extract_existing_namespace(source_file_path, base_name)
+                if existing_namespace and 'no_namespace_schema' in existing_namespace:
+                    has_no_namespace = True
+                    debug_print(f"no_namespace_schema 감지됨: {existing_namespace}")
+            
+            # namespace 생성 (no_namespace 여부에 따라 다르게 처리)
+            namespace, schema_location = process_schema_path(schema_path, preserve_no_namespace=has_no_namespace)
+            if not namespace or not schema_location:
+                return []
             return [{
                 "설명": "스키마 namespace 치환",
                 "찾기": {
@@ -262,25 +258,79 @@ def generate_yaml_from_excel(excel_path, yaml_path):
             
             return replacements
 
-        # 1. 송신스키마파일명 처리 (namespace 계산)
+        # 1. 송신파일경로 처리
+        if pd.notna(normal_row.get('송신파일생성여부')) and float(normal_row['송신파일생성여부']) == 1.0:
+            # 치환목록 계산
+            송신_치환목록 = create_schema_replacements(
+                extract_filename(normal_row['송신스키마파일명']),
+                normal_row['송신스키마파일명'],
+                match_row['송신파일경로']  # 소스 파일 경로 전달
+            ) + create_process_replacements(
+                match_row['송신파일경로'],    # 매칭행의 경로로 패턴 매칭
+                normal_row['송신파일경로'],    # 기본행의 경로로 교체
+                match_row,
+                normal_row
+            )
+            
+            # "스키마 namespace 치환"에서 namespace 값 추출
+            for 치환 in 송신_치환목록:
+                if 치환.get("설명") == "스키마 namespace 치환":
+                    # namespace="..." 형태에서 값 추출
+                    namespace_value = 치환["교체"]["값"]
+                    if 'namespace="' in namespace_value:
+                        송신_namespace_from_path = namespace_value.split('namespace="')[1].split('"')[0]
+                    break
+            
+            yaml_structure[f"{i//2 + 1}번째 행"]["송신파일경로"] = {
+                "원본파일": match_row['송신파일경로'],
+                "복사파일": modify_path(normal_row['송신파일경로']),  # 경로 수정
+                "치환목록": 송신_치환목록
+            }
+            print("\n[송신파일경로 생성]")
+            print(f"  원본파일: {match_row['송신파일경로']}")
+            print(f"  복사파일: {modify_path(normal_row['송신파일경로'])}")
+        
+        # 2. 수신파일경로 처리
+        if pd.notna(normal_row.get('수신파일생성여부')) and float(normal_row['수신파일생성여부']) == 1.0:
+            # 치환목록 계산
+            수신_치환목록 = create_schema_replacements(
+                extract_filename(normal_row['수신스키마파일명']),
+                normal_row['수신스키마파일명'],
+                match_row['수신파일경로']  # 소스 파일 경로 전달
+            ) + create_process_replacements(
+                match_row['수신파일경로'],    # 매칭행의 경로로 패턴 매칭
+                normal_row['수신파일경로'],    # 기본행의 경로로 교체
+                match_row,
+                normal_row
+            )
+            
+            # "스키마 namespace 치환"에서 namespace 값 추출
+            for 치환 in 수신_치환목록:
+                if 치환.get("설명") == "스키마 namespace 치환":
+                    # namespace="..." 형태에서 값 추출
+                    namespace_value = 치환["교체"]["값"]
+                    if 'namespace="' in namespace_value:
+                        수신_namespace_from_path = namespace_value.split('namespace="')[1].split('"')[0]
+                    break
+            
+            yaml_structure[f"{i//2 + 1}번째 행"]["수신파일경로"] = {
+                "원본파일": match_row['수신파일경로'],
+                "복사파일": modify_path(normal_row['수신파일경로']),  # 경로 수정
+                "치환목록": 수신_치환목록
+            }
+            print("\n[수신파일경로 생성]")
+            print(f"  원본파일: {match_row['수신파일경로']}")
+            print(f"  복사파일: {modify_path(normal_row['수신파일경로'])}")
+        
+        # 3. 송신스키마파일명 처리
         if pd.notna(normal_row.get('송신스키마파일생성여부')) and float(normal_row['송신스키마파일생성여부']) == 1.0:
-            # 스키마 파일의 base_name과 namespace 추출
+            # 스키마 파일의 base_name 추출
             base_name = os.path.splitext(os.path.basename(normal_row['송신스키마파일명']))[0]
-            
-            # 소스 파일에서 기존 namespace 확인
-            has_no_namespace = False
-            existing_namespace = extract_existing_namespace(match_row['송신스키마파일명'], base_name)
-            if existing_namespace and 'no_namespace_schema' in existing_namespace:
-                has_no_namespace = True
-                debug_print(f"송신스키마파일명에서 no_namespace_schema 감지됨: {existing_namespace}")
-            
-            # namespace 생성 (no_namespace 여부에 따라 다르게 처리)
-            송신_namespace, 송신_schema_location = process_schema_path(normal_row['송신스키마파일명'], preserve_no_namespace=has_no_namespace)
             
             schema_replacements = []
             
-            # no_namespace가 아닌 경우에만 namespace 치환 적용
-            if not has_no_namespace:
+            # 파일경로에서 추출한 namespace 사용
+            if 송신_namespace_from_path:
                 schema_replacements.extend([
                     {
                         "설명": "xs:schema xmlns 치환",
@@ -288,7 +338,7 @@ def generate_yaml_from_excel(excel_path, yaml_path):
                             "정규식": f'xmlns\\s*=\\s*"[^"]*{base_name}[^"]*"'
                         },
                         "교체": {
-                            "값": f'xmlns="{송신_namespace}"'
+                            "값": f'xmlns="{송신_namespace_from_path}"'
                         }
                     },
                     {
@@ -297,7 +347,7 @@ def generate_yaml_from_excel(excel_path, yaml_path):
                             "정규식": f'targetNamespace\\s*=\\s*"[^"]*{base_name}[^"]*"'
                         },
                         "교체": {
-                            "값": f'targetNamespace="{송신_namespace}"'
+                            "값": f'targetNamespace="{송신_namespace_from_path}"'
                         }
                     }
                 ])
@@ -311,25 +361,15 @@ def generate_yaml_from_excel(excel_path, yaml_path):
             print(f"  원본파일: {match_row['송신스키마파일명']}")
             print(f"  복사파일: {modify_path(normal_row['송신스키마파일명'])}")
         
-        # 2. 수신스키마파일명 처리 (namespace 계산)
+        # 4. 수신스키마파일명 처리
         if pd.notna(normal_row.get('수신스키마파일생성여부')) and float(normal_row['수신스키마파일생성여부']) == 1.0:
-            # 스키마 파일의 base_name과 namespace 추출
+            # 스키마 파일의 base_name 추출
             base_name = os.path.splitext(os.path.basename(normal_row['수신스키마파일명']))[0]
-            
-            # 소스 파일에서 기존 namespace 확인
-            has_no_namespace = False
-            existing_namespace = extract_existing_namespace(match_row['수신스키마파일명'], base_name)
-            if existing_namespace and 'no_namespace_schema' in existing_namespace:
-                has_no_namespace = True
-                debug_print(f"수신스키마파일명에서 no_namespace_schema 감지됨: {existing_namespace}")
-            
-            # namespace 생성 (no_namespace 여부에 따라 다르게 처리)
-            수신_namespace, 수신_schema_location = process_schema_path(normal_row['수신스키마파일명'], preserve_no_namespace=has_no_namespace)
             
             schema_replacements = []
             
-            # no_namespace가 아닌 경우에만 namespace 치환 적용
-            if not has_no_namespace:
+            # 파일경로에서 추출한 namespace 사용
+            if 수신_namespace_from_path:
                 schema_replacements.extend([
                     {
                         "설명": "xs:schema xmlns 치환",
@@ -337,7 +377,7 @@ def generate_yaml_from_excel(excel_path, yaml_path):
                             "정규식": f'xmlns\\s*=\\s*"[^"]*{base_name}[^"]*"'
                         },
                         "교체": {
-                            "값": f'xmlns="{수신_namespace}"'
+                            "값": f'xmlns="{수신_namespace_from_path}"'
                         }
                     },
                     {
@@ -346,7 +386,7 @@ def generate_yaml_from_excel(excel_path, yaml_path):
                             "정규식": f'targetNamespace\\s*=\\s*"[^"]*{base_name}[^"]*"'
                         },
                         "교체": {
-                            "값": f'targetNamespace="{수신_namespace}"'
+                            "값": f'targetNamespace="{수신_namespace_from_path}"'
                         }
                     }
                 ])
@@ -359,50 +399,6 @@ def generate_yaml_from_excel(excel_path, yaml_path):
             print("\n[수신스키마파일명 생성]")
             print(f"  원본파일: {match_row['수신스키마파일명']}")
             print(f"  복사파일: {modify_path(normal_row['수신스키마파일명'])}")
-        
-        # 3. 송신파일경로 처리 (계산된 namespace 사용)
-        if pd.notna(normal_row.get('송신파일생성여부')) and float(normal_row['송신파일생성여부']) == 1.0:
-            yaml_structure[f"{i//2 + 1}번째 행"]["송신파일경로"] = {
-                "원본파일": match_row['송신파일경로'],
-                "복사파일": modify_path(normal_row['송신파일경로']),  # 경로 수정
-                "치환목록": create_schema_replacements(
-                    extract_filename(normal_row['송신스키마파일명']),
-                    normal_row['송신스키마파일명'],
-                    match_row['송신파일경로'],  # 소스 파일 경로 전달
-                    송신_namespace,  # 계산된 namespace 사용
-                    송신_schema_location  # 계산된 schema_location 사용
-                ) + create_process_replacements(
-                    match_row['송신파일경로'],    # 매칭행의 경로로 패턴 매칭
-                    normal_row['송신파일경로'],    # 기본행의 경로로 교체
-                    match_row,
-                    normal_row
-                )
-            }
-            print("\n[송신파일경로 생성]")
-            print(f"  원본파일: {match_row['송신파일경로']}")
-            print(f"  복사파일: {modify_path(normal_row['송신파일경로'])}")
-        
-        # 4. 수신파일경로 처리 (계산된 namespace 사용)
-        if pd.notna(normal_row.get('수신파일생성여부')) and float(normal_row['수신파일생성여부']) == 1.0:
-            yaml_structure[f"{i//2 + 1}번째 행"]["수신파일경로"] = {
-                "원본파일": match_row['수신파일경로'],
-                "복사파일": modify_path(normal_row['수신파일경로']),  # 경로 수정
-                "치환목록": create_schema_replacements(
-                    extract_filename(normal_row['수신스키마파일명']),
-                    normal_row['수신스키마파일명'],  # 수정: 수신스키마파일명 사용
-                    match_row['수신파일경로'],  # 소스 파일 경로 전달
-                    수신_namespace,  # 계산된 namespace 사용
-                    수신_schema_location  # 계산된 schema_location 사용
-                ) + create_process_replacements(
-                    match_row['수신파일경로'],    # 매칭행의 경로로 패턴 매칭
-                    normal_row['수신파일경로'],    # 기본행의 경로로 교체
-                    match_row,
-                    normal_row
-                )
-            }
-            print("\n[수신파일경로 생성]")
-            print(f"  원본파일: {match_row['수신파일경로']}")
-            print(f"  복사파일: {modify_path(normal_row['수신파일경로'])}")
         
         # YAML 구조 출력
         print("\n[YAML 구조]")
