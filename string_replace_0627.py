@@ -296,7 +296,43 @@ def generate_yaml_from_excel(excel_path, yaml_path):
         
         # 3. 송신스키마파일명 처리
         if pd.notna(normal_row.get('송신스키마파일생성여부')) and float(normal_row['송신스키마파일생성여부']) == 1.0:
+            # 스키마 파일의 base_name과 namespace 추출
+            base_name = os.path.splitext(os.path.basename(normal_row['송신스키마파일명']))[0]
+            
+            # 소스 파일에서 기존 namespace 확인
+            has_no_namespace = False
+            existing_namespace = extract_existing_namespace(match_row['송신스키마파일명'], base_name)
+            if existing_namespace and 'no_namespace_schema' in existing_namespace:
+                has_no_namespace = True
+                debug_print(f"송신스키마파일명에서 no_namespace_schema 감지됨: {existing_namespace}")
+            
+            # namespace 생성 (no_namespace 여부에 따라 다르게 처리)
+            namespace, _ = process_schema_path(normal_row['송신스키마파일명'], preserve_no_namespace=has_no_namespace)
+            
             schema_replacements = []
+            
+            # no_namespace가 아닌 경우에만 namespace 치환 적용
+            if not has_no_namespace:
+                schema_replacements.extend([
+                    {
+                        "설명": "xs:schema xmlns 치환",
+                        "찾기": {
+                            "정규식": f'xmlns\\s*=\\s*"[^"]*{base_name}[^"]*"'
+                        },
+                        "교체": {
+                            "값": f'xmlns="{namespace}"'
+                        }
+                    },
+                    {
+                        "설명": "xs:schema targetNamespace 치환",
+                        "찾기": {
+                            "정규식": f'targetNamespace\\s*=\\s*"[^"]*{base_name}[^"]*"'
+                        },
+                        "교체": {
+                            "값": f'targetNamespace="{namespace}"'
+                        }
+                    }
+                ])
             
             yaml_structure[f"{i//2 + 1}번째 행"]["송신스키마파일명"] = {
                 "원본파일": match_row['송신스키마파일명'],
@@ -309,7 +345,43 @@ def generate_yaml_from_excel(excel_path, yaml_path):
         
         # 4. 수신스키마파일명 처리
         if pd.notna(normal_row.get('수신스키마파일생성여부')) and float(normal_row['수신스키마파일생성여부']) == 1.0:
+            # 스키마 파일의 base_name과 namespace 추출
+            base_name = os.path.splitext(os.path.basename(normal_row['수신스키마파일명']))[0]
+            
+            # 소스 파일에서 기존 namespace 확인
+            has_no_namespace = False
+            existing_namespace = extract_existing_namespace(match_row['수신스키마파일명'], base_name)
+            if existing_namespace and 'no_namespace_schema' in existing_namespace:
+                has_no_namespace = True
+                debug_print(f"수신스키마파일명에서 no_namespace_schema 감지됨: {existing_namespace}")
+            
+            # namespace 생성 (no_namespace 여부에 따라 다르게 처리)
+            namespace, _ = process_schema_path(normal_row['수신스키마파일명'], preserve_no_namespace=has_no_namespace)
+            
             schema_replacements = []
+            
+            # no_namespace가 아닌 경우에만 namespace 치환 적용
+            if not has_no_namespace:
+                schema_replacements.extend([
+                    {
+                        "설명": "xs:schema xmlns 치환",
+                        "찾기": {
+                            "정규식": f'xmlns\\s*=\\s*"[^"]*{base_name}[^"]*"'
+                        },
+                        "교체": {
+                            "값": f'xmlns="{namespace}"'
+                        }
+                    },
+                    {
+                        "설명": "xs:schema targetNamespace 치환",
+                        "찾기": {
+                            "정규식": f'targetNamespace\\s*=\\s*"[^"]*{base_name}[^"]*"'
+                        },
+                        "교체": {
+                            "값": f'targetNamespace="{namespace}"'
+                        }
+                    }
+                ])
             
             yaml_structure[f"{i//2 + 1}번째 행"]["수신스키마파일명"] = {
                 "원본파일": match_row['수신스키마파일명'],
