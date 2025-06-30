@@ -51,6 +51,10 @@ def generate_yaml_from_excel(excel_path, yaml_path):
         송신_namespace_from_path = None
         수신_namespace_from_path = None
         
+        # Group ID 읽기
+        group_id = normal_row.get('Group ID', '')
+        debug_print(f"Group ID: {group_id}")
+        
         def modify_path(path):
             """파일 경로를 수정하는 함수 (테스트용)"""
             if isinstance(path, str) and path.startswith("C:\\BwProject"):
@@ -106,13 +110,14 @@ def generate_yaml_from_excel(excel_path, yaml_path):
                 
             return None
 
-        def process_schema_path(schema_path, preserve_no_namespace=False):
+        def process_schema_path(schema_path, preserve_no_namespace=False, group_id=None):
             """
             스키마 파일 경로를 처리하여 namespace와 schemaLocation 생성
             
             Args:
                 schema_path: 스키마 파일 경로
                 preserve_no_namespace: no_namespace_schema 경로 보존 여부
+                group_id: Group ID 값 (엑셀에서 읽어온 값)
             """
             if not isinstance(schema_path, str):
                 return None, None
@@ -125,7 +130,7 @@ def generate_yaml_from_excel(excel_path, yaml_path):
             if shared_idx == -1:
                 return None, None
                 
-            # BB 부분을 포함한 경로 추출
+            # BB 부분을 포함한 경로 추출 (Group ID가 없을 때 사용)
             bb_start = normalized_path.rfind('/', 0, shared_idx)
             if bb_start == -1:
                 return None, None
@@ -138,12 +143,18 @@ def generate_yaml_from_excel(excel_path, yaml_path):
                 # SharedResources 이전 부분은 상수로 대체하고 SharedResources 이후만 새로운 로직 적용
                 namespace = f"http://www.tibco.com/ns/no_namespace_schema_location{schema_location}"
             else:
-                # 기존 로직 그대로 적용
-                namespace = f"http://www.tibco.com/schemas{relative_path}"
+                # Group ID가 있으면 사용, 없으면 기존 로직
+                if group_id and str(group_id).strip():
+                    namespace = f"http://www.tibco.com/schemas/{group_id}{schema_location}"
+                    debug_print(f"Group ID를 사용한 namespace 생성: {namespace}")
+                else:
+                    # 기존 로직 그대로 적용
+                    namespace = f"http://www.tibco.com/schemas{relative_path}"
+                    debug_print(f"기존 로직을 사용한 namespace 생성: {namespace}")
             
             return namespace, schema_location
 
-        def create_schema_replacements(filename, schema_path, source_file_path=None):
+        def create_schema_replacements(filename, schema_path, source_file_path=None, group_id=None):
             """스키마 파일 치환 목록 생성"""
             if not filename.endswith('.xsd'):
                 return []
@@ -159,7 +170,7 @@ def generate_yaml_from_excel(excel_path, yaml_path):
                     debug_print(f"no_namespace_schema 감지됨: {existing_namespace}")
             
             # namespace 생성 (no_namespace 여부에 따라 다르게 처리)
-            namespace, schema_location = process_schema_path(schema_path, preserve_no_namespace=has_no_namespace)
+            namespace, schema_location = process_schema_path(schema_path, preserve_no_namespace=has_no_namespace, group_id=group_id)
             if not namespace or not schema_location:
                 return []
             return [{
@@ -264,7 +275,8 @@ def generate_yaml_from_excel(excel_path, yaml_path):
             송신_치환목록 = create_schema_replacements(
                 extract_filename(normal_row['송신스키마파일명']),
                 normal_row['송신스키마파일명'],
-                match_row['송신파일경로']  # 소스 파일 경로 전달
+                match_row['송신파일경로'],  # 소스 파일 경로 전달
+                group_id  # Group ID 전달
             ) + create_process_replacements(
                 match_row['송신파일경로'],    # 매칭행의 경로로 패턴 매칭
                 normal_row['송신파일경로'],    # 기본행의 경로로 교체
@@ -296,7 +308,8 @@ def generate_yaml_from_excel(excel_path, yaml_path):
             수신_치환목록 = create_schema_replacements(
                 extract_filename(normal_row['수신스키마파일명']),
                 normal_row['수신스키마파일명'],
-                match_row['수신파일경로']  # 소스 파일 경로 전달
+                match_row['수신파일경로'],  # 소스 파일 경로 전달
+                group_id  # Group ID 전달
             ) + create_process_replacements(
                 match_row['수신파일경로'],    # 매칭행의 경로로 패턴 매칭
                 normal_row['수신파일경로'],    # 기본행의 경로로 교체
